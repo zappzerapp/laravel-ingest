@@ -1,2 +1,1 @@
-# laravel-ingest
-A configuration-driven data import framework for Laravel [wip]
+![Laravel Ingest](https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/.github/header.png)
