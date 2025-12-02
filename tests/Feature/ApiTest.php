@@ -1,0 +1,73 @@
+<?php
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
+use LaravelIngest\Enums\IngestStatus;
+use LaravelIngest\IngestServiceProvider;
+use LaravelIngest\Jobs\ProcessIngestChunkJob;
+use LaravelIngest\Tests\Fixtures\UserImporter;
+
+beforeEach(function () {
+    $this->app->tag([UserImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
+    Storage::fake('local');
+});
+
+it('can upload a file and start an ingest run', function () {
+    Bus::fake();
+
+    $fileContent = "full_name,user_email,is_admin\nJohn Doe,john@example.com,yes\nJane Doe,jane@example.com,no";
+    $file = UploadedFile::fake()->createWithContent('users.csv', $fileContent);
+
+    $response = $this->postJson('/api/v1/ingest/upload/userimporter', [
+        'file' => $file,
+    ]);
+
+    $response->assertStatus(202)
+        ->assertJsonPath('data.importer', 'userimporter')
+        ->assertJsonPath('data.status', IngestStatus::PROCESSING->value);
+
+    Bus::assertBatched(function ($batch) {
+        return $batch->jobs->count() === 1
+            && $batch->jobs->first() instanceof ProcessIngestChunkJob;
+    });
+
+    $dispatchedBatches = Bus::dispatchedBatches();
+    $batch = $dispatchedBatches[0];
+    $job = $batch->jobs->first();
+
+    app()->make(\LaravelIngest\Services\RowProcessor::class)->processChunk(
+        $job->ingestRun,
+        $job->config,
+        $job->chunk,
+        $job->isDryRun
+    );
+
+    $this->assertDatabaseCount('ingest_runs', 1);
+    $this->assertDatabaseHas('users', ['email' => 'john@example.com', 'is_admin' => true]);
+    $this->assertDatabaseHas('users', ['email' => 'jane@example.com', 'is_admin' => false]);
+});
+
+it('returns a list of ingest runs', function () {
+    \LaravelIngest\Models\IngestRun::factory()->count(3)->create(['importer_slug' => 'userimporter']);
+
+    $this->getJson('/api/v1/ingest')
+        ->assertOk()
+        ->assertJsonCount(3, 'data');
+});
+
+it('returns a single ingest run with details', function () {
+    $run = \LaravelIngest\Models\IngestRun::factory()->create();
+    \LaravelIngest\Models\IngestRow::factory()->count(5)->create(['ingest_run_id' => $run->id]);
+
+    $this->getJson("/api/v1/ingest/{$run->id}")
+        ->assertOk()
+        ->assertJsonPath('data.id', $run->id)
+        ->assertJsonCount(5, 'data.rows');
+});
+
+it('rejects upload without a file', function () {
+    $this->postJson('/api/v1/ingest/upload/userimporter')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('file');
+});

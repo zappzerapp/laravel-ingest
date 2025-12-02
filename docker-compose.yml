@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    tty: true
+    environment:
+      - APP_KEY=base64:9D5sW8zK9fL3jR6uE2bA1cZ7xY4vG0hN/tP8iO+pKlM=
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=":memory:"
+      - CACHE_DRIVER=array
+      - QUEUE_CONNECTION=sync
+      - XDEBUG_MODE=coverage
+
+  ftp:
+    image: stilliard/pure-ftpd
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    environment:
+      - "PUBLICHOST=localhost"
+      - "FTP_USER_NAME=testuser"
+      - "FTP_USER_PASS=testpass"
+      - "FTP_USER_HOME=/home/testuser"
+    volumes:
+      - ./tests/Fixtures/ftp:/home/testuser
