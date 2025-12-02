@@ -1,38 +1,32 @@
 # Laravel Ingest
 
-> **Tagline:** Das definitive, konfigurationsgesteuerte Daten-Import-Framework für Laravel. Robust, skalierbar und
-> bereit für jede Datenquelle.
-
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/zappzerapp/laravel-ingest.svg?style=flat-square)](https://packagist.org/packages/zappzerapp/laravel-ingest)
 [![Total Downloads](https://img.shields.io/packagist/dt/zappzerapp/laravel-ingest.svg?style=flat-square)](https://packagist.org/packages/zappzerapp/laravel-ingest)
 
-Laravel Ingest revolutioniert die Art und Weise, wie Laravel-Anwendungen Daten importieren. Wir beenden das Chaos von
-maßgeschneiderten, fehleranfälligen Import-Skripten und bieten ein elegantes, deklaratives und robustes Framework, mit
-dem Sie komplexe Daten-Import-Prozesse definieren können.
+Laravel Ingest revolutionizes the way Laravel applications import data. We end the chaos of custom, error-prone import
+scripts and provide an elegant, declarative, and robust framework for defining complex data import processes.
 
-Das System kümmert sich um die "schmutzige" Arbeit – Dateiverarbeitung, Streaming, Validierung, Hintergrund-Jobs,
-Fehler-Reporting und die Bereitstellung einer API – damit Sie sich auf die Geschäftslogik konzentrieren können.
+The system handles the "dirty" work—file processing, streaming, validation, background jobs, error reporting, and API
+provision—so you can focus on the business logic.
 
-## Das Kernproblem, das wir lösen
+## The Core Problem We Solve
 
-Der Import von Daten (CSV, Excel, etc.) ist oft ein schmerzhafter Prozess: repetitiver Code, fehlende Robustheit bei
-großen Dateien, schlechte User Experience und mangelhaftes Error-Handling. Laravel Ingest löst dies durch einen *
-*deklarativen, konfigurationsgesteuerten Ansatz**.
+Importing data (CSV, Excel, etc.) is often a painful process: repetitive code, lack of robustness with large files, poor
+user experience, and inadequate error handling. Laravel Ingest solves this with a **declarative, configuration-driven
+approach**.
 
-## Hauptmerkmale
+## Key Features
 
-- **Grenzenlose Skalierbarkeit**: Durch die konsequente Nutzung von **Streams und Queues** gibt es keine Obergrenze für
-  die Dateigröße. Ob 100 Zeilen oder 10 Millionen, der Speicherverbrauch bleibt konstant niedrig.
-- **Fluent & Expressive API**: Definieren Sie Imports lesbar und selbsterklärend mit der `IngestConfig`-Klasse.
-- **Quell-agnostisch**: Importieren Sie von Datei-Uploads, (S)FTP-Servern, URLs oder jedem Laravel Filesystem Disk (
-  `s3`, `local`). Leicht erweiterbar für weitere Quellen.
-- **Robuste Hintergrundverarbeitung**: Nutzt standardmäßig die Laravel Queue für maximale Zuverlässigkeit.
-- **Umfassendes Mapping & Validierung**: Transformieren Sie Daten on-the-fly, lösen Sie Relationen auf und verwenden Sie
-  die Validierungsregeln Ihrer Eloquent-Modelle.
-- **Auto-generierte API & CLI**: Steuern und überwachen Sie Importe über RESTful-Endpunkte oder die mitgelieferten
-  Artisan-Befehle.
-- **"Dry Runs"**: Simulieren Sie einen Import, um Validierungsfehler zu sehen, ohne einen einzigen Datenbankeintrag zu
-  schreiben.
+- **Limitless Scalability**: By consistently utilizing **streams and queues**, there is no limit to file size. Whether
+  100 rows or 10 million, memory usage remains consistently low.
+- **Fluent & Expressive API**: Define imports in a readable and self-explanatory way using the `IngestConfig` class.
+- **Source Agnostic**: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (`s3`, `local`).
+  Easily extensible for other sources.
+- **Robust Background Processing**: Uses the Laravel Queue by default for maximum reliability.
+- **Comprehensive Mapping & Validation**: Transform data on-the-fly, resolve relationships, and use the validation rules
+  of your Eloquent models.
+- **Auto-generated API & CLI**: Control and monitor imports via RESTful endpoints or the included Artisan commands.
+- **"Dry Runs"**: Simulate an import to detect validation errors without writing a single database entry.
 
 ## Installation
 
@@ -40,23 +34,23 @@ großen Dateien, schlechte User Experience und mangelhaftes Error-Handling. Lara
 composer require zappzerapp/laravel-ingest
 ```
 
-Veröffentlichen Sie die Konfiguration und die Migrationen:
+Publish the configuration and migrations:
 
 ```bash
 php artisan vendor:publish --provider="LaravelIngest\IngestServiceProvider"
 ```
 
-Führen Sie die Migrationen aus, um die Tabellen `ingest_runs` und `ingest_rows` zu erstellen:
+Run the migrations to create the `ingest_runs` and `ingest_rows` tables:
 
 ```bash
 php artisan migrate
 ```
 
-## "Hello World": Ihr erster Importer
+## "Hello World": Your First Importer
 
-### 1. Importer-Klasse definieren
+### 1. Define Importer Class
 
-Erstellen Sie eine Klasse, die das `IngestDefinition`-Interface implementiert. Hier definieren Sie den gesamten Prozess.
+Create a class that implements the `IngestDefinition` interface. This is where you define the entire process.
 
 ```php
 // app/Ingest/UserImporter.php
@@ -84,9 +78,9 @@ class UserImporter implements IngestDefinition
 }
 ```
 
-### 2. Modell taggen
+### 2. Tag the Model
 
-Damit das Framework Ihren Importer findet, taggen Sie ihn im `register`-Teil Ihres `AppServiceProvider`:
+To let the framework find your importer, tag it in the `register` method of your `AppServiceProvider`:
 
 ```php
 // app/Providers/AppServiceProvider.php
@@ -99,10 +93,10 @@ public function register(): void
 }
 ```
 
-### 3. Import ausführen
+### 3. Run Import
 
-**Via API:** Senden Sie eine `multipart/form-data`-Anfrage mit einer `file`-Payload an den automatisch generierten
-Endpunkt. Der Slug wird vom Klassennamen abgeleitet (`UserImporter` -> `user-importer`).
+**Via API:** Send a `multipart/form-data` request with a `file` payload to the automatically generated endpoint. The
+slug is derived from the class name (`UserImporter` -> `user-importer`).
 
 ```bash
 curl -X POST \
@@ -117,29 +111,28 @@ curl -X POST \
 php artisan ingest:run user-importer --file=path/to/users.csv
 ```
 
-Der Import wird nun im Hintergrund verarbeitet. Sie können den Status über die API abfragen:
-`GET /api/v1/ingest/{run-id}`.
+The import is now processed in the background. You can check the status via the API: `GET /api/v1/ingest/{run-id}`.
 
-## Konfigurationsreferenz (`IngestConfig`)
+## Configuration Reference (`IngestConfig`)
 
-Alle Konfigurationen werden über die Fluent-API in Ihrer `getConfig()`-Methode vorgenommen.
+All configurations are handled via the fluent API in your `getConfig()` method.
 
-| Methode                                     | Beschreibung                                                                                                 |
-|---------------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| `fromSource(SourceType, array)`             | Definiert die Datenquelle (z.B. `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                       |
-| `keyedBy(string)`                           | Legt das eindeutige Feld in den Quelldaten fest (z.B. `sku`, `email`).                                       |
-| `onDuplicate(DuplicateStrategy)`            | Definiert das Verhalten bei Duplikaten (`UPDATE`, `SKIP`, `FAIL`).                                           |
-| `map(string, string)`                       | Mappt eine Quellspalte direkt auf ein Modell-Attribut.                                                       |
-| `mapAndTransform(string, string, callable)` | Mappt und transformiert den Wert vor dem Speichern.                                                          |
-| `relate(string, string, string, string)`    | Löst eine `BelongsTo`-Relation auf. Mappt `sourceField` zu `relationName` über `relatedModel`::`relatedKey`. |
-| `validate(array)`                           | Definiert import-spezifische Validierungsregeln.                                                             |
-| `validateWithModelRules()`                  | Nutzt die `$rules`-Eigenschaft des Ziel-Modells für die Validierung.                                         |
-| `setChunkSize(int)`                         | Definiert die Anzahl der Zeilen pro Hintergrund-Job (Standard: 100).                                         |
-| `setDisk(string)`                           | Definiert den Filesystem-Disk für `UPLOAD`- oder `FILESYSTEM`-Quellen.                                       |
+| Method                                      | Description                                                                                                   |
+|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `fromSource(SourceType, array)`             | Defines the data source (e.g., `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                         |
+| `keyedBy(string)`                           | Sets the unique field in the source data (e.g., `sku`, `email`).                                              |
+| `onDuplicate(DuplicateStrategy)`            | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`).                                                   |
+| `map(string, string)`                       | Maps a source column directly to a model attribute.                                                           |
+| `mapAndTransform(string, string, callable)` | Maps and transforms the value before saving.                                                                  |
+| `relate(string, string, string, string)`    | Resolves a `BelongsTo` relationship. Maps `sourceField` to `relationName` using `relatedModel`::`relatedKey`. |
+| `validate(array)`                           | Defines import-specific validation rules.                                                                     |
+| `validateWithModelRules()`                  | Uses the target model's `$rules` property for validation.                                                     |
+| `setChunkSize(int)`                         | Defines the number of rows per background job (Default: 100).                                                 |
+| `setDisk(string)`                           | Defines the filesystem disk for `UPLOAD` or `FILESYSTEM` sources.                                             |
 
-## Fortgeschrittene Szenarien
+## Advanced Scenarios
 
-### Nächtlicher FTP-Import
+### Nightly FTP Import
 
 ```php
 // app/Ingest/DailyStockImporter.php
@@ -156,7 +149,7 @@ return IngestConfig::for(ProductStock::class)
     ->map('Quantity', 'quantity');
 ```
 
-Richten Sie einen Scheduled Command ein, der den Import auslöst:
+Set up a scheduled command to trigger the import:
 
 ```php
 // app/Console/Kernel.php
@@ -164,6 +157,27 @@ $schedule->command('ingest:run daily-stock-importer')->dailyAt('03:00');
 ```
 
 ## Testing
+
+To ensure a consistent test environment, we recommend running tests via Docker.
+
+**Prerequisites:**
+Start the environment once:
+
+```bash
+composer docker:up
+```
+
+**Run Tests:**
+
+```bash
+# Run tests inside the container
+composer docker:test
+
+# Run tests with coverage
+composer docker:coverage
+```
+
+Alternatively, you can run tests locally if you have PHP 8.3 and SQLite installed:
 
 ```bash
 composer test
@@ -181,4 +195,4 @@ Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE) for more information.
+The GNU Affero General Public License v3.0 (AGPL-3.0). Please see [License File](LICENSE) for more information.
