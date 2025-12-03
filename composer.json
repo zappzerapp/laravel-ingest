@@ -1,6 +1,6 @@
 {
   "name": "zappzerapp/laravel-ingest",
-  "version": "0.1.1",
+  "version": "v0.1.1",
   "description": "A configuration-driven data import framework for Laravel",
   "keywords": [
     "laravel",
