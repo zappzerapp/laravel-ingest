@@ -14,28 +14,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          extensions: mbstring, dom, fileinfo, sqlite, pdo_sqlite, zip, ftp
-          coverage: xdebug
-        env:
-          XDEBUG_MODE: "off"
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
-      - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
-
       - name: Start Docker services
         run: docker compose up -d
+
+      - name: Install dependencies
+        run: docker compose exec -T --user root app composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Run Pest tests
         run: docker compose exec -T --user root app composer test
