@@ -21,7 +21,7 @@ COPY . .
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-RUN chown -R nobody:nobody /var/www/html
+RUN chown -R nobody:nogroup /var/www/html
 
 CMD ["tail", "-f", "/dev/null"]
 USER nobody
