@@ -1,0 +1,22 @@
+name: Publish to Packagist
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update Packagist
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            'https://packagist.org/api/update-package?username=zappzerapp&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
+            -d '{"repository":{"url":"https://github.com/zappzerapp/laravel-ingest"}}'
