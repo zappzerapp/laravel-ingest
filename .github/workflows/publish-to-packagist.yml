@@ -18,5 +18,5 @@ jobs:
         run: |
           curl -X POST \
             -H "Content-Type: application/json" \
-            'https://packagist.org/api/update-package?username=zappzerapp&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
+            'https://packagist.org/api/update-package?username=w0bble&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
             -d '{"repository":{"url":"https://github.com/zappzerapp/laravel-ingest"}}'
