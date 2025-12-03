@@ -38,7 +38,7 @@ jobs:
         run: docker compose up -d
 
       - name: Run Pest tests
-        run: composer docker:test
+        run: docker compose exec -T --user root app composer test
 
       - name: Stop Docker services
         if: always()
