@@ -4,6 +4,7 @@ namespace LaravelIngest;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
@@ -74,6 +75,9 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function mapAndTransform(string $sourceField, string $modelAttribute, Closure $transformer): self
     {
         $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => new SerializableClosure($transformer)];
