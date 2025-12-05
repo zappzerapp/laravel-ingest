@@ -1,6 +1,6 @@
 {
   "name": "zappzerapp/laravel-ingest",
-  "version": "v0.1.1",
+  "version": "v0.1.2",
   "description": "A configuration-driven data import framework for Laravel",
   "keywords": [
     "laravel",
@@ -33,6 +33,7 @@
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
+    "league/flysystem-ftp": "^3.0",
     "orchestra/testbench": "^8.0 || ^9.0",
     "pestphp/pest": "^2.0",
     "pestphp/pest-plugin-laravel": "^2.0"

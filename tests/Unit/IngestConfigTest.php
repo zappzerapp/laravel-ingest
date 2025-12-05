@@ -5,6 +5,8 @@ use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\IngestConfig;
+use LaravelIngest\Models\IngestRun;
+use LaravelIngest\Services\RowProcessor;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\User;
 
@@ -15,7 +17,7 @@ it('can be instantiated for a valid model', function () {
 });
 
 it('throws an exception for a non-model class', function () {
-    IngestConfig::for(\stdClass::class);
+    IngestConfig::for(stdClass::class);
 })->throws(InvalidConfigurationException::class);
 
 it('can fluently build a full configuration', function () {
@@ -44,13 +46,13 @@ it('can fluently build a full configuration', function () {
 
 it('correctly transforms values using closure', function () {
     $config = IngestConfig::for(User::class)
-        ->mapAndTransform('name', 'name', function($value) {
+        ->mapAndTransform('name', 'name', function ($value) {
             return strtoupper($value);
         })
         ->map('email', 'email');
 
-    $processor = new \LaravelIngest\Services\RowProcessor();
-    $run = \LaravelIngest\Models\IngestRun::factory()->create();
+    $processor = new RowProcessor();
+    $run = IngestRun::factory()->create();
 
     $processor->processChunk(
         $run,
@@ -60,4 +62,14 @@ it('correctly transforms values using closure', function () {
     );
 
     $this->assertDatabaseHas('users', ['name' => 'LOWER']);
+});
+
+it('throws an exception when relating to a non-model class', function () {
+    IngestConfig::for(User::class)
+        ->relate('field', 'relation', stdClass::class, 'id');
+})->throws(InvalidConfigurationException::class);
+
+it('can enable atomic transactions', function () {
+    $config = IngestConfig::for(User::class)->atomic();
+    expect($config->useTransaction)->toBeTrue();
 });

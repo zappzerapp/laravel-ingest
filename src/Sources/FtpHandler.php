@@ -41,7 +41,7 @@ class FtpHandler implements SourceHandler
         if ($remoteStream === false) {
             throw new SourceException("Could not open read stream for remote file '{$remotePath}' on disk '{$diskName}'.");
         }
-        Storage::disk($localDisk)->putStream($this->temporaryPath, $remoteStream);
+        Storage::disk($localDisk)->put($this->temporaryPath, $remoteStream);
         if (is_resource($remoteStream)) {
             fclose($remoteStream);
         }

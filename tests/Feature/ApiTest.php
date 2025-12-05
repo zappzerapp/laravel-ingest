@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\IngestStatus;
 use LaravelIngest\IngestServiceProvider;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
+use LaravelIngest\Models\IngestRow;
+use LaravelIngest\Models\IngestRun;
+use LaravelIngest\Services\RowProcessor;
+use LaravelIngest\Tests\Fixtures\ProductImporter;
 use LaravelIngest\Tests\Fixtures\UserImporter;
 
 beforeEach(function () {
@@ -36,7 +40,7 @@ it('can upload a file and start an ingest run', function () {
     $batch = $dispatchedBatches[0];
     $job = $batch->jobs->first();
 
-    app()->make(\LaravelIngest\Services\RowProcessor::class)->processChunk(
+    app()->make(RowProcessor::class)->processChunk(
         $job->ingestRun,
         $job->config,
         $job->chunk,
@@ -49,7 +53,7 @@ it('can upload a file and start an ingest run', function () {
 });
 
 it('returns a list of ingest runs', function () {
-    \LaravelIngest\Models\IngestRun::factory()->count(3)->create(['importer_slug' => 'userimporter']);
+    IngestRun::factory()->count(3)->create(['importer_slug' => 'userimporter']);
 
     $this->getJson('/api/v1/ingest')
         ->assertOk()
@@ -57,8 +61,8 @@ it('returns a list of ingest runs', function () {
 });
 
 it('returns a single ingest run with details', function () {
-    $run = \LaravelIngest\Models\IngestRun::factory()->create();
-    \LaravelIngest\Models\IngestRow::factory()->count(5)->create(['ingest_run_id' => $run->id]);
+    $run = IngestRun::factory()->create();
+    IngestRow::factory()->count(5)->create(['ingest_run_id' => $run->id]);
 
     $this->getJson("/api/v1/ingest/{$run->id}")
         ->assertOk()
@@ -70,4 +74,18 @@ it('rejects upload without a file', function () {
     $this->postJson('/api/v1/ingest/upload/userimporter')
         ->assertStatus(422)
         ->assertJsonValidationErrors('file');
+});
+
+it('can trigger a non-upload ingest run', function () {
+    $this->app->tag([ProductImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
+    Storage::fake('local');
+    Storage::put('products.csv', "product_sku,product_name,quantity\nAPI-001,API Product,50");
+
+    $response = $this->postJson('/api/v1/ingest/trigger/productimporter');
+
+    $response->assertStatus(202)
+        ->assertJsonPath('data.importer', 'productimporter')
+        ->assertJsonPath('data.status', IngestStatus::PROCESSING->value);
+
+    $this->assertDatabaseHas('products', ['sku' => 'API-001']);
 });

@@ -1,12 +1,17 @@
 <?php
 
+use Illuminate\Validation\ValidationException;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\IngestConfig;
+use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
+use LaravelIngest\Tests\Fixtures\Models\Category;
+use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
 use LaravelIngest\Tests\Fixtures\Models\User;
 
 beforeEach(function () {
     $this->processor = new RowProcessor();
+    $this->run = IngestRun::factory()->create();
 });
 
 it('successfully processes a valid row', function () {
@@ -19,7 +24,7 @@ it('successfully processes a valid row', function () {
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk(
-        \LaravelIngest\Models\IngestRun::factory()->create(),
+        IngestRun::factory()->create(),
         $config,
         $chunk,
         false
@@ -33,7 +38,7 @@ it('throws a validation exception for an invalid row', function () {
     $rowData = ['email' => 'not-an-email'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $run = \LaravelIngest\Models\IngestRun::factory()->create();
+    $run = IngestRun::factory()->create();
     $results = $this->processor->processChunk(
         $run,
         $config,
@@ -63,7 +68,7 @@ it('updates a duplicate row when strategy is update', function () {
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk(
-        \LaravelIngest\Models\IngestRun::factory()->create(),
+        IngestRun::factory()->create(),
         $config,
         $chunk,
         false
@@ -84,7 +89,7 @@ it('skips a duplicate row when strategy is skip', function () {
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk(
-        \LaravelIngest\Models\IngestRun::factory()->create(),
+        IngestRun::factory()->create(),
         $config,
         $chunk,
         false
@@ -100,7 +105,7 @@ it('does not persist data on a dry run', function () {
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk(
-        \LaravelIngest\Models\IngestRun::factory()->create(),
+        IngestRun::factory()->create(),
         $config,
         $chunk,
         true
@@ -117,7 +122,7 @@ it('logs an error row when duplicate strategy is fail', function () {
         ->onDuplicate(DuplicateStrategy::FAIL)
         ->map('email', 'email');
 
-    $run = \LaravelIngest\Models\IngestRun::factory()->create();
+    $run = IngestRun::factory()->create();
 
     $results = $this->processor->processChunk(
         $run,
@@ -134,4 +139,78 @@ it('logs an error row when duplicate strategy is fail', function () {
     ]);
 
     expect(User::first()->name)->toBe('Original');
+});
+
+
+it('rolls back transaction on failure when atomic is enabled', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->validate(['email' => 'email'])
+        ->atomic();
+
+    $chunk = [
+        ['number' => 1, 'data' => ['name' => 'Valid User', 'email' => 'valid@test.com']],
+        ['number' => 2, 'data' => ['name' => 'Invalid User', 'email' => 'invalid-email']],
+    ];
+
+    $this->expectException(ValidationException::class);
+
+    try {
+        $this->processor->processChunk($this->run, $config, $chunk, false);
+    } finally {
+        $this->assertDatabaseMissing('users', ['email' => 'valid@test.com']);
+    }
+});
+
+it('handles relations when source values are empty', function () {
+    Category::create(['name' => 'Electronics']);
+
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product_name', 'name')
+        ->relate('cat_name', 'category', Category::class, 'name');
+
+    $chunk = [
+        ['number' => 1, 'data' => ['product_name' => 'iPhone', 'cat_name' => null]],
+        ['number' => 2, 'data' => ['product_name' => 'Samsung', 'cat_name' => '']],
+    ];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('products_with_category', ['name' => 'iPhone', 'category_id' => null]);
+    $this->assertDatabaseHas('products_with_category', ['name' => 'Samsung', 'category_id' => null]);
+});
+
+it('skips mappings and relations if source field does not exist in data', function () {
+    $category = Category::create(['name' => 'Books']);
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product_name', 'name')
+        ->map('product_stock', 'stock')
+        ->relate('category_name', 'category', Category::class, 'name');
+
+    $chunk = [['number' => 1, 'data' => ['product_name' => 'The Lord of the Rings']]];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'The Lord of the Rings',
+        'category_id' => null
+    ]);
+});
+
+it('merges model rules and custom rules for validation', function () {
+    $config = IngestConfig::for(User::class)
+        ->validate(['name' => 'min:10'])
+        ->validateWithModelRules();
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'John Doe Is Long Enough', 'email' => 'not-an-email']]];
+    $run = IngestRun::factory()->create();
+
+    $results = $this->processor->processChunk($run, $config, $chunk, false);
+
+    expect($results['failed'])->toBe(1);
+    $this->assertDatabaseHas('ingest_rows', [
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+    ]);
 });

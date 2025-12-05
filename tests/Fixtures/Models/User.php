@@ -7,11 +7,19 @@ use Illuminate\Support\Facades\Hash;
 
 class User extends Model
 {
+    public static array $rules = [
+        'name' => 'required|string',
+        'email' => 'required|email',
+    ];
     protected $guarded = [];
-
     protected $casts = [
         'is_admin' => 'boolean',
     ];
+
+    public static function getRules(): array
+    {
+        return self::$rules;
+    }
 
     protected static function booted(): void
     {
@@ -20,15 +28,5 @@ class User extends Model
                 $user->password = Hash::make('password');
             }
         });
-    }
-
-    public static array $rules = [
-        'name' => 'required|string',
-        'email' => 'required|email',
-    ];
-
-    public static function getRules(): array
-    {
-        return self::$rules;
     }
 }

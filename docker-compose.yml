@@ -14,16 +14,18 @@ services:
       - CACHE_DRIVER=array
       - QUEUE_CONNECTION=sync
       - XDEBUG_MODE=coverage
+    depends_on:
+      - ftp
 
   ftp:
-    image: stilliard/pure-ftpd
+    image: delfer/alpine-ftp-server
     ports:
       - "21:21"
       - "30000-30009:30000-30009"
     environment:
-      - "PUBLICHOST=localhost"
-      - "FTP_USER_NAME=testuser"
-      - "FTP_USER_PASS=testpass"
-      - "FTP_USER_HOME=/home/testuser"
+      - USERS=testuser|testpass
+      - PASV_ADDRESS=ftp
+      - PASV_MIN_PORT=30000
+      - PASV_MAX_PORT=30009
     volumes:
-      - ./tests/Fixtures/ftp:/home/testuser
+      - ./tests/Fixtures/ftp:/ftp/testuser

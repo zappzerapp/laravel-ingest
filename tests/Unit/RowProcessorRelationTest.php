@@ -1,8 +1,8 @@
 <?php
 
 use LaravelIngest\IngestConfig;
-use LaravelIngest\Services\RowProcessor;
 use LaravelIngest\Models\IngestRun;
+use LaravelIngest\Services\RowProcessor;
 use LaravelIngest\Tests\Fixtures\Models\Category;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
 
