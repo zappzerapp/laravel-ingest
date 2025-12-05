@@ -23,12 +23,7 @@ it('successfully processes a valid row', function () {
     $rowData = ['name' => 'John Doe', 'email' => 'john@example.com'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $this->processor->processChunk(
-        IngestRun::factory()->create(),
-        $config,
-        $chunk,
-        false
-    );
+    $this->processor->processChunk($this->run, $config, $chunk, false);
 
     $this->assertDatabaseHas('users', ['email' => 'john@example.com', 'name' => 'John Doe']);
 });
@@ -38,19 +33,13 @@ it('throws a validation exception for an invalid row', function () {
     $rowData = ['email' => 'not-an-email'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $run = IngestRun::factory()->create();
-    $results = $this->processor->processChunk(
-        $run,
-        $config,
-        $chunk,
-        false
-    );
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
 
     expect($results['failed'])->toBe(1);
     expect($results['successful'])->toBe(0);
 
     $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $run->id,
+        'ingest_run_id' => $this->run->id,
         'row_number' => 1,
         'status' => 'failed'
     ]);
@@ -67,12 +56,7 @@ it('updates a duplicate row when strategy is update', function () {
     $rowData = ['name' => 'Jane Doe Updated', 'email' => 'jane@example.com'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $this->processor->processChunk(
-        IngestRun::factory()->create(),
-        $config,
-        $chunk,
-        false
-    );
+    $this->processor->processChunk($this->run, $config, $chunk, false);
 
     $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Jane Doe Updated']);
 });
@@ -88,12 +72,7 @@ it('skips a duplicate row when strategy is skip', function () {
     $rowData = ['name' => 'New Name', 'email' => 'skip@example.com'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $this->processor->processChunk(
-        IngestRun::factory()->create(),
-        $config,
-        $chunk,
-        false
-    );
+    $this->processor->processChunk($this->run, $config, $chunk, false);
 
     $user = User::where('email', 'skip@example.com')->first();
     expect($user->name)->toBe('Old Name');
@@ -104,12 +83,7 @@ it('does not persist data on a dry run', function () {
     $rowData = ['name' => 'Dry Run User', 'email' => 'dry@run.com'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
-    $this->processor->processChunk(
-        IngestRun::factory()->create(),
-        $config,
-        $chunk,
-        true
-    );
+    $this->processor->processChunk($this->run, $config, $chunk, true);
 
     $this->assertDatabaseMissing('users', ['email' => 'dry@run.com']);
 });
@@ -122,10 +96,8 @@ it('logs an error row when duplicate strategy is fail', function () {
         ->onDuplicate(DuplicateStrategy::FAIL)
         ->map('email', 'email');
 
-    $run = IngestRun::factory()->create();
-
     $results = $this->processor->processChunk(
-        $run,
+        $this->run,
         $config,
         [['number' => 1, 'data' => ['email' => 'duplicate@example.com']]],
         false
@@ -134,7 +106,7 @@ it('logs an error row when duplicate strategy is fail', function () {
     expect($results['failed'])->toBe(1);
 
     $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $run->id,
+        'ingest_run_id' => $this->run->id,
         'status' => 'failed',
     ]);
 
@@ -182,7 +154,7 @@ it('handles relations when source values are empty', function () {
 });
 
 it('skips mappings and relations if source field does not exist in data', function () {
-    $category = Category::create(['name' => 'Books']);
+    Category::create(['name' => 'Books']);
     $config = IngestConfig::for(ProductWithCategory::class)
         ->map('product_name', 'name')
         ->map('product_stock', 'stock')
@@ -204,13 +176,12 @@ it('merges model rules and custom rules for validation', function () {
         ->validateWithModelRules();
 
     $chunk = [['number' => 1, 'data' => ['name' => 'John Doe Is Long Enough', 'email' => 'not-an-email']]];
-    $run = IngestRun::factory()->create();
 
-    $results = $this->processor->processChunk($run, $config, $chunk, false);
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
 
     expect($results['failed'])->toBe(1);
     $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $run->id,
+        'ingest_run_id' => $this->run->id,
         'status' => 'failed',
     ]);
 });

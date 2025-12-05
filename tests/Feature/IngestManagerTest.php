@@ -14,7 +14,6 @@ use LaravelIngest\IngestManager;
 use LaravelIngest\IngestServiceProvider;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\ProductImporter;
-use LaravelIngest\Tests\Fixtures\UserImporter;
 
 it('throws exception if definition not found directly', function () {
     $manager = new IngestManager([]);
@@ -30,23 +29,14 @@ it('completes successfully with no jobs if source is empty', function () {
     $config = IngestConfig::for(User::class)
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv']);
 
-    $definition = new class($config) implements \LaravelIngest\Contracts\IngestDefinition {
-        public function __construct(public IngestConfig $config)
-        {
-        }
-
-        public function getConfig(): IngestConfig
-        {
-            return $this->config;
-        }
-    };
+    $definition = $this->createTestDefinition($config);
 
     $manager = new IngestManager(['emptyimporter' => $definition]);
     $run = $manager->start('emptyimporter', 'users.csv');
 
     Bus::assertBatchCount(0);
 
-    expect($run->status)->toBe(\LaravelIngest\Enums\IngestStatus::COMPLETED);
+    expect($run->status)->toBe(IngestStatus::COMPLETED);
     Event::assertDispatched(IngestRunCompleted::class);
 });
 
@@ -58,12 +48,7 @@ it('throws source exception if keyedBy column is missing in header', function ()
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
         ->keyedBy('user_email');
 
-    $definition = new class($config) implements \LaravelIngest\Contracts\IngestDefinition
-    {
-        public function __construct(public IngestConfig $config){}
-        public function getConfig(): IngestConfig { return $this->config; }
-    };
-
+    $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['testimporter' => $definition]);
 
     $manager->start('testimporter', 'users.csv');
@@ -81,10 +66,7 @@ it('handles a failed batch correctly', function () {
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
         ->map('user_email', 'email');
 
-    $definition = new class($config) implements \LaravelIngest\Contracts\IngestDefinition {
-        public function __construct(public IngestConfig $config) {}
-        public function getConfig(): IngestConfig { return $this->config; }
-    };
+    $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['failimporter' => $definition]);
 
     $run = $manager->start('failimporter', 'users.csv');
@@ -112,12 +94,11 @@ it('dispatches failed event when source is unavailable', function () {
 
     $this->app->tag([ProductImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
 
-    /** @var IngestManager $manager */
     $manager = app(IngestManager::class);
 
     try {
         $manager->start('productimporter');
-    } catch (\LaravelIngest\Exceptions\SourceException $e) {
+    } catch (SourceException $e) {
     }
 
     Event::assertDispatched(IngestRunFailed::class);
@@ -133,10 +114,7 @@ it('handles a successful batch correctly', function () {
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
         ->map('user_email', 'email');
 
-    $definition = new class($config) implements \LaravelIngest\Contracts\IngestDefinition {
-        public function __construct(public IngestConfig $config) {}
-        public function getConfig(): IngestConfig { return $this->config; }
-    };
+    $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['successimporter' => $definition]);
 
     $run = $manager->start('successimporter', 'users.csv');
@@ -169,10 +147,7 @@ it('creates multiple jobs when source rows exceed chunk size', function () {
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
         ->setChunkSize(2);
 
-    $definition = new class($config) implements \LaravelIngest\Contracts\IngestDefinition {
-        public function __construct(public IngestConfig $config) {}
-        public function getConfig(): IngestConfig { return $this->config; }
-    };
+    $definition = $this->createTestDefinition($config);
 
     $manager = new IngestManager(['multichunk' => $definition]);
     $manager->start('multichunk', 'users.csv');

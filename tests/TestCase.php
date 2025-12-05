@@ -4,6 +4,8 @@ namespace LaravelIngest\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use LaravelIngest\Contracts\IngestDefinition;
+use LaravelIngest\IngestConfig;
 use LaravelIngest\IngestServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -83,5 +85,19 @@ class TestCase extends Orchestra
         return [
             IngestServiceProvider::class,
         ];
+    }
+
+    protected function createTestDefinition(IngestConfig $config): IngestDefinition
+    {
+        return new class($config) implements IngestDefinition {
+            public function __construct(public IngestConfig $config)
+            {
+            }
+
+            public function getConfig(): IngestConfig
+            {
+                return $this->config;
+            }
+        };
     }
 }

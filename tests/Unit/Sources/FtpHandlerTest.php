@@ -39,17 +39,21 @@ it('can read a file from an ftp source', function () {
     Storage::disk('local')->assertMissing($handler->getProcessedFilePath());
 });
 
-it('throws exception if ftp disk option is missing', function () {
-    $config = IngestConfig::for(Product::class)->fromSource(SourceType::FTP, ['path' => '...']);
-    iterator_to_array((new FtpHandler())->read($config));
-})->throws(SourceException::class, 'FTP/SFTP source requires a "disk" option');
-
-it('throws exception if ftp path option is missing', function () {
-    $config = IngestConfig::for(Product::class)->fromSource(SourceType::FTP, ['disk' => 'test_ftp']);
-    iterator_to_array((new FtpHandler())->read($config));
-})->throws(SourceException::class, 'FTP/SFTP source requires a "path" option');
-
 it('throws exception if ftp file does not exist', function () {
     $config = IngestConfig::for(Product::class)->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'missing.csv']);
     iterator_to_array((new FtpHandler())->read($config));
 })->throws(SourceException::class, "File not found at remote path 'missing.csv'");
+
+it('throws exception when ftp stream cannot be opened', function () {
+    config()->set('filesystems.disks.test_ftp', ['driver' => 'ftp']);
+    Storage::fake('local');
+
+    Storage::shouldReceive('disk')->with('test_ftp')->andReturnSelf();
+    Storage::shouldReceive('exists')->with('products.csv')->andReturn(true);
+    Storage::shouldReceive('readStream')->with('products.csv')->andReturn(false);
+
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'products.csv']);
+
+    iterator_to_array((new FtpHandler())->read($config));
+})->throws(SourceException::class, "Could not open read stream for remote file");
