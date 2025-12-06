@@ -32,7 +32,6 @@ class RowProcessor
 
                 try {
                     if ($config->beforeRowCallback) {
-                        // FIX: Use call_user_func_array to support pass-by-reference
                         call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
                     }
 
@@ -116,7 +115,6 @@ class RowProcessor
     {
         $modelData = [];
 
-        // 1. Apply explicit mappings and transformations.
         foreach ($config->mappings as $sourceField => $mapping) {
             if (!array_key_exists($sourceField, $processedData)) {
                 continue;
@@ -129,7 +127,6 @@ class RowProcessor
             $modelData[$mapping['attribute']] = $value;
         }
 
-        // 2. Resolve relationships.
         foreach ($config->relations as $sourceField => $relationConfig) {
             if (!array_key_exists($sourceField, $processedData)) {
                 continue;
@@ -148,8 +145,6 @@ class RowProcessor
             $modelData[$foreignKey] = $relatedId;
         }
 
-        // 3. Pass through any remaining data that is a valid model attribute but wasn't explicitly mapped.
-        // This is important for fields like 'password' which might not be in the mapping but are in the source data.
         $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations);
         $modelInstance = new $config->model;
         foreach ($unmappedData as $key => $value) {

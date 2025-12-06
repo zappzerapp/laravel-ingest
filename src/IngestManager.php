@@ -13,6 +13,7 @@ use LaravelIngest\Events\IngestRunFailed;
 use LaravelIngest\Events\IngestRunStarted;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
+use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
 use LaravelIngest\Models\IngestRun;
@@ -21,8 +22,10 @@ use Throwable;
 
 class IngestManager
 {
-    public function __construct(protected array $definitions)
-    {
+    public function __construct(
+        protected array $definitions,
+        protected SourceHandlerFactory $sourceHandlerFactory
+    ) {
     }
 
     public function getDefinitions(): array
@@ -35,12 +38,10 @@ class IngestManager
         mixed            $payload = null,
         ?Authenticatable $user = null,
         bool             $isDryRun = false
-    ): IngestRun
-    {
+    ): IngestRun {
         $definition = $this->getDefinition($importerSlug);
         $config = $definition->getConfig();
-        $sourceHandlerFactory = new SourceHandlerFactory();
-        $sourceHandler = $sourceHandlerFactory->make($config->sourceType);
+        $sourceHandler = $this->sourceHandlerFactory->make($config->sourceType);
 
         $ingestRun = IngestRun::create([
             'importer_slug' => $importerSlug,
@@ -121,6 +122,87 @@ class IngestManager
 
         return $ingestRun;
     }
+
+    /**
+     * @throws DefinitionNotFoundException
+     * @throws NoFailedRowsException
+     * @throws Throwable
+     */
+    public function retry(IngestRun $originalRun, ?Authenticatable $user = null, bool $isDryRun = false): IngestRun
+    {
+        if ($originalRun->failed_rows === 0) {
+            throw new NoFailedRowsException('The original run has no failed rows to retry.');
+        }
+
+        $newRun = IngestRun::create([
+            'retried_from_run_id' => $originalRun->id,
+            'importer_slug' => $originalRun->importer_slug,
+            'user_id' => $user?->getAuthIdentifier(),
+            'status' => IngestStatus::PROCESSING,
+            'original_filename' => $originalRun->original_filename,
+            'total_rows' => $originalRun->failed_rows,
+        ]);
+
+        IngestRunStarted::dispatch($newRun);
+
+        try {
+            $definition = $this->getDefinition($originalRun->importer_slug);
+            $config = $definition->getConfig();
+
+            $failedRowsCursor = $originalRun->rows()->where('status', 'failed')->cursor();
+
+            $batchJobs = [];
+            $chunk = [];
+            $rowCounter = 1;
+
+            foreach ($failedRowsCursor as $failedRow) {
+                $chunk[] = ['number' => $rowCounter++, 'data' => $failedRow->data];
+                if (count($chunk) >= $config->chunkSize) {
+                    $batchJobs[] = new ProcessIngestChunkJob($newRun, $config, $chunk, $isDryRun);
+                    $chunk = [];
+                }
+            }
+            if (!empty($chunk)) {
+                $batchJobs[] = new ProcessIngestChunkJob($newRun, $config, $chunk, $isDryRun);
+            }
+
+            if (empty($batchJobs)) {
+                $newRun->update(['total_rows' => $rowCounter - 1]);
+                $newRun->finalize();
+                IngestRunCompleted::dispatch($newRun);
+                return $newRun;
+            }
+
+            if ($newRun->total_rows !== ($rowCounter - 1)) {
+                $newRun->update(['total_rows' => $rowCounter - 1]);
+            }
+
+            $queueConnection = Config::get('ingest.queue.connection');
+            $queueName = Config::get('ingest.queue.name');
+
+            $batch = Bus::batch($batchJobs)
+                ->then(function () use ($newRun) {
+                    $newRun->finalize();
+                    IngestRunCompleted::dispatch($newRun);
+                })
+                ->catch(function (Throwable $e) use ($newRun) {
+                    $newRun->update(['status' => IngestStatus::FAILED]);
+                    IngestRunFailed::dispatch($newRun, $e);
+                })
+                ->onConnection($queueConnection)
+                ->onQueue($queueName)
+                ->dispatch();
+
+            $newRun->update(['batch_id' => $batch->id]);
+        } catch (Throwable $e) {
+            $newRun->update(['status' => IngestStatus::FAILED, 'summary' => ['error' => $e->getMessage()]]);
+            IngestRunFailed::dispatch($newRun, $e);
+            throw $e;
+        }
+
+        return $newRun;
+    }
+
 
     public function getDefinition(string $slug): IngestDefinition
     {

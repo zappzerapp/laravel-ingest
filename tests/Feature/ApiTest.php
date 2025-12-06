@@ -102,10 +102,26 @@ it('can cancel an ingest run via api', function () {
     expect($batch->fresh()->cancelled())->toBeTrue();
 });
 
-it('returns not implemented for retry endpoint', function () {
-    $run = IngestRun::factory()->create();
+it('can retry a failed ingest run via api', function () {
+    Bus::fake();
+    $originalRun = IngestRun::factory()->create([
+        'importer_slug' => 'userimporter',
+        'failed_rows' => 1,
+    ]);
+    IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
+
+    $this->postJson("/api/v1/ingest/{$originalRun->id}/retry")
+        ->assertStatus(202)
+        ->assertJsonPath('data.progress.total', 1);
+
+    $this->assertDatabaseHas('ingest_runs', ['retried_from_run_id' => $originalRun->id]);
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() > 0);
+});
+
+it('returns bad request when retrying a run with no failed rows via api', function () {
+    $run = IngestRun::factory()->create(['failed_rows' => 0]);
 
     $this->postJson("/api/v1/ingest/{$run->id}/retry")
-        ->assertStatus(501)
-        ->assertJson(['message' => 'Feature not yet implemented.']);
+        ->assertStatus(400)
+        ->assertJson(['message' => 'The original run has no failed rows to retry.']);
 });

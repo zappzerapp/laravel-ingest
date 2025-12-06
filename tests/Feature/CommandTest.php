@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\IngestManager;
 use LaravelIngest\IngestServiceProvider;
+use LaravelIngest\Sources\SourceHandlerFactory;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\ProductImporter;
@@ -42,8 +43,8 @@ it('fails to run if importer slug does not exist', function () {
 });
 
 it('shows a warning when no importers are registered', function () {
-    $this->app->singleton(IngestManager::class, function () {
-        return new IngestManager([]);
+    $this->app->singleton(IngestManager::class, function ($app) {
+        return new IngestManager([], $app->make(SourceHandlerFactory::class));
     });
 
     $this->artisan('ingest:list')

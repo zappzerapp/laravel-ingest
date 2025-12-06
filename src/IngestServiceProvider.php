@@ -9,6 +9,7 @@ use LaravelIngest\Console\ListIngestsCommand;
 use LaravelIngest\Console\RetryIngestCommand;
 use LaravelIngest\Console\RunIngestCommand;
 use LaravelIngest\Console\StatusIngestCommand;
+use LaravelIngest\Sources\SourceHandlerFactory;
 
 class IngestServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,7 @@ class IngestServiceProvider extends ServiceProvider
 
         $this->app->singleton(IngestManager::class, function ($app) {
             $definitions = $this->discoverDefinitions($app);
-            return new IngestManager($definitions);
+            return new IngestManager($definitions, $app->make(SourceHandlerFactory::class));
         });
     }
 

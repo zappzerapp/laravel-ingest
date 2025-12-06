@@ -59,6 +59,11 @@ class IngestRun extends Model
         return $this->hasMany(IngestRow::class);
     }
 
+    public function originalRun(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'retried_from_run_id');
+    }
+
     public function batch(): ?Batch
     {
         return $this->batch_id ? Bus::findBatch($this->batch_id) : null;

@@ -20,3 +20,13 @@ it('returns null if batch id is not set', function () {
 
     expect($run->batch())->toBeNull();
 });
+
+it('can retrieve its original run via relationship', function () {
+    $originalRun = IngestRun::factory()->create();
+    $retryRun = IngestRun::factory()->create(['retried_from_run_id' => $originalRun->id]);
+
+    $retrievedOriginal = $retryRun->originalRun;
+
+    expect($retrievedOriginal)->toBeInstanceOf(IngestRun::class);
+    expect($retrievedOriginal->id)->toBe($originalRun->id);
+});

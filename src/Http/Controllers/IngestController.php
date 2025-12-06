@@ -5,7 +5,9 @@ namespace LaravelIngest\Http\Controllers;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Http\Requests\UploadRequest;
 use LaravelIngest\Http\Resources\IngestRunResource;
 use LaravelIngest\IngestManager;
@@ -59,8 +61,14 @@ class IngestController extends Controller
         return response()->json(['message' => 'Cancellation request sent.']);
     }
 
-    public function retry(IngestRun $ingestRun): JsonResponse
+    public function retry(Request $request, IngestRun $ingestRun): JsonResponse
     {
-        return response()->json(['message' => 'Feature not yet implemented.'], 501);
+        try {
+            $isDryRun = $request->boolean('dry_run');
+            $newRun = $this->ingestManager->retry($ingestRun, $request->user(), $isDryRun);
+            return IngestRunResource::make($newRun)->response()->setStatusCode(202);
+        } catch (NoFailedRowsException $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
     }
 }

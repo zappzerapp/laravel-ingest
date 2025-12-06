@@ -46,6 +46,9 @@ class TestCase extends Orchestra
         $migration->up();
         $migration = include __DIR__ . '/../database/migrations/2025_01_01_000001_create_ingest_rows_table.php';
         $migration->up();
+        $migration = include __DIR__ . '/../database/migrations/2025_01_01_000002_add_retry_to_ingest_runs_table.php';
+        $migration->up();
+
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
