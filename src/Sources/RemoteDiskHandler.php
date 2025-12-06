@@ -40,7 +40,7 @@ class RemoteDiskHandler implements SourceHandler
         $this->temporaryPath = 'ingest-temp/' . Str::random(40) . '/' . basename($remotePath);
 
         $remoteStream = Storage::disk($diskName)->readStream($remotePath);
-        if ($remoteStream === false) {
+        if ($remoteStream === null) {
             throw new SourceException("Could not open read stream for remote file '{$remotePath}' on disk '{$diskName}'.");
         }
         Storage::disk($localDisk)->put($this->temporaryPath, $remoteStream);

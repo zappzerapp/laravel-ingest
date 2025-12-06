@@ -52,7 +52,7 @@ it('throws exception when ftp stream cannot be opened', function () {
 
     Storage::shouldReceive('disk')->with('test_ftp')->andReturnSelf();
     Storage::shouldReceive('exists')->with('products.csv')->andReturn(true);
-    Storage::shouldReceive('readStream')->with('products.csv')->andReturn(false);
+    Storage::shouldReceive('readStream')->with('products.csv')->andReturn(null);
 
     $config = IngestConfig::for(Product::class)
         ->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'products.csv']);

@@ -9,12 +9,39 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Database\Factories\IngestRunFactory;
 use LaravelIngest\Enums\IngestStatus;
 
+/**
+ * @property int $id
+ * @property string $importer_slug
+ * @property int|null $user_id
+ * @property IngestStatus $status
+ * @property string|null $batch_id
+ * @property string|null $original_filename
+ * @property string|null $processed_filepath
+ * @property int $total_rows
+ * @property int $processed_rows
+ * @property int $successful_rows
+ * @property int $failed_rows
+ * @property array|null $summary
+ * @property Carbon|null $completed_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property int|null $retried_from_run_id
+ *
+ * @property-read User|null $user
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, IngestRow> $rows
+ * @property-read IngestRun|null $originalRun
+ *
+ * @method static IngestRunFactory factory(...$parameters)
+ */
 class IngestRun extends Model
 {
+    /** @use HasFactory<IngestRunFactory> */
     use HasFactory;
 
     protected $table = 'ingest_runs';
@@ -27,7 +54,10 @@ class IngestRun extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo($this->getUserModelClass(), 'user_id');
+        /** @var class-string<User> $userModelClass */
+        $userModelClass = $this->getUserModelClass();
+
+        return $this->belongsTo($userModelClass, 'user_id');
     }
 
     public function finalize(): void
@@ -67,6 +97,6 @@ class IngestRun extends Model
 
     private function getUserModelClass(): string
     {
-        return config('auth.providers.users.model', \Illuminate\Foundation\Auth\User::class);
+        return (string) config('auth.providers.users.model', \Illuminate\Foundation\Auth\User::class);
     }
 }

@@ -116,7 +116,7 @@ class IngestManager
 
         } catch (Throwable $e) {
             $ingestRun->update(['status' => IngestStatus::FAILED, 'summary' => ['error' => $e->getMessage()]]);
-            $sourceHandler?->cleanup();
+            $sourceHandler->cleanup();
             IngestRunFailed::dispatch($ingestRun, $e);
             throw $e;
         }

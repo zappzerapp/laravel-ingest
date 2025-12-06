@@ -4,14 +4,31 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use LaravelIngest\Database\Factories\IngestRowFactory;
 
+/**
+ * @property int $id
+ * @property int $ingest_run_id
+ * @property int $row_number
+ * @property string $status
+ * @property array $data
+ * @property array|null $errors
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ *
+ * @property-read IngestRun $ingestRun
+ *
+ * @method static IngestRowFactory factory(...$parameters)
+ */
 class IngestRow extends Model
 {
+    /** @use HasFactory<IngestRowFactory> */
     use HasFactory;
     use Prunable;
 
@@ -22,7 +39,10 @@ class IngestRow extends Model
         'errors' => 'array',
     ];
 
-    public function prunable()
+    /**
+     * @return Builder<IngestRow>
+     */
+    public function prunable(): Builder
     {
         return static::where('created_at', '<=', now()->subMonth());
     }
