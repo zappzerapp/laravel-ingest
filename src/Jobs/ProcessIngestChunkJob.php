@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Jobs;
 
 use Illuminate\Bus\Batchable;
@@ -15,16 +17,18 @@ use LaravelIngest\Services\RowProcessor;
 
 class ProcessIngestChunkJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Batchable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     public function __construct(
-        public IngestRun    $ingestRun,
+        public IngestRun $ingestRun,
         public IngestConfig $config,
-        public array        $chunk,
-        public bool         $isDryRun = false
-    )
-    {
-    }
+        public array $chunk,
+        public bool $isDryRun = false
+    ) {}
 
     public function handle(RowProcessor $rowProcessor): void
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest;
 
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -12,7 +14,6 @@ use LaravelIngest\Events\IngestRunCompleted;
 use LaravelIngest\Events\IngestRunFailed;
 use LaravelIngest\Events\IngestRunStarted;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
-use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
@@ -25,8 +26,7 @@ class IngestManager
     public function __construct(
         protected array $definitions,
         protected SourceHandlerFactory $sourceHandlerFactory
-    ) {
-    }
+    ) {}
 
     public function getDefinitions(): array
     {
@@ -34,10 +34,10 @@ class IngestManager
     }
 
     public function start(
-        string           $importerSlug,
-        mixed            $payload = null,
+        string $importerSlug,
+        mixed $payload = null,
         ?Authenticatable $user = null,
-        bool             $isDryRun = false
+        bool $isDryRun = false
     ): IngestRun {
         $definition = $this->getDefinition($importerSlug);
         $config = $definition->getConfig();
@@ -57,7 +57,7 @@ class IngestManager
 
             $ingestRun->update([
                 'total_rows' => $sourceHandler->getTotalRows() ?? 0,
-                'processed_filepath' => $sourceHandler->getProcessedFilePath()
+                'processed_filepath' => $sourceHandler->getProcessedFilePath(),
             ]);
 
             $batchJobs = [];
@@ -90,6 +90,7 @@ class IngestManager
                 $ingestRun->finalize();
                 IngestRunCompleted::dispatch($ingestRun);
                 $sourceHandler->cleanup();
+
                 return $ingestRun;
             }
 
@@ -170,6 +171,7 @@ class IngestManager
                 $newRun->update(['total_rows' => $rowCounter - 1]);
                 $newRun->finalize();
                 IngestRunCompleted::dispatch($newRun);
+
                 return $newRun;
             }
 
@@ -202,7 +204,6 @@ class IngestManager
 
         return $newRun;
     }
-
 
     public function getDefinition(string $slug): IngestDefinition
     {

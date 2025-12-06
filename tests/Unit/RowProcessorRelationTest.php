@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
@@ -24,7 +26,7 @@ it('resolves a belongsTo relation via lookup key', function () {
 
     $this->assertDatabaseHas('products_with_category', [
         'name' => 'iPhone',
-        'category_id' => $category->id
+        'category_id' => $category->id,
     ]);
 });
 
@@ -44,6 +46,6 @@ it('leaves foreign key null if relation not found', function () {
 
     $this->assertDatabaseHas('products_with_category', [
         'name' => 'Samsung',
-        'category_id' => null
+        'category_id' => null,
     ]);
 });

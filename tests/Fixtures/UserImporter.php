@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Tests\Fixtures;
 
 use LaravelIngest\Contracts\IngestDefinition;

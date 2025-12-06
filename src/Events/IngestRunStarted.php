@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
@@ -8,9 +10,8 @@ use LaravelIngest\Models\IngestRun;
 
 class IngestRunStarted
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
+    use SerializesModels;
 
-    public function __construct(public IngestRun $ingestRun)
-    {
-    }
+    public function __construct(public IngestRun $ingestRun) {}
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Http\Controllers;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -15,15 +17,15 @@ use LaravelIngest\Models\IngestRun;
 
 class IngestController extends Controller
 {
-    use AuthorizesRequests, ValidatesRequests;
+    use AuthorizesRequests;
+    use ValidatesRequests;
 
-    public function __construct(protected IngestManager $ingestManager)
-    {
-    }
+    public function __construct(protected IngestManager $ingestManager) {}
 
     public function index(): JsonResponse
     {
         $runs = IngestRun::latest()->paginate();
+
         return IngestRunResource::collection($runs)->response();
     }
 
@@ -48,6 +50,7 @@ class IngestController extends Controller
     public function trigger(string $importerSlug): JsonResponse
     {
         $run = $this->ingestManager->start($importerSlug, null, request()->user());
+
         return IngestRunResource::make($run)->response()->setStatusCode(202);
     }
 
@@ -66,6 +69,7 @@ class IngestController extends Controller
         try {
             $isDryRun = $request->boolean('dry_run');
             $newRun = $this->ingestManager->retry($ingestRun, $request->user(), $isDryRun);
+
             return IngestRunResource::make($newRun)->response()->setStatusCode(202);
         } catch (NoFailedRowsException $e) {
             return response()->json(['message' => $e->getMessage()], 400);

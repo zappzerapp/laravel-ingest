@@ -1,0 +1,67 @@
+{
+    "preset": "laravel",
+    "rules": {
+        "align_multiline_comment": true,
+        "array_push": true,
+        "assign_null_coalescing_to_coalesce_equal": true,
+        "class_attributes_separation": {
+            "elements": {
+                "const": "none",
+                "method": "one",
+                "property": "none"
+            }
+        },
+        "class_definition": {
+            "multi_line_extends_each_single_line": true,
+            "single_item_single_line": true,
+            "single_line": false
+        },
+        "concat_space": {
+            "spacing": "one"
+        },
+        "fully_qualified_strict_types": true,
+        "function_declaration": {
+            "closure_fn_spacing": "none"
+        },
+        "global_namespace_import": true,
+        "modernize_strpos": true,
+        "modernize_types_casting": true,
+        "new_with_braces": true,
+        "declare_strict_types": true,
+        "no_superfluous_elseif": true,
+        "no_useless_else": true,
+        "not_operator_with_successor_space": false,
+        "ordered_class_elements": {
+            "order": [
+                "use_trait",
+                "case",
+                "constant",
+                "constant_public",
+                "constant_protected",
+                "constant_private",
+                "property_public",
+                "property_protected",
+                "property_private",
+                "construct",
+                "destruct",
+                "magic",
+                "phpunit",
+                "method_abstract",
+                "method_public_static",
+                "method_public",
+                "method_protected_static",
+                "method_protected",
+                "method_private_static",
+                "method_private"
+            ],
+            "sort_algorithm": "none"
+        },
+        "phpdoc_var_without_name": false,
+        "simplified_if_return": true,
+        "single_trait_insert_per_statement": true,
+        "strict_comparison": true,
+        "strict_param": true,
+        "ternary_to_null_coalescing": true,
+        "use_arrow_functions": true
+    }
+}

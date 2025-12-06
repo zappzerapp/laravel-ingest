@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Concerns;
 
 use Illuminate\Contracts\Foundation\Application;

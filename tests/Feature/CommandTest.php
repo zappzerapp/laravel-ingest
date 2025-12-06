@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\IngestManager;
 use LaravelIngest\IngestServiceProvider;
@@ -43,9 +45,7 @@ it('fails to run if importer slug does not exist', function () {
 });
 
 it('shows a warning when no importers are registered', function () {
-    $this->app->singleton(IngestManager::class, function ($app) {
-        return new IngestManager([], $app->make(SourceHandlerFactory::class));
-    });
+    $this->app->singleton(IngestManager::class, fn($app) => new IngestManager([], $app->make(SourceHandlerFactory::class)));
 
     $this->artisan('ingest:list')
         ->expectsOutputToContain('No ingest definitions found.')

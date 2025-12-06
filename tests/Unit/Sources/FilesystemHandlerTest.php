@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\SourceException;
@@ -16,4 +18,4 @@ it('throws exception when filesystem file is missing', function () {
     $handler = new FilesystemHandler();
 
     iterator_to_array($handler->read($config));
-})->throws(SourceException::class, "We could not find the file");
+})->throws(SourceException::class, 'We could not find the file');

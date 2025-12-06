@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Config;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\InvalidConfigurationException;

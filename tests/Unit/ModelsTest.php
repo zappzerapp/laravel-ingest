@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Auth\User;
 use LaravelIngest\Models\IngestRun;
 use Orchestra\Testbench\Factories\UserFactory;

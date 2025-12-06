@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\SourceException;
@@ -23,7 +25,7 @@ it('can read a file from an ftp source', function () {
     $config = IngestConfig::for(Product::class)
         ->fromSource(SourceType::FTP, [
             'disk' => 'test_ftp',
-            'path' => 'products.csv'
+            'path' => 'products.csv',
         ]);
 
     $handler = new RemoteDiskHandler();
@@ -56,4 +58,4 @@ it('throws exception when ftp stream cannot be opened', function () {
         ->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'products.csv']);
 
     iterator_to_array((new RemoteDiskHandler())->read($config));
-})->throws(SourceException::class, "Could not open read stream for remote file");
+})->throws(SourceException::class, 'Could not open read stream for remote file');

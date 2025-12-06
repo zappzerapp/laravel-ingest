@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Console;
 
 use Illuminate\Console\Command;
@@ -22,6 +24,7 @@ class RetryIngestCommand extends Command
         $originalRun = IngestRun::find($runId);
         if (!$originalRun) {
             $this->error("No ingest run found with ID {$runId}.");
+
             return self::FAILURE;
         }
 
@@ -34,25 +37,28 @@ class RetryIngestCommand extends Command
 
             $newRun = $ingestManager->retry($originalRun, null, $isDryRun);
 
-            $this->components->success("Retry run successfully queued.");
+            $this->components->success('Retry run successfully queued.');
 
             $this->table(
                 ['New Run ID', 'Status', 'Total Rows'],
                 [[
                     $newRun->id,
                     $newRun->status->value,
-                    number_format($newRun->total_rows ?? 0)
+                    number_format($newRun->total_rows ?? 0),
                 ]]
             );
             $this->components->twoColumnDetail('Monitor Progress', "php artisan ingest:status {$newRun->id}");
+
             return self::SUCCESS;
 
         } catch (NoFailedRowsException $e) {
             $this->warn($e->getMessage());
+
             return self::SUCCESS;
         } catch (Throwable $e) {
-            $this->components->error("The retry process could not be started.");
+            $this->components->error('The retry process could not be started.');
             $this->components->bulletList([$e->getMessage()]);
+
             return self::FAILURE;
         }
     }

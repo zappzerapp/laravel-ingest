@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Console;
 
 use Exception;
@@ -11,7 +13,6 @@ class RunIngestCommand extends Command
     protected $signature = 'ingest:run {slug}
                             {--file= : The path to the file to ingest (for filesystem sources)}
                             {--dry-run : Simulate the import without persisting data}';
-
     protected $description = 'Manually trigger an ingest process.';
 
     public function handle(IngestManager $ingestManager): int
@@ -29,14 +30,14 @@ class RunIngestCommand extends Command
 
             $ingestRun = $ingestManager->start($slug, $file, null, $isDryRun);
 
-            $this->components->success("Ingest run successfully queued.");
+            $this->components->success('Ingest run successfully queued.');
 
             $this->table(
                 ['Run ID', 'Status', 'Total Rows'],
                 [[
                     $ingestRun->id,
                     $ingestRun->status->value,
-                    number_format($ingestRun->total_rows ?? 0)
+                    number_format($ingestRun->total_rows ?? 0),
                 ]]
             );
 
@@ -44,9 +45,9 @@ class RunIngestCommand extends Command
 
             return self::SUCCESS;
         } catch (Exception $e) {
-            $this->components->error("The ingest process could not be started.");
+            $this->components->error('The ingest process could not be started.');
             $this->components->bulletList([
-                $e->getMessage()
+                $e->getMessage(),
             ]);
 
             return self::FAILURE;

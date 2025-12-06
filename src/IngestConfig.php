@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest;
 
 use Closure;
@@ -48,30 +50,35 @@ class IngestConfig
     {
         $this->sourceType = $sourceType;
         $this->sourceOptions = $options;
+
         return $this;
     }
 
     public function keyedBy(string $sourceField): self
     {
         $this->keyedBy = $sourceField;
+
         return $this;
     }
 
     public function onDuplicate(DuplicateStrategy $strategy): self
     {
         $this->duplicateStrategy = $strategy;
+
         return $this;
     }
 
     public function map(string $sourceField, string $modelAttribute): self
     {
         $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => null];
+
         return $this;
     }
 
     public function mapAndTransform(string $sourceField, string $modelAttribute, Closure $transformer): self
     {
         $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => new SerializableClosure($transformer)];
+
         return $this;
     }
 
@@ -86,48 +93,56 @@ class IngestConfig
             'model' => $relatedModel,
             'key' => $relatedKey,
         ];
+
         return $this;
     }
 
     public function validate(array $rules): self
     {
         $this->validationRules = array_merge($this->validationRules, $rules);
+
         return $this;
     }
 
     public function validateWithModelRules(): self
     {
         $this->useModelRules = true;
+
         return $this;
     }
 
     public function setChunkSize(int $size): self
     {
         $this->chunkSize = $size;
+
         return $this;
     }
 
     public function setDisk(string $diskName): self
     {
         $this->disk = $diskName;
+
         return $this;
     }
 
     public function atomic(): self
     {
         $this->useTransaction = true;
+
         return $this;
     }
 
     public function beforeRow(Closure $callback): self
     {
         $this->beforeRowCallback = new SerializableClosure($callback);
+
         return $this;
     }
 
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);
+
         return $this;
     }
 }

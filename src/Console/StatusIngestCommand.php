@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Console;
 
 use Illuminate\Console\Command;
@@ -9,7 +11,6 @@ use LaravelIngest\Models\IngestRun;
 class StatusIngestCommand extends Command
 {
     protected $signature = 'ingest:status {ingestRun : The ID of the ingest run}';
-
     protected $description = 'Check the status of a specific ingest run.';
 
     public function handle(): int
@@ -19,6 +20,7 @@ class StatusIngestCommand extends Command
 
         if (!$run) {
             $this->error("No ingest run found with ID {$runId}.");
+
             return self::FAILURE;
         }
 
@@ -40,7 +42,7 @@ class StatusIngestCommand extends Command
                 number_format($run->total_rows),
                 number_format($run->processed_rows),
                 number_format($run->successful_rows),
-                number_format($run->failed_rows)
+                number_format($run->failed_rows),
             ]]
         );
 

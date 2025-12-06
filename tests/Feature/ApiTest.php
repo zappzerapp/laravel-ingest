@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -31,10 +33,8 @@ it('can upload a file and start an ingest run', function () {
         ->assertJsonPath('data.importer', 'userimporter')
         ->assertJsonPath('data.status', IngestStatus::PROCESSING->value);
 
-    Bus::assertBatched(function ($batch) {
-        return $batch->jobs->count() === 1
-            && $batch->jobs->first() instanceof ProcessIngestChunkJob;
-    });
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1
+            && $batch->jobs->first() instanceof ProcessIngestChunkJob);
 
     $dispatchedBatches = Bus::dispatchedBatches();
     $batch = $dispatchedBatches[0];

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -20,7 +21,7 @@ it('throws exception when url download fails', function () {
     $handler = new UrlHandler();
 
     iterator_to_array($handler->read($config));
-})->throws(SourceException::class, "Failed to download file");
+})->throws(SourceException::class, 'Failed to download file');
 
 it('cleans up temporary file after url download', function () {
     Http::fake(['*' => Http::response("sku,name\nURL001,URL Product")]);

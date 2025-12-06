@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -59,7 +61,6 @@ it('throws source exception if keyedBy column is missing in header', function ()
 
 })->throws(SourceException::class, "The key column 'user_email' was not found in the source file headers.");
 
-
 it('handles a failed batch correctly', function () {
     Event::fake();
     Bus::fake();
@@ -87,9 +88,7 @@ it('handles a failed batch correctly', function () {
 
     $run->refresh();
     expect($run->status)->toBe(IngestStatus::FAILED);
-    Event::assertDispatched(IngestRunFailed::class, function ($event) use ($run, $exception) {
-        return $event->ingestRun->id === $run->id && $event->exception === $exception;
-    });
+    Event::assertDispatched(IngestRunFailed::class, fn($event) => $event->ingestRun->id === $run->id && $event->exception === $exception);
 });
 
 it('dispatches failed event when source is unavailable', function () {
@@ -133,7 +132,7 @@ it('handles a successful batch correctly', function () {
 
     $run->refresh();
 
-    \LaravelIngest\Models\IngestRow::factory()->create(['ingest_run_id' => $run->id, 'status' => 'success']);
+    IngestRow::factory()->create(['ingest_run_id' => $run->id, 'status' => 'success']);
 
     $run->finalize();
     $run->refresh();
@@ -156,9 +155,7 @@ it('creates multiple jobs when source rows exceed chunk size', function () {
     $manager = new IngestManager(['multichunk' => $definition], app(SourceHandlerFactory::class));
     $manager->start('multichunk', 'users.csv');
 
-    Bus::assertBatched(function ($batch) {
-        return $batch->jobs->count() === 2;
-    });
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 2);
 });
 
 it('handles a failed batch during a retry run', function () {

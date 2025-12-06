@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Console;
 
 use Illuminate\Console\Command;
@@ -17,22 +19,26 @@ class CancelIngestCommand extends Command
 
         if (!$run) {
             $this->error("No ingest run found with ID {$runId}.");
+
             return self::FAILURE;
         }
 
         $batch = $run->batch();
         if (!$batch) {
             $this->warn("Could not find a batch associated with run ID {$runId}. It might be already finished or failed before starting.");
+
             return self::FAILURE;
         }
 
         if ($batch->finished()) {
             $this->info("Ingest run #{$runId} has already finished.");
+
             return self::SUCCESS;
         }
 
         $batch->cancel();
         $this->info("Cancellation request sent for ingest run #{$runId}.");
+
         return self::SUCCESS;
     }
 }

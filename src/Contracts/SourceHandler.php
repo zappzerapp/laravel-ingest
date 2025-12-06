@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Contracts;
 
 use Generator;
@@ -8,9 +10,7 @@ use LaravelIngest\IngestConfig;
 interface SourceHandler
 {
     /**
-     * @param IngestConfig $config
-     * @param mixed|null $payload Data from the trigger (e.g., UploadedFile)
-     * @return Generator
+     * @param  mixed|null  $payload  Data from the trigger (e.g., UploadedFile)
      */
     public function read(IngestConfig $config, mixed $payload = null): Generator;
 

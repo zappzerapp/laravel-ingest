@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Models;
 
 use Illuminate\Bus\Batch;
@@ -7,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Database\Factories\IngestRunFactory;
 use LaravelIngest\Enums\IngestStatus;
@@ -24,19 +25,9 @@ class IngestRun extends Model
         'completed_at' => 'datetime',
     ];
 
-    protected static function newFactory(): IngestRunFactory
-    {
-        return IngestRunFactory::new();
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo($this->getUserModelClass(), 'user_id');
-    }
-
-    private function getUserModelClass(): string
-    {
-        return config('auth.providers.users.model', \Illuminate\Foundation\Auth\User::class);
     }
 
     public function finalize(): void
@@ -67,5 +58,15 @@ class IngestRun extends Model
     public function batch(): ?Batch
     {
         return $this->batch_id ? Bus::findBatch($this->batch_id) : null;
+    }
+
+    protected static function newFactory(): IngestRunFactory
+    {
+        return IngestRunFactory::new();
+    }
+
+    private function getUserModelClass(): string
+    {
+        return config('auth.providers.users.model', \Illuminate\Foundation\Auth\User::class);
     }
 }

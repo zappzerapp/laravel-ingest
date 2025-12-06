@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +12,8 @@ use LaravelIngest\Database\Factories\IngestRowFactory;
 
 class IngestRow extends Model
 {
-    use HasFactory, Prunable;
+    use HasFactory;
+    use Prunable;
 
     protected $table = 'ingest_rows';
     protected $guarded = [];
@@ -18,11 +21,6 @@ class IngestRow extends Model
         'data' => 'array',
         'errors' => 'array',
     ];
-
-    protected static function newFactory(): IngestRowFactory
-    {
-        return IngestRowFactory::new();
-    }
 
     public function prunable()
     {
@@ -32,5 +30,10 @@ class IngestRow extends Model
     public function ingestRun(): BelongsTo
     {
         return $this->belongsTo(IngestRun::class);
+    }
+
+    protected static function newFactory(): IngestRowFactory
+    {
+        return IngestRowFactory::new();
     }
 }

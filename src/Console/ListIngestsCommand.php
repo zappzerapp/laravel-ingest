@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Console;
 
 use Illuminate\Console\Command;
@@ -17,6 +19,7 @@ class ListIngestsCommand extends Command
         if (empty($definitions)) {
             $this->warn('No ingest definitions found.');
             $this->line('Ensure your ingest classes implement IngestDefinition and are tagged in a service provider.');
+
             return self::SUCCESS;
         }
 
@@ -24,6 +27,7 @@ class ListIngestsCommand extends Command
 
         $rows = collect($definitions)->map(function ($definition, $slug) {
             $config = $definition->getConfig();
+
             return [
                 'slug' => "<info>{$slug}</info>",
                 'class' => get_class($definition),

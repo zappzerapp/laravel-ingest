@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
@@ -26,7 +28,7 @@ it('can fluently build a full configuration', function () {
         ->keyedBy('sku')
         ->onDuplicate(DuplicateStrategy::UPDATE)
         ->map('product_name', 'name')
-        ->mapAndTransform('stock_level', 'stock', fn($v) => (int)$v)
+        ->mapAndTransform('stock_level', 'stock', fn($v) => (int) $v)
         ->validate(['product_name' => 'required'])
         ->validateWithModelRules()
         ->setChunkSize(250)
@@ -46,9 +48,7 @@ it('can fluently build a full configuration', function () {
 
 it('correctly transforms values using closure', function () {
     $config = IngestConfig::for(User::class)
-        ->mapAndTransform('name', 'name', function ($value) {
-            return strtoupper($value);
-        })
+        ->mapAndTransform('name', 'name', fn($value) => strtoupper($value))
         ->map('email', 'email');
 
     $processor = new RowProcessor();

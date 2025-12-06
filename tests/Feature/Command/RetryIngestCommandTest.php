@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\IngestManager;
 use LaravelIngest\IngestServiceProvider;
@@ -61,6 +63,7 @@ it('can retry a failed ingest run in dry-run mode', function () {
 
     Bus::assertBatched(function ($batch) {
         $job = $batch->jobs->first();
+
         // Assert that the flag is correctly passed down to the job
         return $job->isDryRun === true;
     });

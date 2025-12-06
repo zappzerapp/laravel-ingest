@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Events;
 
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +11,8 @@ use LaravelIngest\Models\IngestRun;
 
 class RowProcessed
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
+    use SerializesModels;
 
     public function __construct(
         public IngestRun $ingestRun,
@@ -17,6 +20,5 @@ class RowProcessed
         public array $originalData,
         public ?Model $model,
         public ?array $errors = null
-    ) {
-    }
+    ) {}
 }

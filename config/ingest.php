@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'chunk_size' => 100,
 
@@ -13,10 +15,10 @@ return [
     'log_rows' => true,
 
     'handlers' => [
-        'upload'     => \LaravelIngest\Sources\UploadHandler::class,
-        'filesystem' => \LaravelIngest\Sources\FilesystemHandler::class,
-        'ftp'        => \LaravelIngest\Sources\RemoteDiskHandler::class,
-        'sftp'       => \LaravelIngest\Sources\RemoteDiskHandler::class,
-        'url'        => \LaravelIngest\Sources\UrlHandler::class,
+        'upload' => LaravelIngest\Sources\UploadHandler::class,
+        'filesystem' => LaravelIngest\Sources\FilesystemHandler::class,
+        'ftp' => LaravelIngest\Sources\RemoteDiskHandler::class,
+        'sftp' => LaravelIngest\Sources\RemoteDiskHandler::class,
+        'url' => LaravelIngest\Sources\UrlHandler::class,
     ],
 ];

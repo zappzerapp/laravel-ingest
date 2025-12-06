@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Services;
 
 use Exception;
@@ -53,6 +55,7 @@ class RowProcessor
                     $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'failed', $errors);
                     $results['failed']++;
                     RowProcessed::dispatch($ingestRun, 'failed', $rowData->originalData, null, $errors);
+
                     continue;
                 }
 
@@ -89,13 +92,14 @@ class RowProcessor
             }
 
             $relatedModelClass = $relationConfig['model'];
-            $relatedInstance = new $relatedModelClass;
+            $relatedInstance = new $relatedModelClass();
             $pkName = $relatedInstance->getKeyName();
             $lookupKey = $relationConfig['key'];
 
             $results = $relatedModelClass::query()->whereIn($lookupKey, $values)->get([$pkName, $lookupKey]);
             $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
         }
+
         return $cache;
     }
 
@@ -132,7 +136,7 @@ class RowProcessor
                 continue;
             }
 
-            $modelInstance = new $config->model;
+            $modelInstance = new $config->model();
             $relationValue = $processedData[$sourceField];
             $relatedId = null;
 
@@ -146,7 +150,7 @@ class RowProcessor
         }
 
         $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations);
-        $modelInstance = new $config->model;
+        $modelInstance = new $config->model();
         foreach ($unmappedData as $key => $value) {
             if ($modelInstance->isFillable($key)) {
                 $modelData[$key] = $value;
@@ -156,7 +160,6 @@ class RowProcessor
         return $modelData;
     }
 
-
     private function persist(array $modelData, IngestConfig $config): ?Model
     {
         $existingModel = $this->findExistingModel($modelData, $config);
@@ -165,6 +168,7 @@ class RowProcessor
             switch ($config->duplicateStrategy) {
                 case DuplicateStrategy::UPDATE:
                     $existingModel->update($modelData);
+
                     return $existingModel->fresh();
                 case DuplicateStrategy::SKIP:
                     return $existingModel;
@@ -188,6 +192,7 @@ class RowProcessor
         if (is_null($config->keyedBy) || is_null($modelKey) || !isset($modelData[$modelKey])) {
             return null;
         }
+
         return $config->model::where($modelKey, $modelData[$modelKey])->first();
     }
 

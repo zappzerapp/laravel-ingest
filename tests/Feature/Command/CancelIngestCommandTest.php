@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Models\IngestRun;

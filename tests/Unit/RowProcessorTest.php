@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Validation\ValidationException;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\IngestConfig;
@@ -40,7 +42,7 @@ it('throws a validation exception for an invalid row', function () {
     $this->assertDatabaseHas('ingest_rows', [
         'ingest_run_id' => $this->run->id,
         'row_number' => 1,
-        'status' => 'failed'
+        'status' => 'failed',
     ]);
 });
 
@@ -112,7 +114,6 @@ it('logs an error row when duplicate strategy is fail', function () {
     expect(User::where('email', 'duplicate@example.com')->first()->name)->toBe('Original');
 });
 
-
 it('rolls back transaction on failure when atomic is enabled', function () {
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
@@ -165,7 +166,7 @@ it('skips mappings and relations if source field does not exist in data', functi
 
     $this->assertDatabaseHas('products_with_category', [
         'name' => 'The Lord of the Rings',
-        'category_id' => null
+        'category_id' => null,
     ]);
 });
 

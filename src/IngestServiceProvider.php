@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest;
 
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +25,7 @@ class IngestServiceProvider extends ServiceProvider
 
         $this->app->singleton(IngestManager::class, function ($app) {
             $definitions = $this->discoverDefinitions($app);
+
             return new IngestManager($definitions, $app->make(SourceHandlerFactory::class));
         });
     }

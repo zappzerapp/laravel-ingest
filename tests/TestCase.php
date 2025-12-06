@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
@@ -11,19 +13,19 @@ use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->setUpDatabase();
+    }
+
     public function getEnvironmentSetUp($app): void
     {
         config()->set('database.default', 'testing');
         config()->set('queue.default', 'sync');
         config()->set('queue.batching.database', 'testing');
         config()->set('ingest.disk', 'local');
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->setUpDatabase();
     }
 
     protected function setUpDatabase(): void
@@ -48,7 +50,6 @@ class TestCase extends Orchestra
         $migration->up();
         $migration = include __DIR__ . '/../database/migrations/2025_01_01_000002_add_retry_to_ingest_runs_table.php';
         $migration->up();
-
 
         Schema::create('users', function (Blueprint $table) {
             $table->id();
@@ -92,10 +93,9 @@ class TestCase extends Orchestra
 
     protected function createTestDefinition(IngestConfig $config): IngestDefinition
     {
-        return new class($config) implements IngestDefinition {
-            public function __construct(public IngestConfig $config)
-            {
-            }
+        return new class($config) implements IngestDefinition
+        {
+            public function __construct(public IngestConfig $config) {}
 
             public function getConfig(): IngestConfig
             {

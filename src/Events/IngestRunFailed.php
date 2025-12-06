@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
@@ -9,9 +11,8 @@ use Throwable;
 
 class IngestRunFailed
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
+    use SerializesModels;
 
-    public function __construct(public IngestRun $ingestRun, public ?Throwable $exception = null)
-    {
-    }
+    public function __construct(public IngestRun $ingestRun, public ?Throwable $exception = null) {}
 }

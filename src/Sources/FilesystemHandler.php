@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace LaravelIngest\Sources;
 
 use Generator;
@@ -36,7 +38,7 @@ class FilesystemHandler implements SourceHandler
             throw new SourceException(
                 sprintf(
                     "We could not find the file at '%s' using the disk '%s'. " .
-                    "Please check the path and ensure the disk is correctly configured in filesystems.php.",
+                    'Please check the path and ensure the disk is correctly configured in filesystems.php.',
                     $this->path,
                     $disk
                 )
@@ -62,7 +64,5 @@ class FilesystemHandler implements SourceHandler
         return $this->path;
     }
 
-    public function cleanup(): void
-    {
-    }
+    public function cleanup(): void {}
 }

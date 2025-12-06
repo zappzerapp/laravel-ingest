@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\SourceType;

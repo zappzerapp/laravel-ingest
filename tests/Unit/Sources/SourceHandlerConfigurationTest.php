@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
