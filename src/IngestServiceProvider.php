@@ -4,8 +4,11 @@ namespace LaravelIngest;
 
 use Illuminate\Support\ServiceProvider;
 use LaravelIngest\Concerns\DiscoversIngestDefinitions;
+use LaravelIngest\Console\CancelIngestCommand;
 use LaravelIngest\Console\ListIngestsCommand;
+use LaravelIngest\Console\RetryIngestCommand;
 use LaravelIngest\Console\RunIngestCommand;
+use LaravelIngest\Console\StatusIngestCommand;
 
 class IngestServiceProvider extends ServiceProvider
 {
@@ -37,6 +40,9 @@ class IngestServiceProvider extends ServiceProvider
             $this->commands([
                 ListIngestsCommand::class,
                 RunIngestCommand::class,
+                StatusIngestCommand::class,
+                CancelIngestCommand::class,
+                RetryIngestCommand::class,
             ]);
         }
 

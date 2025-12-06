@@ -22,7 +22,6 @@ class IngestController extends Controller
     public function index(): JsonResponse
     {
         $runs = IngestRun::latest()->paginate();
-
         return IngestRunResource::collection($runs)->response();
     }
 
@@ -41,17 +40,27 @@ class IngestController extends Controller
             $isDryRun
         );
 
-        return IngestRunResource::make($run)
-            ->response()
-            ->setStatusCode(202);
+        return IngestRunResource::make($run)->response()->setStatusCode(202);
     }
 
     public function trigger(string $importerSlug): JsonResponse
     {
         $run = $this->ingestManager->start($importerSlug, null, request()->user());
+        return IngestRunResource::make($run)->response()->setStatusCode(202);
+    }
 
-        return IngestRunResource::make($run)
-            ->response()
-            ->setStatusCode(202);
+    public function cancel(IngestRun $ingestRun): JsonResponse
+    {
+        $batch = $ingestRun->batch();
+        if ($batch && !$batch->finished()) {
+            $batch->cancel();
+        }
+
+        return response()->json(['message' => 'Cancellation request sent.']);
+    }
+
+    public function retry(IngestRun $ingestRun): JsonResponse
+    {
+        return response()->json(['message' => 'Feature not yet implemented.'], 501);
     }
 }

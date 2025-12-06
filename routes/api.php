@@ -11,4 +11,6 @@ Route::prefix('api/v1/ingest')
 
         Route::post('/upload/{importerSlug}', [IngestController::class, 'upload']);
         Route::post('/trigger/{importerSlug}', [IngestController::class, 'trigger']);
+        Route::post('/{ingestRun}/cancel', [IngestController::class, 'cancel']);
+        Route::post('/{ingestRun}/retry', [IngestController::class, 'retry']);
     });

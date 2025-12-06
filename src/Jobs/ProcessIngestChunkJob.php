@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use LaravelIngest\Events\ChunkProcessed;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
@@ -36,5 +37,7 @@ class ProcessIngestChunkJob implements ShouldQueue
         $this->ingestRun->increment('processed_rows', $results['processed']);
         $this->ingestRun->increment('successful_rows', $results['successful']);
         $this->ingestRun->increment('failed_rows', $results['failed']);
+
+        ChunkProcessed::dispatch($this->ingestRun, $results);
     }
 }

@@ -16,11 +16,10 @@ beforeEach(function () {
 
 it('successfully processes a valid row', function () {
     $config = IngestConfig::for(User::class)
-        ->keyedBy('email')
         ->map('name', 'name')
         ->map('email', 'email');
 
-    $rowData = ['name' => 'John Doe', 'email' => 'john@example.com'];
+    $rowData = ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => 'secret'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk($this->run, $config, $chunk, false);
@@ -46,7 +45,7 @@ it('throws a validation exception for an invalid row', function () {
 });
 
 it('updates a duplicate row when strategy is update', function () {
-    $user = User::create(['name' => 'Old Name', 'email' => 'jane@example.com']);
+    $user = User::create(['name' => 'Old Name', 'email' => 'jane@example.com', 'password' => 'secret']);
     $config = IngestConfig::for(User::class)
         ->keyedBy('email')
         ->onDuplicate(DuplicateStrategy::UPDATE)
@@ -62,7 +61,7 @@ it('updates a duplicate row when strategy is update', function () {
 });
 
 it('skips a duplicate row when strategy is skip', function () {
-    User::create(['name' => 'Old Name', 'email' => 'skip@example.com']);
+    User::create(['name' => 'Old Name', 'email' => 'skip@example.com', 'password' => 'secret']);
     $config = IngestConfig::for(User::class)
         ->keyedBy('email')
         ->onDuplicate(DuplicateStrategy::SKIP)
@@ -80,7 +79,7 @@ it('skips a duplicate row when strategy is skip', function () {
 
 it('does not persist data on a dry run', function () {
     $config = IngestConfig::for(User::class)->map('name', 'name')->map('email', 'email');
-    $rowData = ['name' => 'Dry Run User', 'email' => 'dry@run.com'];
+    $rowData = ['name' => 'Dry Run User', 'email' => 'dry@run.com', 'password' => 'secret'];
     $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk($this->run, $config, $chunk, true);
@@ -89,7 +88,7 @@ it('does not persist data on a dry run', function () {
 });
 
 it('logs an error row when duplicate strategy is fail', function () {
-    User::create(['email' => 'duplicate@example.com', 'name' => 'Original']);
+    User::create(['email' => 'duplicate@example.com', 'name' => 'Original', 'password' => 'secret']);
 
     $config = IngestConfig::for(User::class)
         ->keyedBy('email')
@@ -110,7 +109,7 @@ it('logs an error row when duplicate strategy is fail', function () {
         'status' => 'failed',
     ]);
 
-    expect(User::first()->name)->toBe('Original');
+    expect(User::where('email', 'duplicate@example.com')->first()->name)->toBe('Original');
 });
 
 
@@ -122,8 +121,8 @@ it('rolls back transaction on failure when atomic is enabled', function () {
         ->atomic();
 
     $chunk = [
-        ['number' => 1, 'data' => ['name' => 'Valid User', 'email' => 'valid@test.com']],
-        ['number' => 2, 'data' => ['name' => 'Invalid User', 'email' => 'invalid-email']],
+        ['number' => 1, 'data' => ['name' => 'Valid User', 'email' => 'valid@test.com', 'password' => 'secret']],
+        ['number' => 2, 'data' => ['name' => 'Invalid User', 'email' => 'invalid-email', 'password' => 'secret']],
     ];
 
     $this->expectException(ValidationException::class);
@@ -184,4 +183,39 @@ it('merges model rules and custom rules for validation', function () {
         'ingest_run_id' => $this->run->id,
         'status' => 'failed',
     ]);
+});
+
+it('executes before row callback and modifies data', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->map('password', 'password')
+        ->beforeRow(function (array &$data) {
+            $data['name'] = 'PREFIX_' . $data['name'];
+        });
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'before@test.com', 'password' => 'secretx']]];
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('users', ['email' => 'before@test.com', 'name' => 'PREFIX_Test']);
+});
+
+it('executes after row callback on success', function () {
+    $mock = mock();
+    $mock->shouldReceive('someMethod')->once();
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->map('password', 'password')
+        ->afterRow(function (User $user, array $originalData) use ($mock) {
+            expect($user->email)->toBe('after@test.com');
+            expect($originalData['name'])->toBe('Test');
+            $mock->someMethod();
+        });
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'after@test.com', 'password' => 'secret']]];
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('users', ['email' => 'after@test.com']);
 });

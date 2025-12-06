@@ -4,7 +4,6 @@ namespace LaravelIngest;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
@@ -24,16 +23,14 @@ class IngestConfig
     public int $chunkSize;
     public ?string $disk = null;
     public bool $useTransaction = false;
+    public ?SerializableClosure $beforeRowCallback = null;
+    public ?SerializableClosure $afterRowCallback = null;
 
-    /**
-     * @throws InvalidConfigurationException
-     */
     private function __construct(string $modelClass)
     {
         if (!is_subclass_of($modelClass, Model::class)) {
             throw new InvalidConfigurationException(sprintf(
-                "The class '%s' must be an instance of Illuminate\Database\Eloquent\Model. " .
-                "Please check the class name passed to IngestConfig::for().",
+                "The class '%s' must be an instance of Illuminate\Database\Eloquent\Model.",
                 $modelClass
             ));
         }
@@ -42,9 +39,6 @@ class IngestConfig
         $this->disk = config('ingest.disk', 'local');
     }
 
-    /**
-     * @throws InvalidConfigurationException
-     */
     public static function for(string $modelClass): self
     {
         return new self($modelClass);
@@ -75,23 +69,12 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function mapAndTransform(string $sourceField, string $modelAttribute, Closure $transformer): self
     {
         $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => new SerializableClosure($transformer)];
         return $this;
     }
 
-    /**
-     * @param string $sourceField Das Feld in der Quelldatei (z.B. 'category_name')
-     * @param string $relationName Der Name der Eloquent-Relation im Hauptmodell (z.B. 'category')
-     * @param string $relatedModel Die Klasse des verwandten Models (z.B. Category::class)
-     * @param string $relatedKey Die Spalte im verwandten Model, nach der gesucht wird (z.B. 'name')
-     * @return $this
-     * @throws InvalidConfigurationException
-     */
     public function relate(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id'): self
     {
         if (!is_subclass_of($relatedModel, Model::class)) {
@@ -133,6 +116,18 @@ class IngestConfig
     public function atomic(): self
     {
         $this->useTransaction = true;
+        return $this;
+    }
+
+    public function beforeRow(Closure $callback): self
+    {
+        $this->beforeRowCallback = new SerializableClosure($callback);
+        return $this;
+    }
+
+    public function afterRow(Closure $callback): self
+    {
+        $this->afterRowCallback = new SerializableClosure($callback);
         return $this;
     }
 }

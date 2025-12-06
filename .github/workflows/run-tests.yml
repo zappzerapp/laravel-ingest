@@ -20,6 +20,12 @@ jobs:
       - name: Install dependencies
         run: docker compose exec -T --user root app composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: Check code style with Pint
+        run: docker compose exec -T --user root app composer lint:check
+
+      - name: Run static analysis with Larastan
+        run: docker compose exec -T --user root app composer analyse
+
       - name: Run Pest tests
         run: docker compose exec -T --user root app composer test
 

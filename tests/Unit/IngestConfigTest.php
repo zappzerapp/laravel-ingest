@@ -73,3 +73,12 @@ it('can enable atomic transactions', function () {
     $config = IngestConfig::for(User::class)->atomic();
     expect($config->useTransaction)->toBeTrue();
 });
+
+it('can set before and after row callbacks', function () {
+    $config = IngestConfig::for(User::class)
+        ->beforeRow(fn(array &$data) => $data['name'] = 'Modified')
+        ->afterRow(fn($model, $data) => $model->touch());
+
+    expect($config->beforeRowCallback)->toBeInstanceOf(SerializableClosure::class);
+    expect($config->afterRowCallback)->toBeInstanceOf(SerializableClosure::class);
+});

@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('importer_slug')->index();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('status')->default(IngestStatus::PENDING->value)->index();
+            $table->string('batch_id')->nullable()->index();
 
             $table->string('original_filename')->nullable();
             $table->string('processed_filepath')->nullable();

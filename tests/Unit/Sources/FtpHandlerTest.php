@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
-use LaravelIngest\Sources\FtpHandler;
+use LaravelIngest\Sources\RemoteDiskHandler;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 
 beforeEach(function () {
@@ -26,7 +26,7 @@ it('can read a file from an ftp source', function () {
             'path' => 'products.csv'
         ]);
 
-    $handler = new FtpHandler();
+    $handler = new RemoteDiskHandler();
     $generator = $handler->read($config);
 
     $rows = iterator_to_array($generator);
@@ -41,7 +41,7 @@ it('can read a file from an ftp source', function () {
 
 it('throws exception if ftp file does not exist', function () {
     $config = IngestConfig::for(Product::class)->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'missing.csv']);
-    iterator_to_array((new FtpHandler())->read($config));
+    iterator_to_array((new RemoteDiskHandler())->read($config));
 })->throws(SourceException::class, "File not found at remote path 'missing.csv'");
 
 it('throws exception when ftp stream cannot be opened', function () {
@@ -55,5 +55,5 @@ it('throws exception when ftp stream cannot be opened', function () {
     $config = IngestConfig::for(Product::class)
         ->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'products.csv']);
 
-    iterator_to_array((new FtpHandler())->read($config));
+    iterator_to_array((new RemoteDiskHandler())->read($config));
 })->throws(SourceException::class, "Could not open read stream for remote file");

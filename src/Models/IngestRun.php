@@ -2,38 +2,22 @@
 
 namespace LaravelIngest\Models;
 
+use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Database\Factories\IngestRunFactory;
 use LaravelIngest\Enums\IngestStatus;
 
-/**
- * @property int $id
- * @property string $importer_slug
- * @property int|null $user_id
- * @property IngestStatus $status
- * @property string|null $original_filename
- * @property string|null $processed_filepath
- * @property int $total_rows
- * @property int $processed_rows
- * @property int $successful_rows
- * @property int $failed_rows
- * @property array|null $summary
- * @property Carbon|null $completed_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
- */
 class IngestRun extends Model
 {
     use HasFactory;
 
     protected $table = 'ingest_runs';
-
     protected $guarded = [];
-
     protected $casts = [
         'status' => IngestStatus::class,
         'summary' => 'array',
@@ -73,5 +57,10 @@ class IngestRun extends Model
     public function rows(): HasMany
     {
         return $this->hasMany(IngestRow::class);
+    }
+
+    public function batch(): ?Batch
+    {
+        return $this->batch_id ? Bus::findBatch($this->batch_id) : null;
     }
 }

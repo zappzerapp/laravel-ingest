@@ -30,12 +30,6 @@ class IngestManager
         return $this->definitions;
     }
 
-    /**
-     * @throws Throwable
-     * @throws InvalidConfigurationException
-     * @throws DefinitionNotFoundException
-     * @throws SourceException
-     */
     public function start(
         string           $importerSlug,
         mixed            $payload = null,
@@ -101,7 +95,7 @@ class IngestManager
             $queueConnection = Config::get('ingest.queue.connection');
             $queueName = Config::get('ingest.queue.name');
 
-            Bus::batch($batchJobs)
+            $batch = Bus::batch($batchJobs)
                 ->then(function () use ($ingestRun, $sourceHandler) {
                     $ingestRun->finalize();
                     $sourceHandler->cleanup();
@@ -116,6 +110,8 @@ class IngestManager
                 ->onQueue($queueName)
                 ->dispatch();
 
+            $ingestRun->update(['batch_id' => $batch->id]);
+
         } catch (Throwable $e) {
             $ingestRun->update(['status' => IngestStatus::FAILED, 'summary' => ['error' => $e->getMessage()]]);
             $sourceHandler?->cleanup();
@@ -126,9 +122,6 @@ class IngestManager
         return $ingestRun;
     }
 
-    /**
-     * @throws DefinitionNotFoundException
-     */
     public function getDefinition(string $slug): IngestDefinition
     {
         if (!isset($this->definitions[$slug])) {

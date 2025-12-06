@@ -10,7 +10,7 @@ use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
-class FtpHandler implements SourceHandler
+class RemoteDiskHandler implements SourceHandler
 {
     protected ?string $temporaryPath = null;
     protected ?int $totalRows = null;

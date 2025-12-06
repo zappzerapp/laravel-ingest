@@ -89,3 +89,23 @@ it('can trigger a non-upload ingest run', function () {
 
     $this->assertDatabaseHas('products', ['sku' => 'API-001']);
 });
+
+it('can cancel an ingest run via api', function () {
+    Bus::fake();
+    $batch = Bus::batch([])->dispatch();
+    $run = IngestRun::factory()->create(['batch_id' => $batch->id]);
+
+    $this->postJson("/api/v1/ingest/{$run->id}/cancel")
+        ->assertOk()
+        ->assertJson(['message' => 'Cancellation request sent.']);
+
+    expect($batch->fresh()->cancelled())->toBeTrue();
+});
+
+it('returns not implemented for retry endpoint', function () {
+    $run = IngestRun::factory()->create();
+
+    $this->postJson("/api/v1/ingest/{$run->id}/retry")
+        ->assertStatus(501)
+        ->assertJson(['message' => 'Feature not yet implemented.']);
+});

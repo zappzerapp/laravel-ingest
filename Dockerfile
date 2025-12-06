@@ -1,6 +1,6 @@
 FROM composer:latest as composer
 
-FROM php:8.3-cli
+FROM php:8.4-cli
 
 WORKDIR /var/www/html
 

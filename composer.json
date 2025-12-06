@@ -32,11 +32,13 @@
     "spatie/simple-excel": "^3.2"
   },
   "require-dev": {
-    "roave/security-advisories": "dev-latest",
+    "larastan/larastan": "^2.11",
+    "laravel/pint": "^1.13",
     "league/flysystem-ftp": "^3.0",
     "orchestra/testbench": "^8.0 || ^9.0",
     "pestphp/pest": "^2.0",
-    "pestphp/pest-plugin-laravel": "^2.0"
+    "pestphp/pest-plugin-laravel": "^2.0",
+    "roave/security-advisories": "dev-latest"
   },
   "autoload": {
     "psr-4": {
@@ -50,6 +52,9 @@
     }
   },
   "scripts": {
+    "analyse": "vendor/bin/phpstan analyse",
+    "lint": "vendor/bin/pint",
+    "lint:check": "vendor/bin/pint --test",
     "test": "vendor/bin/pest",
     "test:coverage": "vendor/bin/pest --coverage",
     "docker:test": "docker compose exec -T app composer test",
