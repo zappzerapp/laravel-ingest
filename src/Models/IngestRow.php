@@ -21,7 +21,6 @@ use LaravelIngest\Database\Factories\IngestRowFactory;
  * @property array|null $errors
  * @property Carbon $created_at
  * @property Carbon $updated_at
- *
  * @property-read IngestRun $ingestRun
  *
  * @method static IngestRowFactory factory(...$parameters)

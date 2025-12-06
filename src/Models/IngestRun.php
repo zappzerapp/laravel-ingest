@@ -32,7 +32,6 @@ use LaravelIngest\Enums\IngestStatus;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property int|null $retried_from_run_id
- *
  * @property-read User|null $user
  * @property-read \Illuminate\Database\Eloquent\Collection<int, IngestRow> $rows
  * @property-read IngestRun|null $originalRun
@@ -97,6 +96,6 @@ class IngestRun extends Model
 
     private function getUserModelClass(): string
     {
-        return (string) config('auth.providers.users.model', \Illuminate\Foundation\Auth\User::class);
+        return (string) config('auth.providers.users.model', User::class);
     }
 }
