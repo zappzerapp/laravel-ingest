@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zappzerapp.github.io/laravel-ingest/sitemap.xml.gz
