@@ -184,7 +184,6 @@ it('completes a retry run immediately if cursor returns empty', function () {
     Event::fake();
     Bus::fake();
 
-    // Simulate a data inconsistency where failed_rows > 0, but no actual rows are found
     $originalRun = IngestRun::factory()->create(['importer_slug' => 'userimporter', 'failed_rows' => 1]);
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
     $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
@@ -192,7 +191,7 @@ it('completes a retry run immediately if cursor returns empty', function () {
     $newRun = $manager->retry($originalRun);
 
     expect($newRun->status)->toBe(IngestStatus::COMPLETED);
-    expect($newRun->refresh()->total_rows)->toBe(0); // Check that the count was corrected
+    expect($newRun->refresh()->total_rows)->toBe(0);
     Bus::assertBatchCount(0);
     Event::assertDispatched(IngestRunCompleted::class, fn($event) => $event->ingestRun->id === $newRun->id);
 });
@@ -200,7 +199,7 @@ it('completes a retry run immediately if cursor returns empty', function () {
 it('cleans up source handler on early read failure', function () {
     $sourceHandlerMock = $this->mock(SourceHandler::class);
     $sourceHandlerMock->shouldReceive('read')->once()->andThrow(new SourceException('Read failed unexpectedly'));
-    $sourceHandlerMock->shouldReceive('cleanup')->once(); // This is the key assertion
+    $sourceHandlerMock->shouldReceive('cleanup')->once();
 
     $factoryMock = $this->mock(SourceHandlerFactory::class);
     $factoryMock->shouldReceive('make')->andReturn($sourceHandlerMock);
@@ -250,15 +249,12 @@ it('handles a successful batch for a retry run', function () {
 
 it('handles an exception during retry setup', function () {
     Event::fake();
-    // This manager has no definitions registered
     $manager = new IngestManager([], app(SourceHandlerFactory::class));
-    // The run refers to an importer that the manager doesn't know about
     $originalRun = IngestRun::factory()->create(['importer_slug' => 'unknown-importer', 'failed_rows' => 1]);
 
     try {
         $manager->retry($originalRun);
     } catch (DefinitionNotFoundException $e) {
-        // Expected exception
     }
 
     $newRun = IngestRun::where('retried_from_run_id', $originalRun->id)->first();
@@ -274,9 +270,8 @@ it('corrects total rows count on retry if it mismatches actual failed rows', fun
 
     $originalRun = IngestRun::factory()->create([
         'importer_slug' => 'userimporter',
-        'failed_rows' => 5, // The "official" but incorrect count
+        'failed_rows' => 5,
     ]);
-    // The actual number of failed rows is different
     IngestRow::factory()->count(3)->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
 
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
@@ -285,10 +280,8 @@ it('corrects total rows count on retry if it mismatches actual failed rows', fun
     $newRun = $manager->retry($originalRun);
     $newRun->refresh();
 
-    // The key assertion: The new run's total_rows should be the *actual* count, not the incorrect one.
     expect($newRun->total_rows)->toBe(3);
     Bus::assertBatched(function ($batch) {
-        // The batch should be for the 3 actual rows
         return $batch->jobs->count() === 1;
     });
 });

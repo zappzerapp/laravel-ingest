@@ -115,8 +115,23 @@ class IngestManager
             $ingestRun->update(['batch_id' => $batch->id]);
 
         } catch (Throwable $e) {
-            $ingestRun->update(['status' => IngestStatus::FAILED, 'summary' => ['error' => $e->getMessage()]]);
-            $sourceHandler->cleanup();
+            $summary = [
+                'error' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ];
+
+            $ingestRun->update([
+                'status' => IngestStatus::FAILED,
+                'summary' => $summary,
+            ]);
+
+            if (isset($sourceHandler)) {
+                $sourceHandler->cleanup();
+            }
+
             IngestRunFailed::dispatch($ingestRun, $e);
             throw $e;
         }
@@ -197,7 +212,19 @@ class IngestManager
 
             $newRun->update(['batch_id' => $batch->id]);
         } catch (Throwable $e) {
-            $newRun->update(['status' => IngestStatus::FAILED, 'summary' => ['error' => $e->getMessage()]]);
+            $summary = [
+                'error' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ];
+
+            $newRun->update([
+                'status' => IngestStatus::FAILED,
+                'summary' => $summary,
+            ]);
+
             IngestRunFailed::dispatch($newRun, $e);
             throw $e;
         }

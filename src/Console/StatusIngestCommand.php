@@ -63,7 +63,7 @@ class StatusIngestCommand extends Command
     private function getStatusColor(IngestStatus $status): string
     {
         return match ($status) {
-            IngestStatus::PENDING, IngestStatus::PROCESSING => 'yellow',
+            IngestStatus::PENDING, IngestStatus::PROCESSING, IngestStatus::COMPLETED_WITH_ERRORS => 'yellow',
             IngestStatus::COMPLETED => 'green',
             IngestStatus::FAILED => 'red',
         };

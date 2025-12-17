@@ -61,15 +61,15 @@ class IngestRun extends Model
 
     public function finalize(): void
     {
-        $stats = $this->rows()
-            ->selectRaw('count(*) as total, sum(case when status = "success" then 1 else 0 end) as success, sum(case when status = "failed" then 1 else 0 end) as failed')
-            ->first();
+        $this->refresh();
+
+        $finalStatus = IngestStatus::COMPLETED;
+        if ($this->failed_rows > 0) {
+            $finalStatus = IngestStatus::COMPLETED_WITH_ERRORS;
+        }
 
         $this->update([
-            'processed_rows' => $stats->total ?? 0,
-            'successful_rows' => $stats->success ?? 0,
-            'failed_rows' => $stats->failed ?? 0,
-            'status' => ($stats->failed ?? 0) > 0 ? IngestStatus::FAILED : IngestStatus::COMPLETED,
+            'status' => $finalStatus,
             'completed_at' => now(),
         ]);
     }
