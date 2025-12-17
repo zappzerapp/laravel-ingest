@@ -1,0 +1,24 @@
+input: ./docs
+output: .retype
+url: https://zappzerapp.github.io/laravel-ingest/
+
+branding:
+  title: Laravel Ingest
+  label: Docs
+
+links:
+  - text: Getting Started
+    link: /getting-started/installation/
+  - text: Configuration
+    link: /configuration/ingest-config/
+  - text: Usage
+    link: /usage/running-imports/
+  - text: Advanced
+    link: /advanced/events/
+  - text: API Reference
+    link: /api-reference/
+  - text: GitHub
+    link: https://github.com/zappzerapp/laravel-ingest
+
+footer:
+  copyright: "&copy; Copyright {{ year }}. All rights reserved."
