@@ -281,7 +281,5 @@ it('corrects total rows count on retry if it mismatches actual failed rows', fun
     $newRun->refresh();
 
     expect($newRun->total_rows)->toBe(3);
-    Bus::assertBatched(function ($batch) {
-        return $batch->jobs->count() === 1;
-    });
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1);
 });
