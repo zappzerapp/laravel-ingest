@@ -1,15 +1,19 @@
-name: Run Tests
+name: Test and Publish
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   test:
-    runs-on: ubuntu-latest
 
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,3 +36,22 @@ jobs:
       - name: Stop Docker services
         if: always()
         run: docker compose down
+
+  publish:
+    needs: test
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: retypeapp/action-build@latest
+
+      - uses: retypeapp/action-github-pages@latest
+        with:
+          update-branch: true

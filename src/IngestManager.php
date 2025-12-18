@@ -128,9 +128,7 @@ class IngestManager
                 'summary' => $summary,
             ]);
 
-            if (isset($sourceHandler)) {
-                $sourceHandler->cleanup();
-            }
+            $sourceHandler->cleanup();
 
             IngestRunFailed::dispatch($ingestRun, $e);
             throw $e;
