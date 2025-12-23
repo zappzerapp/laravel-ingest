@@ -1,3 +1,8 @@
+---
+order: 200
+label: Introduction
+---
+
 # Introduction to Laravel Ingest
 
 Laravel Ingest revolutionizes the way Laravel applications import data. We end the chaos of custom, error-prone import scripts and provide an elegant, declarative, and robust framework for defining complex data import processes.

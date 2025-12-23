@@ -1,129 +1,163 @@
+---
+label: The IngestConfig Class
+order: 100
+---
+
 # The IngestConfig Class
 
-The `IngestConfig` object is the heart of every importer. It provides a fluent, expressive API to define every aspect of the import process, from the data source to validation and data transformation.
+The `IngestConfig` object is the declarative heart of your importer. It allows you to define the entire ETL (Extract, Transform, Load) process in a fluent, readable way.
 
-All configuration is done within the `getConfig()` method of your `IngestDefinition` class.
+All configuration happens inside the `getConfig()` method of your importer class.
 
-### Core Methods
+## Basic Setup
 
-#### `for(string $modelClass)`
-Initializes the configuration for a specific Eloquent model. This is always the first call.
+### `for(string $modelClass)`
+**Required.** Initializes the configuration for a specific Eloquent model. This must be the static entry point.
+
 ```php
-IngestConfig::for(App\Models\Product::class)
+IngestConfig::for(\App\Models\Product::class)
 ```
 
-#### `fromSource(SourceType $sourceType, array $options = [])`
-Defines the source of the data. See the [Available Source Types](./source-types.md) page for details on each type and its required options.
+### `fromSource(SourceType $type, array $options = [])`
+**Required.** Defines where the data comes from.
+- **$type**: An enum instance of `LaravelIngest\Enums\SourceType`.
+- **$options**: An associative array of options required by the specific source handler (e.g., `path`, `disk`, `url`).
+
 ```php
-->fromSource(SourceType::FTP, ['disk' => 'ftp_erp', 'path' => '/exports/products.csv'])
+->fromSource(SourceType::FTP, ['disk' => 'ftp-disk', 'path' => 'import.csv'])
 ```
 
-### Data Identification
+---
 
-#### `keyedBy(string $sourceField)`
-Sets the unique identifier column from your source file (e.g., SKU, email). This is crucial for handling duplicates.
+## Identity & Duplicates
+
+### `keyedBy(string $sourceColumn)`
+Defines the "Unique ID" column in your **source file** (not the database column name). This is used to check if a record already exists.
+
 ```php
-->keyedBy('product_sku')
+// The CSV has a column "EAN-Code" which is unique
+->keyedBy('EAN-Code')
 ```
 
-#### `onDuplicate(DuplicateStrategy $strategy)`
-Defines what to do when a record with the same key already exists in the database.
-- `DuplicateStrategy::UPDATE`: Updates the existing record with the new data.
-- `DuplicateStrategy::SKIP`: (Default) Ignores the incoming row and leaves the existing record unchanged.
-- `DuplicateStrategy::FAIL`: Marks the incoming row as failed and reports a duplicate error.
+### `onDuplicate(DuplicateStrategy $strategy)`
+Defines behavior when a record with the `keyedBy` value is found in the database.
+- `DuplicateStrategy::SKIP`: (Default) Do nothing. Keep the old record.
+- `DuplicateStrategy::UPDATE`: Overwrite the database record with new data.
+- `DuplicateStrategy::FAIL`: Stop processing this row and mark it as failed.
 
 ```php
 ->onDuplicate(DuplicateStrategy::UPDATE)
 ```
 
-### Mapping & Transformation
+---
 
-#### `map(string $sourceField, string $modelAttribute)`
-Creates a direct mapping from a source column to a model attribute.
+## Mapping & Transformation
+
+### `map(string $sourceColumn, string $modelAttribute)`
+A 1:1 copy from source to database.
 ```php
-// Maps the 'product_name' column from the CSV to the 'name' attribute on the Product model.
-->map('product_name', 'name')
+->map('First Name', 'first_name')
 ```
 
-#### `mapAndTransform(string $sourceField, string $modelAttribute, callable $transformer)`
-Maps a source column and transforms its value using a closure before it's assigned to the model. The closure receives the value and the full original row data as arguments.
+### `mapAndTransform(string $sourceColumn, string $modelAttribute, callable $callback)`
+Transforms the value before saving.
+- **Callback Signature**: `fn($value, array $row)`
+- **$value**: The value of the specific column.
+- **$row**: The entire raw row array (useful for combining columns).
+
 ```php
-// Converts a price string like "1,99 EUR" to cents.
-->mapAndTransform('price', 'price_in_cents', function($value, $row) {
-    $price = str_replace([' EUR', ','], ['', '.'], $value);
-    return (int) ((float) $price * 100);
+// Combine First and Last name
+->mapAndTransform('Last Name', 'full_name', function($value, $row) {
+    return $row['First Name'] . ' ' . $value;
 })
+
+// Format currency
+->mapAndTransform('Price', 'price_in_cents', fn($val) => (int)($val * 100))
 ```
 
-#### `relate(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id')`
-Resolves a `BelongsTo` relationship. It looks up the related model's ID and sets the foreign key on the primary model.
+### `relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey)`
+Automatically resolves `BelongsTo` relationships.
+1. Takes the value from `$sourceColumn`.
+2. Searches `$relatedModel` where `$relatedKey` matches that value.
+3. If found, assigns the ID to the foreign key of `$relationName`.
+
 ```php
-// The source file has a 'category_name' column (e.g., "Electronics").
-// This will find the Category model where 'name' is "Electronics" and set 'category_id' on the Product.
-->relate('category_name', 'category', App\Models\Category::class, 'name')
+// Source: "Category: Smartphones"
+// Database lookup: Category::where('name', 'Smartphones')->first()
+// Result: $product->category_id = $foundCategory->id
+->relate('Category', 'category', \App\Models\Category::class, 'name')
 ```
 
-### Validation
+---
 
-#### `validate(array $rules)`
-Applies Laravel validation rules to the incoming data *before* transformation.
+## Validation
+
+### `validate(array $rules)`
+Applies Laravel validation rules to the incoming data *before* it is transformed or saved. Keys must match the **source file columns**.
+
 ```php
 ->validate([
-    'product_sku' => 'required|alpha_dash|max:50',
-    'stock' => 'required|integer|min:0',
+    'EAN-Code' => 'required|numeric|digits:13',
+    'Price' => 'required|numeric|min:0',
 ])
 ```
 
-#### `validateWithModelRules()`
-Merges rules from a static `getRules()` method on your target model. This is great for keeping validation logic centralized.
-```php
-// In your User.php model:
-public static function getRules(): array
-{
-    return ['email' => 'required|email'];
-}
+### `validateWithModelRules()`
+Merges validation rules defined in the target model's static `getRules()` method. Useful for DRY (Don't Repeat Yourself).
 
-// In your importer:
+```php
+// In Product.php
+public static function getRules() { return ['sku' => 'required']; }
+
+// In Config
 ->validateWithModelRules()
 ```
 
-### Process Control
+---
 
-#### `setChunkSize(int $size)`
-Defines how many rows are processed in a single background job. The default is 100.
+## Hooks
+
+### `beforeRow(callable $callback)`
+Executed **before** validation. Allows you to modify the raw data array by reference. Perfect for cleaning up messy data globally.
+
 ```php
-->setChunkSize(500)
-```
-
-#### `setDisk(string $diskName)`
-Specifies the Laravel Filesystem disk to use for `UPLOAD` or `FILESYSTEM` sources. Defaults to the disk set in `config/ingest.php`.
-```php
-->setDisk('s3_imports')
-```
-
-#### `atomic()`
-Wraps the processing of each chunk in a database transaction. If any row within a chunk fails, all changes from that chunk are rolled back. This ensures data integrity.
-```php
-->atomic()
-```
-
-### Callbacks / Hooks
-
-#### `beforeRow(callable $callback)`
-Executes a closure just before a row is validated and processed. You can modify the data by reference.
-```php
-// Ensure all names are properly capitalized.
 ->beforeRow(function(array &$data) {
-    $data['name'] = ucwords(strtolower($data['name']));
+    // Remove invisible characters from all keys
+    $data = array_combine(
+        array_map('trim', array_keys($data)), 
+        $data
+    );
 })
 ```
 
-#### `afterRow(callable $callback)`
-Executes a closure *after* a row has been successfully processed and persisted. The closure receives the saved model instance and the original row data.
+### `afterRow(callable $callback)`
+Executed **after** the model has been successfully saved.
+- **$model**: The saved Eloquent model.
+- **$row**: The original raw data.
+
 ```php
-// Sync a relationship after the main model is created.
-->afterRow(function(Product $product, array $originalData) {
-    $tags = explode(',', $originalData['tags']);
-    $product->tags()->sync($tags);
+->afterRow(function(Product $product, array $row) {
+    // Sync tags or trigger side effects
+    $product->search_index_updated_at = now();
+    $product->saveQuietly();
 })
+```
+
+---
+
+## Processing Options
+
+### `setChunkSize(int $size)`
+Determines how many rows are processed per background job. Default: `100`.
+- Increase for simple inserts to reduce queue overhead.
+- Decrease for memory-heavy operations (e.g., image processing in `afterRow`).
+
+### `atomic()`
+Wraps each chunk in a Database Transaction. If **one** row in the chunk fails, **all** rows in that chunk are rolled back.
+- **Default**: Disabled (Rows are committed individually).
+
+### `setDisk(string $disk)`
+Overrides the default filesystem disk (from `config/ingest.php`) for this specific importer.
+```php
+->setDisk('s3_private_bucket')
 ```

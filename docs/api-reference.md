@@ -1,3 +1,8 @@
+---
+order: 10
+label: API Reference
+---
+
 # API Reference
 
 Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with `/api/v1/ingest`.

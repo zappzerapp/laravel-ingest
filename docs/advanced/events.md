@@ -1,82 +1,90 @@
+---
+label: Working with Events
+order: 80
+---
+
 # Working with Events
 
-Laravel Ingest fires a series of events throughout the import lifecycle, allowing you to easily hook into the process to add custom logic, notifications, or logging.
+Laravel Ingest dispatches events at every stage of the import lifecycle. This allows you to decouple your logic: the importer handles the data, and your listeners handle notifications, logging, or cleanup.
 
-You can register listeners for these events in your `EventServiceProvider`.
+## Available Events
 
-### `LaravelIngest\Events\IngestRunStarted`
-Fired as soon as an `IngestRun` model is created and the import process begins.
+| Event Class | Description | Payload |
+| :--- | :--- | :--- |
+| `IngestRunStarted` | The import record is created. | `$ingestRun` |
+| `ChunkProcessed` | A batch of rows finished. | `$ingestRun`, `$results` |
+| `RowProcessed` | A single row was handled. | `$ingestRun`, `$status`, `$data`, `$model`, `$errors` |
+| `IngestRunCompleted` | All jobs finished successfully. | `$ingestRun` |
+| `IngestRunFailed` | The process crashed or stopped. | `$ingestRun`, `$exception` |
 
--   `$ingestRun`: The `IngestRun` Eloquent model.
+## Tutorial: Sending a Slack Notification
+
+Let's implement a listener that sends a summary to Slack when an import completes.
+
+### 1. Create the Notification
+
+```bash
+php artisan make:notification ImportCompletedNotification
+```
 
 ```php
-// app/Listeners/SendIngestStartedNotification.php
-use LaravelIngest\Events\IngestRunStarted;
-
-public function handle(IngestRunStarted $event): void
+// app/Notifications/ImportCompletedNotification.php
+public function toSlack($notifiable)
 {
-    $user = $event->ingestRun->user;
-    // $user->notify(new ImportHasStarted($event->ingestRun));
+    $run = $this->ingestRun;
+    
+    return (new SlackMessage)
+        ->success()
+        ->content("Import '{$run->importer_slug}' finished!")
+        ->attachment(function ($attachment) use ($run) {
+            $attachment->fields([
+                'Total' => $run->total_rows,
+                'Success' => $run->successful_rows,
+                'Failed' => $run->failed_rows,
+            ]);
+        });
 }
 ```
 
-### `LaravelIngest\Events\ChunkProcessed`
-Fired by a background job after it finishes processing a chunk of rows.
+### 2. Create the Listener
 
--   `$ingestRun`: The `IngestRun` Eloquent model.
--   `$results` (array): An array with statistics for the processed chunk, e.g., `['processed' => 100, 'successful' => 98, 'failed' => 2]`.
-
-```php
-// app/Listeners/LogChunkProgress.php
-use LaravelIngest\Events\ChunkProcessed;
-use Illuminate\Support\Facades\Log;
-
-public function handle(ChunkProcessed $event): void
-{
-    Log::info("Chunk processed for run #{$event->ingestRun->id}. " .
-              "Successful: {$event->results['successful']}.");
-}
+```bash
+php artisan make:listener SendImportSummaryListener
 ```
 
-### `LaravelIngest\Events\RowProcessed`
-Fired for *every single row* after it has been processed. This is a very powerful but potentially high-volume event.
-
--   `$ingestRun`: The `IngestRun` model.
--   `$status` (string): The result of the processing ('success' or 'failed').
--   `$originalData` (array): The raw data for the row from the source file.
--   `$model` (?Model): The created or updated Eloquent model instance on success, `null` on failure.
--   `$errors` (?array): An array of error details on failure, `null` on success.
-
-### `LaravelIngest\Events\IngestRunCompleted`
-Fired when the entire import batch successfully completes. This event is triggered from the `then()` callback of the Laravel Job Batch.
-
--   `$ingestRun`: The `IngestRun` Eloquent model, now with final statistics.
-
 ```php
-// app/Listeners/SendIngestCompletedNotification.php
+// app/Listeners/SendImportSummaryListener.php
+namespace App\Listeners;
+
 use LaravelIngest\Events\IngestRunCompleted;
+use App\Notifications\ImportCompletedNotification;
 
-public function handle(IngestRunCompleted $event): void
+class SendImportSummaryListener
 {
-    // Send a summary notification to the user
+    public function handle(IngestRunCompleted $event): void
+    {
+        $user = $event->ingestRun->user;
+
+        if ($user) {
+            $user->notify(new ImportCompletedNotification($event->ingestRun));
+        }
+    }
 }
 ```
 
-### `LaravelIngest\Events\IngestRunFailed`
-Fired when the import process fails. This can happen if a job in the batch throws an exception that isn't caught, or if an error occurs before the batch is even dispatched (e.g., the source file is not found).
+### 3. Register the Listener
 
--   `$ingestRun`: The `IngestRun` Eloquent model.
--   `$exception` (?Throwable): The exception that caused the failure, if available.
+In your `EventServiceProvider`:
 
 ```php
-// app/Listeners/AlertOnFailedIngest.php
-use LaravelIngest\Events\IngestRunFailed;
-use Illuminate\Support\Facades\Log;
+use LaravelIngest\Events\IngestRunCompleted;
+use App\Listeners\SendImportSummaryListener;
 
-public function handle(IngestRunFailed $event): void
-{
-    Log::critical("Ingest run #{$event->ingestRun->id} failed!", [
-        'error' => $event->exception?->getMessage()
-    ]);
-}
+protected $listen = [
+    IngestRunCompleted::class => [
+        SendImportSummaryListener::class,
+    ],
+];
 ```
+
+Now, every time an import finishes, the user who started it gets a notification!

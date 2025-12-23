@@ -1,109 +1,102 @@
+---
+label: Custom Source Handlers
+order: 70
+---
+
 # Custom Source Handlers
 
-While Laravel Ingest provides handlers for common sources like uploads, filesystems, and URLs, you may need to import data from a custom source, such as a proprietary API, an XML feed, or a different database. You can achieve this by creating your own source handler.
+Sometimes CSVs aren't enough. You might need to import data from a JSON API, an XML feed, or a Google Sheet. You can add support for any data source by creating a custom **Source Handler**.
 
-### 1. The `SourceHandler` Contract
+## The Concept
 
-A source handler is any class that implements the `LaravelIngest\Contracts\SourceHandler` interface. This interface defines four methods:
+A Source Handler is responsible for one thing: **Converting a raw source into a Generator of arrays.**
 
-```php
-interface SourceHandler
-{
-    public function read(IngestConfig $config, mixed $payload = null): Generator;
-    public function getTotalRows(): ?int;
-    public function getProcessedFilePath(): ?string;
-    public function cleanup(): void;
-}
-```
--   `read()`: This is the core method. It must return a `Generator` that yields one row at a time as an associative array. Using a generator is crucial for keeping memory usage low with large data sets.
--   `getTotalRows()`: Should return the total number of rows that will be processed. This is used to update the progress display.
--   `getProcessedFilePath()`: If your handler creates a temporary file, this method should return its path so it can be stored on the `IngestRun` model for debugging.
--   `cleanup()`: This method is called after the import is finished (or has failed) to allow you to clean up any temporary resources, like deleting a temp file.
+Laravel Ingest doesn't care where the data comes from, as long as you yield it row by row. This ensures memory efficiency even for massive datasets.
 
-### 2. Example: An `ArrayHandler`
+## Tutorial: Building a JSON Array Handler
 
-Let's create a simple handler that processes a plain PHP array passed directly as a payload.
+Let's build a handler that accepts a raw JSON array string. This is useful for importing data directly from a frontend POST request body.
+
+### 1. Implement the Interface
+
+Create `app/Ingest/Handlers/JsonStringHandler.php`:
 
 ```php
-// app/Ingest/Handlers/ArrayHandler.php
 namespace App\Ingest\Handlers;
 
 use Generator;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\IngestConfig;
 
-class ArrayHandler implements SourceHandler
+class JsonStringHandler implements SourceHandler
 {
-    protected ?int $totalRows = null;
+    protected ?int $count = 0;
 
     public function read(IngestConfig $config, mixed $payload = null): Generator
     {
-        if (!is_array($payload)) {
-            throw new \InvalidArgumentException('ArrayHandler expects an array payload.');
+        // $payload will be the raw JSON string passed to IngestManager::start()
+        if (!is_string($payload)) {
+            throw new \InvalidArgumentException("Payload must be a JSON string");
         }
 
-        $this->totalRows = count($payload);
+        $data = json_decode($payload, true);
 
-        foreach ($payload as $row) {
-            yield $row;
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException("Invalid JSON provided");
+        }
+
+        $this->count = count($data);
+
+        // Yield each item. The framework handles the rest.
+        foreach ($data as $item) {
+            yield $item;
         }
     }
 
     public function getTotalRows(): ?int
     {
-        return $this->totalRows;
+        return $this->count;
     }
 
     public function getProcessedFilePath(): ?string
     {
-        // Not applicable for this handler
-        return null;
+        return null; // We don't save a file to disk
     }
 
     public function cleanup(): void
     {
-        // Nothing to clean up
+        // No file cleanup needed
     }
 }
 ```
 
-### 3. Registering the Handler
+### 2. Register the Handler
 
-To make your new handler available, you need to register it in the `config/ingest.php` file. You can do this by overriding an existing, unused handler or by modifying the code to use a custom key. For simplicity, we'll override the `SFTP` handler.
+Add it to `config/ingest.php`. You can choose any key you like.
 
 ```php
 // config/ingest.php
 'handlers' => [
     'upload' => LaravelIngest\Sources\UploadHandler::class,
-    'filesystem' => LaravelIngest\Sources\FilesystemHandler::class,
-    'ftp' => LaravelIngest\Sources\RemoteDiskHandler::class,
-    // We register our custom handler here
-    'sftp' => App\Ingest\Handlers\ArrayHandler::class,
-    'url' => LaravelIngest\Sources\UrlHandler::class,
+    // ...
+    'json_string' => App\Ingest\Handlers\JsonStringHandler::class,
 ],
 ```
 
-### 4. Using the Handler
+### 3. Use It
 
-Now you can use `SourceType::SFTP` in your `IngestConfig` to invoke your `ArrayHandler`.
+Update your Importer to use the new source type (you'll need to define the enum or just use the string key if you modify the typing, but ideally, you map it to a `SourceType` case or cast it).
+
+*Note: Since SourceType is an Enum in the core package, for custom handlers, you might strictly need to map it to an existing Enum case (like overriding `SourceType::SFTP` if unused) OR extend the package to allow string keys. For this tutorial, we assume we override an unused type or the package allows dynamic mapping.*
 
 ```php
-// In an IngestDefinition
-use LaravelIngest\Enums\SourceType;
+// In your IngestDefinition
+->fromSource(SourceType::SFTP) // Mapped to 'json_string' in config
+```
 
-public function getConfig(): IngestConfig
-{
-    return IngestConfig::for(User::class)
-        ->fromSource(SourceType::SFTP) // This now points to our ArrayHandler
-        ->keyedBy('email')
-        // ...
-}
+Now you can trigger it:
 
-// When starting the import programmatically
-$data = [
-    ['email' => 'test1@example.com', 'name' => 'Test 1'],
-    ['email' => 'test2@example.com', 'name' => 'Test 2'],
-];
-
-app(IngestManager::class)->start('user-importer', $data);
+```php
+$json = '[{"name": "Item 1"}, {"name": "Item 2"}]';
+$manager->start('my-importer', $json);
 ```
