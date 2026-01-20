@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.819808859850">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.819808859850" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.819808859850" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -278,26 +278,28 @@ php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot; 
   https://myapp.com/api/v1/ingest/trigger/daily-stock-importer</code></pre>
 </doc-codeblock></div>
 <hr>
-<doc-anchor-target id="3-programmatically">
+<doc-anchor-target id="3-programmatically-facade">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-programmatically">#</doc-anchor-trigger>
-        <span>3. Programmatically</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-programmatically-facade">#</doc-anchor-trigger>
+        <span>3. Programmatically (Facade)</span>
     </h3>
 </doc-anchor-target>
-<p>You can start an import directly from your application code by using the <code v-pre>IngestManager</code>. This is useful for complex workflows, scheduled jobs, or custom controllers.</p>
+<p>You can start an import directly from your application code using the <code v-pre>Ingest</code> Facade. This is useful for complex workflows, scheduled jobs, or custom controllers.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\IngestManager;
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
 use Illuminate\Support\Facades\Auth;
-
-// Resolve the manager from the service container
-$ingestManager = app(IngestManager::class);
 
 $slug = 'product-importer';
 $filePath = 'imports/products.csv'; // Path on a configured disk
 $user = Auth::user();
 
 // Start the import
-$ingestRun = $ingestManager-&gt;start($slug, $filePath, $user);
+$ingestRun = Ingest::start(
+    importer: $slug, 
+    payload: $filePath, 
+    user: $user,
+    isDryRun: false
+);
 
 // $ingestRun is the Eloquent model for the newly created run.
 echo &quot;Started ingest run with ID: &quot; . $ingestRun-&gt;id;</code></pre>
@@ -339,7 +341,7 @@ echo &quot;Started ingest run with ID: &quot; . $ingestRun-&gt;id;</code></pre>
                                     <ul class="flex flex-wrap items-center text-sm">
                                     </ul>
                                 </div>
-                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2025. All rights reserved.</p></div>
+                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
                             </footer>
                         </div>
                     </div>

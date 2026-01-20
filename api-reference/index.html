@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.819808859850">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../resources/css/retype.css?v=3.11.0.819808859850" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.819808859850" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -201,7 +201,7 @@
         <span>API Reference</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with <code v-pre>/api/v1/ingest</code>.</p>
+<p>Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with <code v-pre>/api/v1/ingest</code> (configurable via <code v-pre>config/ingest.php</code>).</p>
 <doc-anchor-target id="authentication">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#authentication">#</doc-anchor-trigger>
@@ -256,7 +256,7 @@
 <li><strong>Endpoint:</strong> <code v-pre>POST /upload/{importerSlug}</code></li>
 <li><strong>URL Parameters:</strong>
 <ul>
-<li><code v-pre>importerSlug</code> (string, required): The slug of the importer definition.</li>
+<li><code v-pre>importerSlug</code> (string, required): The slug of the importer definition (e.g., <code v-pre>user-importer</code>).</li>
 </ul>
 </li>
 <li><strong>Body (<code v-pre>multipart/form-data</code>):</strong>
@@ -405,7 +405,7 @@
                                     <ul class="flex flex-wrap items-center text-sm">
                                     </ul>
                                 </div>
-                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2025. All rights reserved.</p></div>
+                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
                             </footer>
                         </div>
                     </div>

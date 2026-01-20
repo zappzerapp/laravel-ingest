@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.819808859850">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.819808859850" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.819808859850" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.819808859850" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -230,7 +230,7 @@
 </doc-anchor-target>
 <p>This handler reads a file directly from one of your configured Laravel filesystem disks (e.g., <code v-pre>local</code>, <code v-pre>s3</code>). It&#x27;s ideal for imports triggered by console commands or scheduled jobs.</p>
 <ul>
-<li><strong>Payload:</strong> The path to the file can be passed as a string payload to the <code v-pre>IngestManager::start()</code> method, which is what the <code v-pre>ingest:run --file=...</code> command does.</li>
+<li><strong>Payload:</strong> The path to the file can be passed as a string payload to the <code v-pre>Ingest::start()</code> method (or via CLI <code v-pre>--file</code> argument).</li>
 <li><strong>Options:</strong>
 <ul>
 <li><code v-pre>path</code> (string): The default path to the file if no payload is provided.</li>
@@ -239,10 +239,10 @@
 </li>
 </ul>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig for a command-triggered import
--&gt;fromSource(SourceType::FILESYSTEM) // Path is provided via --file option
+<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig for a command-triggered import where path is dynamic
+-&gt;fromSource(SourceType::FILESYSTEM) 
 
-// IngestConfig for a hardcoded path
+// IngestConfig for a hardcoded path (e.g. nightly cron)
 -&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; 'imports/daily-products.csv', 'disk' =&gt; 's3'])</code></pre>
 </doc-codeblock></div>
 <hr>
@@ -277,8 +277,8 @@
 <li><strong>Payload:</strong> None.</li>
 <li><strong>Options:</strong>
 <ul>
-<li><code v-pre>disk</code> (string): The name of the FTP/SFTP disk configured in <code v-pre>config/filesystems.php</code>.</li>
-<li><code v-pre>path</code> (string): The path to the file on the remote server.</li>
+<li><code v-pre>disk</code> (string): <strong>Required.</strong> The name of the FTP/SFTP disk configured in <code v-pre>config/filesystems.php</code>.</li>
+<li><code v-pre>path</code> (string): <strong>Required.</strong> The path to the file on the remote server.</li>
 </ul>
 </li>
 </ul>
@@ -353,7 +353,7 @@
                                     <ul class="flex flex-wrap items-center text-sm">
                                     </ul>
                                 </div>
-                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2025. All rights reserved.</p></div>
+                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
                             </footer>
                         </div>
                     </div>
