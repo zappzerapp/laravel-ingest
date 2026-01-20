@@ -50,11 +50,18 @@ class IngestManager
         $config = $definition->getConfig();
         $sourceHandler = $this->sourceHandlerFactory->make($config->sourceType);
 
+        $originalFilename = null;
+        if ($payload instanceof UploadedFile) {
+            $originalFilename = $payload->getClientOriginalName();
+        } elseif (is_string($payload)) {
+            $originalFilename = basename($payload);
+        }
+
         $ingestRun = IngestRun::create([
             'importer' => $importer,
             'user_id' => $user?->getAuthIdentifier(),
             'status' => IngestStatus::PROCESSING,
-            'original_filename' => $payload instanceof UploadedFile ? $payload->getClientOriginalName() : null,
+            'original_filename' => $originalFilename,
         ]);
 
         IngestRunStarted::dispatch($ingestRun);

@@ -10,10 +10,34 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Database\Factories\IngestRunFactory;
 use LaravelIngest\Enums\IngestStatus;
 
+/**
+ * @property int $id
+ * @property int|null $parent_id
+ * @property int|null $retried_from_run_id
+ * @property string $importer
+ * @property int|null $user_id
+ * @property IngestStatus $status
+ * @property string|null $batch_id
+ * @property string|null $original_filename
+ * @property string|null $processed_filepath
+ * @property int $total_rows
+ * @property int $processed_rows
+ * @property int $successful_rows
+ * @property int $failed_rows
+ * @property array|null $summary
+ * @property Carbon|null $completed_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User|null $user
+ * @property-read IngestRun|null $parent
+ *
+ * @method static IngestRunFactory factory(...$parameters)
+ */
 class IngestRun extends Model
 {
     use HasFactory;

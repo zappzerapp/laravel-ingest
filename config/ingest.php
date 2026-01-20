@@ -23,6 +23,8 @@ return [
 
     'log_rows' => true,
 
+    'prune_days' => 30,
+
     'handlers' => [
         'upload' => LaravelIngest\Sources\UploadHandler::class,
         'filesystem' => LaravelIngest\Sources\FilesystemHandler::class,

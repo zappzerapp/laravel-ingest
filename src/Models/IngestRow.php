@@ -43,7 +43,9 @@ class IngestRow extends Model
      */
     public function prunable(): Builder
     {
-        return static::where('created_at', '<=', now()->subMonth());
+        $days = config('ingest.prune_days', 30);
+
+        return static::where('created_at', '<=', now()->subDays($days));
     }
 
     public function ingestRun(): BelongsTo
