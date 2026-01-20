@@ -3,6 +3,15 @@
 declare(strict_types=1);
 
 return [
+    'path' => 'api/v1/ingest',
+    'domain' => null,
+
+    'middleware' => ['api'],
+
+    'importers' => [
+        // 'user-importer' => App\Ingest\UserImporter::class,
+    ],
+
     'chunk_size' => 100,
 
     'queue' => [

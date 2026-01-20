@@ -7,7 +7,7 @@ use LaravelIngest\Models\IngestRun;
 
 it('shows the status of a specific ingest run', function () {
     $run = IngestRun::factory()->create([
-        'importer_slug' => 'user-importer',
+        'importer' => 'user-importer',
         'status' => IngestStatus::COMPLETED,
         'total_rows' => 100,
         'processed_rows' => 100,
@@ -52,6 +52,6 @@ it('shows a progress bar for a processing run', function () {
     ]);
 
     $this->artisan('ingest:status', ['ingestRun' => $run->id])
-        ->expectsOutputToContain('25%') // The progress bar component will output the percentage
+        ->expectsOutputToContain('25%')
         ->assertExitCode(0);
 });

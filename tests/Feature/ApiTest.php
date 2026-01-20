@@ -34,7 +34,7 @@ it('can upload a file and start an ingest run', function () {
         ->assertJsonPath('data.status', IngestStatus::PROCESSING->value);
 
     Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1
-            && $batch->jobs->first() instanceof ProcessIngestChunkJob);
+        && $batch->jobs->first() instanceof ProcessIngestChunkJob);
 
     $dispatchedBatches = Bus::dispatchedBatches();
     $batch = $dispatchedBatches[0];
@@ -53,7 +53,7 @@ it('can upload a file and start an ingest run', function () {
 });
 
 it('returns a list of ingest runs', function () {
-    IngestRun::factory()->count(3)->create(['importer_slug' => 'userimporter']);
+    IngestRun::factory()->count(3)->create(['importer' => 'userimporter']);
 
     $this->getJson('/api/v1/ingest')
         ->assertOk()
@@ -105,7 +105,7 @@ it('can cancel an ingest run via api', function () {
 it('can retry a failed ingest run via api', function () {
     Bus::fake();
     $originalRun = IngestRun::factory()->create([
-        'importer_slug' => 'userimporter',
+        'importer' => 'userimporter',
         'failed_rows' => 1,
     ]);
     IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);

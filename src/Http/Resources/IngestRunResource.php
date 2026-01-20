@@ -18,7 +18,7 @@ class IngestRunResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'importer' => $this->importer_slug,
+            'importer' => $this->importer,
             'status' => $this->status,
             'user_id' => $this->user_id,
             'original_filename' => $this->original_filename,

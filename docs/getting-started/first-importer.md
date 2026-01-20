@@ -29,7 +29,10 @@ class UserImporter implements IngestDefinition
             ->map('full_name', 'name')
             ->map('user_email', 'email')
             ->mapAndTransform('is_admin', 'is_admin', fn($value) => $value === 'yes')
-            ->validateWithModelRules();
+            ->validate([
+                'full_name' => 'required|string',
+                'user_email' => 'required|email'
+            ]);
     }
 }
 ```
@@ -42,7 +45,7 @@ This configuration tells Laravel Ingest to:
 5.  Map the CSV column `full_name` to the `name` attribute on the model.
 6.  Map `user_email` to `email`.
 7.  Map `is_admin` to `is_admin`, transforming the value "yes" into a boolean.
-8.  Use validation rules defined on the `User` model.
+8.  Validate the incoming data using the provided rules.
 
 ### 2. Register the Importer
 

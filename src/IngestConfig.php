@@ -6,6 +6,7 @@ namespace LaravelIngest;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
@@ -70,14 +71,20 @@ class IngestConfig
 
     public function map(string $sourceField, string $modelAttribute): self
     {
-        $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => null];
+        $this->mappings[$sourceField] = [
+            'attribute' => $modelAttribute,
+            'transformer' => null,
+        ];
 
         return $this;
     }
 
     public function mapAndTransform(string $sourceField, string $modelAttribute, Closure $transformer): self
     {
-        $this->mappings[$sourceField] = ['attribute' => $modelAttribute, 'transformer' => new SerializableClosure($transformer)];
+        $this->mappings[$sourceField] = [
+            'attribute' => $modelAttribute,
+            'transformer' => new SerializableClosure($transformer),
+        ];
 
         return $this;
     }
@@ -132,6 +139,7 @@ class IngestConfig
         return $this;
     }
 
+    /** @throws PhpVersionNotSupportedException */
     public function beforeRow(Closure $callback): self
     {
         $this->beforeRowCallback = new SerializableClosure($callback);
@@ -139,6 +147,7 @@ class IngestConfig
         return $this;
     }
 
+    /** @throws PhpVersionNotSupportedException */
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);

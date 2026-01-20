@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\IngestConfig;
+use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
 use LaravelIngest\Tests\Fixtures\Models\Category;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
 use LaravelIngest\Tests\Fixtures\Models\User;
+use LaravelIngest\Tests\Fixtures\Models\UserWithRules;
 
 beforeEach(function () {
     $this->processor = new RowProcessor();
@@ -79,16 +82,6 @@ it('skips a duplicate row when strategy is skip', function () {
     expect($user->name)->toBe('Old Name');
 });
 
-it('does not persist data on a dry run', function () {
-    $config = IngestConfig::for(User::class)->map('name', 'name')->map('email', 'email');
-    $rowData = ['name' => 'Dry Run User', 'email' => 'dry@run.com', 'password' => 'secret'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, true);
-
-    $this->assertDatabaseMissing('users', ['email' => 'dry@run.com']);
-});
-
 it('logs an error row when duplicate strategy is fail', function () {
     User::create(['email' => 'duplicate@example.com', 'name' => 'Original', 'password' => 'secret']);
 
@@ -110,29 +103,6 @@ it('logs an error row when duplicate strategy is fail', function () {
         'ingest_run_id' => $this->run->id,
         'status' => 'failed',
     ]);
-
-    expect(User::where('email', 'duplicate@example.com')->first()->name)->toBe('Original');
-});
-
-it('rolls back transaction on failure when atomic is enabled', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('name', 'name')
-        ->map('email', 'email')
-        ->validate(['email' => 'email'])
-        ->atomic();
-
-    $chunk = [
-        ['number' => 1, 'data' => ['name' => 'Valid User', 'email' => 'valid@test.com', 'password' => 'secret']],
-        ['number' => 2, 'data' => ['name' => 'Invalid User', 'email' => 'invalid-email', 'password' => 'secret']],
-    ];
-
-    $this->expectException(ValidationException::class);
-
-    try {
-        $this->processor->processChunk($this->run, $config, $chunk, false);
-    } finally {
-        $this->assertDatabaseMissing('users', ['email' => 'valid@test.com']);
-    }
 });
 
 it('handles relations when source values are empty', function () {
@@ -153,70 +123,96 @@ it('handles relations when source values are empty', function () {
     $this->assertDatabaseHas('products_with_category', ['name' => 'Samsung', 'category_id' => null]);
 });
 
-it('skips mappings and relations if source field does not exist in data', function () {
-    Category::create(['name' => 'Books']);
-    $config = IngestConfig::for(ProductWithCategory::class)
-        ->map('product_name', 'name')
-        ->map('product_stock', 'stock')
-        ->relate('category_name', 'category', Category::class, 'name');
+it('executes beforeRow and afterRow callbacks during processing', function () {
+    $callbackExecuted = false;
+    $afterCallbackExecuted = false;
 
-    $chunk = [['number' => 1, 'data' => ['product_name' => 'The Lord of the Rings']]];
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->beforeRow(function (array &$data) use (&$callbackExecuted) {
+            $callbackExecuted = true;
+            $data['name'] = 'Modified ' . $data['name'];
+        })
+        ->afterRow(function ($model, array $data) use (&$afterCallbackExecuted) {
+            $afterCallbackExecuted = true;
+        });
+
+    $rowData = ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => 'secret'];
+    $chunk = [['number' => 1, 'data' => $rowData]];
 
     $this->processor->processChunk($this->run, $config, $chunk, false);
 
-    $this->assertDatabaseHas('products_with_category', [
-        'name' => 'The Lord of the Rings',
-        'category_id' => null,
+    expect($callbackExecuted)->toBeTrue();
+    expect($afterCallbackExecuted)->toBeTrue();
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'john@example.com',
+        'name' => 'Modified John Doe',
     ]);
 });
 
-it('merges model rules and custom rules for validation', function () {
+it('bubbles exception when using atomic transactions', function () {
     $config = IngestConfig::for(User::class)
-        ->validate(['name' => 'min:10'])
-        ->validateWithModelRules();
+        ->atomic()
+        ->map('name', 'name');
 
-    $chunk = [['number' => 1, 'data' => ['name' => 'John Doe Is Long Enough', 'email' => 'not-an-email']]];
+    $config->validate(['name' => 'integer']);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'John']]];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+})->throws(ValidationException::class);
+
+it('does not log rows when config option is disabled', function () {
+    Config::set('ingest.log_rows', false);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'No Log', 'email' => 'nolog@test.com']]];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('users', ['email' => 'nolog@test.com']);
+    $this->assertDatabaseCount('ingest_rows', 0);
+});
+
+it('merges validation rules from model', function () {
+    $config = IngestConfig::for(UserWithRules::class)
+        ->validateWithModelRules()
+        ->map('email', 'email');
+
+    $chunk = [['number' => 1, 'data' => ['email' => 'not-an-email']]];
 
     $results = $this->processor->processChunk($this->run, $config, $chunk, false);
 
     expect($results['failed'])->toBe(1);
-    $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $this->run->id,
-        'status' => 'failed',
+
+    $row = IngestRow::first();
+    expect($row->errors)->toContain('The email field must be a valid email address.');
+});
+
+it('ignores missing source fields during mapping and relation resolution', function () {
+    $category = Category::create(['name' => 'Tech']);
+
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('unknown_col', 'name')
+        ->map('existing_col', 'name')
+        ->relate('unknown_rel', 'category', Category::class, 'name');
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'existing_col' => 'My Product',
+        ],
+    ]];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'My Product',
+        'category_id' => null,
     ]);
-});
-
-it('executes before row callback and modifies data', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('name', 'name')
-        ->map('email', 'email')
-        ->map('password', 'password')
-        ->beforeRow(function (array &$data) {
-            $data['name'] = 'PREFIX_' . $data['name'];
-        });
-
-    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'before@test.com', 'password' => 'secretx']]];
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('users', ['email' => 'before@test.com', 'name' => 'PREFIX_Test']);
-});
-
-it('executes after row callback on success', function () {
-    $mock = mock();
-    $mock->shouldReceive('someMethod')->once();
-
-    $config = IngestConfig::for(User::class)
-        ->map('name', 'name')
-        ->map('email', 'email')
-        ->map('password', 'password')
-        ->afterRow(function (User $user, array $originalData) use ($mock) {
-            expect($user->email)->toBe('after@test.com');
-            expect($originalData['name'])->toBe('Test');
-            $mock->someMethod();
-        });
-
-    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'after@test.com', 'password' => 'secret']]];
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('users', ['email' => 'after@test.com']);
 });

@@ -162,7 +162,7 @@ it('handles a failed batch during a retry run', function () {
     Event::fake();
     Bus::fake();
 
-    $originalRun = IngestRun::factory()->create(['importer_slug' => 'userimporter', 'failed_rows' => 1]);
+    $originalRun = IngestRun::factory()->create(['importer' => 'userimporter', 'failed_rows' => 1]);
     IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
     $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
@@ -184,7 +184,7 @@ it('completes a retry run immediately if cursor returns empty', function () {
     Event::fake();
     Bus::fake();
 
-    $originalRun = IngestRun::factory()->create(['importer_slug' => 'userimporter', 'failed_rows' => 1]);
+    $originalRun = IngestRun::factory()->create(['importer' => 'userimporter', 'failed_rows' => 1]);
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
     $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
 
@@ -219,7 +219,7 @@ it('creates multiple jobs when retrying rows that exceed chunk size', function (
     $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['multiretry' => $definition], app(SourceHandlerFactory::class));
 
-    $originalRun = IngestRun::factory()->create(['importer_slug' => 'multiretry', 'failed_rows' => 3]);
+    $originalRun = IngestRun::factory()->create(['importer' => 'multiretry', 'failed_rows' => 3]);
     IngestRow::factory()->count(3)->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
 
     $manager->retry($originalRun);
@@ -231,7 +231,7 @@ it('handles a successful batch for a retry run', function () {
     Event::fake();
     Bus::fake();
 
-    $originalRun = IngestRun::factory()->create(['importer_slug' => 'userimporter', 'failed_rows' => 1]);
+    $originalRun = IngestRun::factory()->create(['importer' => 'userimporter', 'failed_rows' => 1]);
     IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
     $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
@@ -250,7 +250,7 @@ it('handles a successful batch for a retry run', function () {
 it('handles an exception during retry setup', function () {
     Event::fake();
     $manager = new IngestManager([], app(SourceHandlerFactory::class));
-    $originalRun = IngestRun::factory()->create(['importer_slug' => 'unknown-importer', 'failed_rows' => 1]);
+    $originalRun = IngestRun::factory()->create(['importer' => 'unknown-importer', 'failed_rows' => 1]);
 
     try {
         $manager->retry($originalRun);
@@ -269,7 +269,7 @@ it('corrects total rows count on retry if it mismatches actual failed rows', fun
     Bus::fake();
 
     $originalRun = IngestRun::factory()->create([
-        'importer_slug' => 'userimporter',
+        'importer' => 'userimporter',
         'failed_rows' => 5,
     ]);
     IngestRow::factory()->count(3)->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);

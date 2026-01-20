@@ -19,7 +19,7 @@ class IngestRowFactory extends Factory
             'ingest_run_id' => IngestRun::factory(),
             'row_number' => $this->faker->numberBetween(1, 1000),
             'status' => IngestStatus::PENDING->value,
-            'data' => json_encode(['email' => $this->faker->email]),
+            'data' => ['user_email' => $this->faker->email],
             'errors' => null,
         ];
     }

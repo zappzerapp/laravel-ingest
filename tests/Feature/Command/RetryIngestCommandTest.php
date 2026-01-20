@@ -14,7 +14,7 @@ it('can retry a failed ingest run', function () {
     $this->app->tag([UserImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
 
     $originalRun = IngestRun::factory()->create([
-        'importer_slug' => 'userimporter',
+        'importer' => 'userimporter',
         'failed_rows' => 2,
     ]);
     IngestRow::factory()->create([
@@ -38,9 +38,7 @@ it('can retry a failed ingest run', function () {
     expect($newRun)->not()->toBeNull();
     expect($newRun->total_rows)->toBe(2);
 
-    Bus::assertBatched(function ($batch) {
-        return $batch->jobs->count() === 1; // Both rows in one chunk
-    });
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1);
 });
 
 it('can retry a failed ingest run in dry-run mode', function () {
@@ -48,7 +46,7 @@ it('can retry a failed ingest run in dry-run mode', function () {
     $this->app->tag([UserImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
 
     $originalRun = IngestRun::factory()->create([
-        'importer_slug' => 'userimporter',
+        'importer' => 'userimporter',
         'failed_rows' => 1,
     ]);
     IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
@@ -64,7 +62,6 @@ it('can retry a failed ingest run in dry-run mode', function () {
     Bus::assertBatched(function ($batch) {
         $job = $batch->jobs->first();
 
-        // Assert that the flag is correctly passed down to the job
         return $job->isDryRun === true;
     });
 });
@@ -74,7 +71,7 @@ it('shows a warning if there are no failed rows to retry', function () {
 
     $this->artisan('ingest:retry', ['ingestRun' => $run->id])
         ->expectsOutputToContain('The original run has no failed rows to retry.')
-        ->assertExitCode(0); // It's a warning, not an error
+        ->assertExitCode(0);
 });
 
 it('shows an error if the original run does not exist', function () {

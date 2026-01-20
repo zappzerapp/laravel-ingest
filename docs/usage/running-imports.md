@@ -57,23 +57,25 @@ curl -X POST \
 
 ---
 
-### 3. Programmatically
+### 3. Programmatically (Facade)
 
-You can start an import directly from your application code by using the `IngestManager`. This is useful for complex workflows, scheduled jobs, or custom controllers.
+You can start an import directly from your application code using the `Ingest` Facade. This is useful for complex workflows, scheduled jobs, or custom controllers.
 
 ```php
-use LaravelIngest\IngestManager;
+use LaravelIngest\Facades\Ingest;
 use Illuminate\Support\Facades\Auth;
-
-// Resolve the manager from the service container
-$ingestManager = app(IngestManager::class);
 
 $slug = 'product-importer';
 $filePath = 'imports/products.csv'; // Path on a configured disk
 $user = Auth::user();
 
 // Start the import
-$ingestRun = $ingestManager->start($slug, $filePath, $user);
+$ingestRun = Ingest::start(
+    importer: $slug, 
+    payload: $filePath, 
+    user: $user,
+    isDryRun: false
+);
 
 // $ingestRun is the Eloquent model for the newly created run.
 echo "Started ingest run with ID: " . $ingestRun->id;

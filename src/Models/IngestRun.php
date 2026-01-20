@@ -10,37 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Bus;
 use LaravelIngest\Database\Factories\IngestRunFactory;
 use LaravelIngest\Enums\IngestStatus;
 
-/**
- * @property int $id
- * @property string $importer_slug
- * @property int|null $user_id
- * @property IngestStatus $status
- * @property string|null $batch_id
- * @property string|null $original_filename
- * @property string|null $processed_filepath
- * @property int $total_rows
- * @property int $processed_rows
- * @property int $successful_rows
- * @property int $failed_rows
- * @property array|null $summary
- * @property Carbon|null $completed_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
- * @property int|null $retried_from_run_id
- * @property-read User|null $user
- * @property-read \Illuminate\Database\Eloquent\Collection<int, IngestRow> $rows
- * @property-read IngestRun|null $originalRun
- *
- * @method static IngestRunFactory factory(...$parameters)
- */
 class IngestRun extends Model
 {
-    /** @use HasFactory<IngestRunFactory> */
     use HasFactory;
 
     protected $table = 'ingest_runs';
@@ -53,10 +28,24 @@ class IngestRun extends Model
 
     public function user(): BelongsTo
     {
-        /** @var class-string<User> $userModelClass */
-        $userModelClass = $this->getUserModelClass();
+        $userModelClass = (string) config('auth.providers.users.model', User::class);
 
         return $this->belongsTo($userModelClass, 'user_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function rows(): HasMany
+    {
+        return $this->hasMany(IngestRow::class);
+    }
+
+    public function batch(): ?Batch
+    {
+        return $this->batch_id ? Bus::findBatch($this->batch_id) : null;
     }
 
     public function finalize(): void
@@ -74,28 +63,8 @@ class IngestRun extends Model
         ]);
     }
 
-    public function rows(): HasMany
-    {
-        return $this->hasMany(IngestRow::class);
-    }
-
-    public function originalRun(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'retried_from_run_id');
-    }
-
-    public function batch(): ?Batch
-    {
-        return $this->batch_id ? Bus::findBatch($this->batch_id) : null;
-    }
-
     protected static function newFactory(): IngestRunFactory
     {
         return IngestRunFactory::new();
-    }
-
-    private function getUserModelClass(): string
-    {
-        return (string) config('auth.providers.users.model', User::class);
     }
 }

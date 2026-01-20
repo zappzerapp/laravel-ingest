@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use JsonException;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
@@ -24,6 +26,11 @@ class RowProcessor
     {
         $relationCache = $this->prefetchRelations($chunk, $config);
 
+        /**
+         * @throws Throwable
+         * @throws PhpVersionNotSupportedException
+         * @throws JsonException
+         */
         $processLogic = function () use ($ingestRun, $config, $chunk, $isDryRun, $relationCache) {
             $results = ['processed' => 0, 'successful' => 0, 'failed' => 0];
             $rowsToLog = [];
@@ -69,7 +76,7 @@ class RowProcessor
             }
 
             if (!empty($rowsToLog) && config('ingest.log_rows')) {
-                IngestRow::insert($rowsToLog);
+                IngestRow::toBase()->insert($rowsToLog);
             }
 
             return $results;
@@ -92,7 +99,7 @@ class RowProcessor
             }
 
             $relatedModelClass = $relationConfig['model'];
-            $relatedInstance = new $relatedModelClass();
+            $relatedInstance = app($relatedModelClass);
             $pkName = $relatedInstance->getKeyName();
             $lookupKey = $relationConfig['key'];
 
@@ -106,8 +113,9 @@ class RowProcessor
     private function validate(array $data, IngestConfig $config): void
     {
         $rules = $config->validationRules;
+
         if ($config->useModelRules && method_exists($config->model, 'getRules')) {
-            $rules = array_merge($rules, $config->model::getRules());
+            $rules = array_merge($config->model::getRules(), $rules);
         }
 
         if (!empty($rules)) {
@@ -136,7 +144,7 @@ class RowProcessor
                 continue;
             }
 
-            $modelInstance = new $config->model();
+            $modelInstance = app($config->model);
             $relationValue = $processedData[$sourceField];
             $relatedId = null;
 
@@ -150,7 +158,7 @@ class RowProcessor
         }
 
         $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations);
-        $modelInstance = new $config->model();
+        $modelInstance = app($config->model);
         foreach ($unmappedData as $key => $value) {
             if ($modelInstance->isFillable($key)) {
                 $modelData[$key] = $value;

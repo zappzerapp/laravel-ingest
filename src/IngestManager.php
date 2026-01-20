@@ -14,6 +14,7 @@ use LaravelIngest\Events\IngestRunCompleted;
 use LaravelIngest\Events\IngestRunFailed;
 use LaravelIngest\Events\IngestRunStarted;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
+use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
@@ -33,18 +34,24 @@ class IngestManager
         return $this->definitions;
     }
 
+    /**
+     * @throws Throwable
+     * @throws InvalidConfigurationException
+     * @throws DefinitionNotFoundException
+     * @throws SourceException
+     */
     public function start(
-        string $importerSlug,
+        string $importer,
         mixed $payload = null,
         ?Authenticatable $user = null,
         bool $isDryRun = false
     ): IngestRun {
-        $definition = $this->getDefinition($importerSlug);
+        $definition = $this->getDefinition($importer);
         $config = $definition->getConfig();
         $sourceHandler = $this->sourceHandlerFactory->make($config->sourceType);
 
         $ingestRun = IngestRun::create([
-            'importer_slug' => $importerSlug,
+            'importer' => $importer,
             'user_id' => $user?->getAuthIdentifier(),
             'status' => IngestStatus::PROCESSING,
             'original_filename' => $payload instanceof UploadedFile ? $payload->getClientOriginalName() : null,
@@ -60,77 +67,13 @@ class IngestManager
                 'processed_filepath' => $sourceHandler->getProcessedFilePath(),
             ]);
 
-            $batchJobs = [];
-            $chunk = [];
-            $rowCounter = 1;
-
-            $headersChecked = false;
-
-            foreach ($rowGenerator as $row) {
-                if (!$headersChecked && $config->keyedBy) {
-                    if (!array_key_exists($config->keyedBy, $row)) {
-                        throw new SourceException("The key column '{$config->keyedBy}' was not found in the source file headers.");
-                    }
-                    $headersChecked = true;
-                }
-
-                $chunk[] = ['number' => $rowCounter++, 'data' => $row];
-
-                if (count($chunk) >= $config->chunkSize) {
-                    $batchJobs[] = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
-                    $chunk = [];
-                }
-            }
-
-            if (!empty($chunk)) {
-                $batchJobs[] = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
-            }
-
-            if (empty($batchJobs)) {
-                $ingestRun->finalize();
-                IngestRunCompleted::dispatch($ingestRun);
+            $this->dispatchBatch($ingestRun, $config, $rowGenerator, $isDryRun, function () use ($sourceHandler) {
                 $sourceHandler->cleanup();
-
-                return $ingestRun;
-            }
-
-            $queueConnection = Config::get('ingest.queue.connection');
-            $queueName = Config::get('ingest.queue.name');
-
-            $batch = Bus::batch($batchJobs)
-                ->then(function () use ($ingestRun, $sourceHandler) {
-                    $ingestRun->finalize();
-                    $sourceHandler->cleanup();
-                    IngestRunCompleted::dispatch($ingestRun);
-                })
-                ->catch(function (Throwable $e) use ($ingestRun, $sourceHandler) {
-                    $ingestRun->update(['status' => IngestStatus::FAILED]);
-                    $sourceHandler->cleanup();
-                    IngestRunFailed::dispatch($ingestRun, $e);
-                })
-                ->onConnection($queueConnection)
-                ->onQueue($queueName)
-                ->dispatch();
-
-            $ingestRun->update(['batch_id' => $batch->id]);
+            });
 
         } catch (Throwable $e) {
-            $summary = [
-                'error' => $e->getMessage(),
-                'exception' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ];
-
-            $ingestRun->update([
-                'status' => IngestStatus::FAILED,
-                'summary' => $summary,
-            ]);
-
+            $this->handleFailure($ingestRun, $e);
             $sourceHandler->cleanup();
-
-            IngestRunFailed::dispatch($ingestRun, $e);
             throw $e;
         }
 
@@ -138,9 +81,10 @@ class IngestManager
     }
 
     /**
+     * @throws Throwable
      * @throws DefinitionNotFoundException
      * @throws NoFailedRowsException
-     * @throws Throwable
+     * @throws SourceException
      */
     public function retry(IngestRun $originalRun, ?Authenticatable $user = null, bool $isDryRun = false): IngestRun
     {
@@ -149,8 +93,9 @@ class IngestManager
         }
 
         $newRun = IngestRun::create([
+            'parent_id' => $originalRun->id,
             'retried_from_run_id' => $originalRun->id,
-            'importer_slug' => $originalRun->importer_slug,
+            'importer' => $originalRun->importer,
             'user_id' => $user?->getAuthIdentifier(),
             'status' => IngestStatus::PROCESSING,
             'original_filename' => $originalRun->original_filename,
@@ -160,76 +105,25 @@ class IngestManager
         IngestRunStarted::dispatch($newRun);
 
         try {
-            $definition = $this->getDefinition($originalRun->importer_slug);
+            $definition = $this->getDefinition($originalRun->importer);
             $config = $definition->getConfig();
 
-            $failedRowsCursor = $originalRun->rows()->where('status', 'failed')->cursor();
+            $failedRowsCursor = $originalRun->rows()
+                ->where('status', 'failed')
+                ->cursor()
+                ->map(fn($row) => $row->data);
 
-            $batchJobs = [];
-            $chunk = [];
-            $rowCounter = 1;
+            $this->dispatchBatch($newRun, $config, $failedRowsCursor, $isDryRun);
 
-            foreach ($failedRowsCursor as $failedRow) {
-                $chunk[] = ['number' => $rowCounter++, 'data' => $failedRow->data];
-                if (count($chunk) >= $config->chunkSize) {
-                    $batchJobs[] = new ProcessIngestChunkJob($newRun, $config, $chunk, $isDryRun);
-                    $chunk = [];
-                }
-            }
-            if (!empty($chunk)) {
-                $batchJobs[] = new ProcessIngestChunkJob($newRun, $config, $chunk, $isDryRun);
-            }
-
-            if (empty($batchJobs)) {
-                $newRun->update(['total_rows' => $rowCounter - 1]);
-                $newRun->finalize();
-                IngestRunCompleted::dispatch($newRun);
-
-                return $newRun;
-            }
-
-            if ($newRun->total_rows !== ($rowCounter - 1)) {
-                $newRun->update(['total_rows' => $rowCounter - 1]);
-            }
-
-            $queueConnection = Config::get('ingest.queue.connection');
-            $queueName = Config::get('ingest.queue.name');
-
-            $batch = Bus::batch($batchJobs)
-                ->then(function () use ($newRun) {
-                    $newRun->finalize();
-                    IngestRunCompleted::dispatch($newRun);
-                })
-                ->catch(function (Throwable $e) use ($newRun) {
-                    $newRun->update(['status' => IngestStatus::FAILED]);
-                    IngestRunFailed::dispatch($newRun, $e);
-                })
-                ->onConnection($queueConnection)
-                ->onQueue($queueName)
-                ->dispatch();
-
-            $newRun->update(['batch_id' => $batch->id]);
         } catch (Throwable $e) {
-            $summary = [
-                'error' => $e->getMessage(),
-                'exception' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ];
-
-            $newRun->update([
-                'status' => IngestStatus::FAILED,
-                'summary' => $summary,
-            ]);
-
-            IngestRunFailed::dispatch($newRun, $e);
+            $this->handleFailure($newRun, $e);
             throw $e;
         }
 
         return $newRun;
     }
 
+    /** @throws DefinitionNotFoundException */
     public function getDefinition(string $slug): IngestDefinition
     {
         if (!isset($this->definitions[$slug])) {
@@ -240,5 +134,98 @@ class IngestManager
         }
 
         return $this->definitions[$slug];
+    }
+
+    /**
+     * @throws Throwable
+     * @throws SourceException
+     */
+    protected function dispatchBatch(
+        IngestRun $ingestRun,
+        IngestConfig $config,
+        iterable $rows,
+        bool $isDryRun,
+        ?callable $cleanupCallback = null
+    ): void {
+        $batchJobs = [];
+        $chunk = [];
+        $rowCounter = 1;
+        $headersChecked = false;
+
+        foreach ($rows as $row) {
+            if (!$headersChecked && $config->keyedBy) {
+                if (!array_key_exists($config->keyedBy, $row)) {
+                    throw new SourceException("The key column '{$config->keyedBy}' was not found in the source file headers.");
+                }
+                $headersChecked = true;
+            }
+
+            $chunk[] = ['number' => $rowCounter++, 'data' => $row];
+
+            if (count($chunk) >= $config->chunkSize) {
+                $batchJobs[] = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
+                $chunk = [];
+            }
+        }
+
+        if (!empty($chunk)) {
+            $batchJobs[] = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
+        }
+
+        if ($ingestRun->parent_id && $ingestRun->total_rows !== ($rowCounter - 1)) {
+            $ingestRun->update(['total_rows' => $rowCounter - 1]);
+        }
+
+        if (empty($batchJobs)) {
+            $ingestRun->finalize();
+            if ($cleanupCallback) {
+                $cleanupCallback();
+            }
+            IngestRunCompleted::dispatch($ingestRun);
+
+            return;
+        }
+
+        $queueConnection = Config::get('ingest.queue.connection');
+        $queueName = Config::get('ingest.queue.name');
+
+        $batch = Bus::batch($batchJobs)
+            ->then(function () use ($ingestRun, $cleanupCallback) {
+                $ingestRun->finalize();
+                if ($cleanupCallback) {
+                    $cleanupCallback();
+                }
+                IngestRunCompleted::dispatch($ingestRun);
+            })
+            ->catch(function (Throwable $e) use ($ingestRun, $cleanupCallback) {
+                $ingestRun->update(['status' => IngestStatus::FAILED]);
+                if ($cleanupCallback) {
+                    $cleanupCallback();
+                }
+                IngestRunFailed::dispatch($ingestRun, $e);
+            })
+            ->onConnection($queueConnection)
+            ->onQueue($queueName)
+            ->dispatch();
+
+        $ingestRun->update(['batch_id' => $batch->id]);
+    }
+
+    protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
+    {
+        $summary = [
+            'error' => $e->getMessage(),
+            'exception' => get_class($e),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+        ];
+
+        $ingestRun->update([
+            'status' => IngestStatus::FAILED,
+            'summary' => $summary,
+        ]);
+
+        IngestRunFailed::dispatch($ingestRun, $e);
     }
 }

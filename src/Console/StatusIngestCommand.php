@@ -26,7 +26,7 @@ class StatusIngestCommand extends Command
 
         $this->components->info("Details for Ingest Run #{$run->id}");
 
-        $this->components->twoColumnDetail('Importer', $run->importer_slug);
+        $this->components->twoColumnDetail('Importer', $run->importer);
         $this->components->twoColumnDetail('Status', "<fg={$this->getStatusColor($run->status)}>{$run->status->value}</>");
         $this->components->twoColumnDetail('User', $run->user_id ?? 'N/A');
         $this->components->twoColumnDetail('Original File', $run->original_filename ?? 'N/A');

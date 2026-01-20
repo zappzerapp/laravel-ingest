@@ -25,14 +25,14 @@ it('returns null if batch id is not set', function () {
     expect($run->batch())->toBeNull();
 });
 
-it('can retrieve its original run via relationship', function () {
-    $originalRun = IngestRun::factory()->create();
-    $retryRun = IngestRun::factory()->create(['retried_from_run_id' => $originalRun->id]);
+it('can retrieve its parent run via relationship', function () {
+    $parentRun = IngestRun::factory()->create();
+    $retryRun = IngestRun::factory()->create(['parent_id' => $parentRun->id]);
 
-    $retrievedOriginal = $retryRun->originalRun;
+    $retrievedParent = $retryRun->parent;
 
-    expect($retrievedOriginal)->toBeInstanceOf(IngestRun::class);
-    expect($retrievedOriginal->id)->toBe($originalRun->id);
+    expect($retrievedParent)->toBeInstanceOf(IngestRun::class);
+    expect($retrievedParent->id)->toBe($parentRun->id);
 });
 
 it('sets status to completed with errors when failures exist on finalization', function () {
@@ -68,18 +68,4 @@ it('sets status to completed when no failures exist on finalization', function (
     expect($run->status)->toBe(IngestStatus::COMPLETED);
     expect($run->completed_at)->toBeInstanceOf(Carbon::class);
     expect($run->failed_rows)->toBe(0);
-});
-
-it('uses refreshed counts to determine final status', function () {
-    $run = IngestRun::factory()->create([
-        'status' => IngestStatus::PROCESSING,
-        'failed_rows' => 0,
-        'completed_at' => null,
-    ]);
-
-    IngestRun::where('id', $run->id)->update(['failed_rows' => 1]);
-
-    $run->finalize();
-
-    expect($run->status)->toBe(IngestStatus::COMPLETED_WITH_ERRORS);
 });

@@ -24,16 +24,16 @@ This is the most common source type for user-facing imports. It expects a file t
 
 This handler reads a file directly from one of your configured Laravel filesystem disks (e.g., `local`, `s3`). It's ideal for imports triggered by console commands or scheduled jobs.
 
--   **Payload:** The path to the file can be passed as a string payload to the `IngestManager::start()` method, which is what the `ingest:run --file=...` command does.
+-   **Payload:** The path to the file can be passed as a string payload to the `Ingest::start()` method (or via CLI `--file` argument).
 -   **Options:**
     -   `path` (string): The default path to the file if no payload is provided.
     -   `disk` (string, optional): Overrides the default disk for this specific import.
 
 ```php
-// IngestConfig for a command-triggered import
-->fromSource(SourceType::FILESYSTEM) // Path is provided via --file option
+// IngestConfig for a command-triggered import where path is dynamic
+->fromSource(SourceType::FILESYSTEM) 
 
-// IngestConfig for a hardcoded path
+// IngestConfig for a hardcoded path (e.g. nightly cron)
 ->fromSource(SourceType::FILESYSTEM, ['path' => 'imports/daily-products.csv', 'disk' => 's3'])
 ```
 
@@ -60,8 +60,8 @@ These handlers use the `RemoteDiskHandler` to download a file from a remote serv
 
 -   **Payload:** None.
 -   **Options:**
-    -   `disk` (string): The name of the FTP/SFTP disk configured in `config/filesystems.php`.
-    -   `path` (string): The path to the file on the remote server.
+    -   `disk` (string): **Required.** The name of the FTP/SFTP disk configured in `config/filesystems.php`.
+    -   `path` (string): **Required.** The path to the file on the remote server.
 
 #### Example Filesystem Configuration
 

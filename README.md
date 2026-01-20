@@ -96,7 +96,7 @@ public function register(): void
 ### 3. Run Import
 
 **Via API:** Send a `multipart/form-data` request with a `file` payload to the automatically generated endpoint. The
-slug is derived from the class name (`UserImporter` -> `user-importer`).
+importer slug is derived from the class name (`UserImporter` -> `user-importer`).
 
 ```bash
 curl -X POST \
@@ -112,6 +112,28 @@ php artisan ingest:run user-importer --file=path/to/users.csv
 ```
 
 The import is now processed in the background. You can check the status via the API: `GET /api/v1/ingest/{run-id}`.
+
+## Programmatic Usage (Facade)
+
+You can define complex workflows or custom controllers using the `Ingest` facade.
+
+```php
+use LaravelIngest\Facades\Ingest;
+use Illuminate\Support\Facades\Auth;
+
+// Start an import
+$run = Ingest::start(
+    importer: 'user-importer',
+    payload: '/path/to/file.csv', // Or UploadedFile instance
+    user: Auth::user(),
+    isDryRun: false
+);
+
+echo "Import started with ID: {$run->id}";
+
+// Retry failed rows from a previous run
+$retryRun = Ingest::retry($run);
+```
 
 ## Configuration Reference (`IngestConfig`)
 
@@ -142,6 +164,7 @@ return IngestConfig::for(ProductStock::class)
         'username' => config('services.erp.username'),
         'password' => config('services.erp.password'),
         'path' => '/stock/daily_update.csv',
+        'disk' => 'ftp_disk' // Ensure this disk is defined in filesystems.php
     ])
     ->keyedBy('product_sku')
     ->onDuplicate(DuplicateStrategy::UPDATE)

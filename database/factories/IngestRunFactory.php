@@ -15,7 +15,7 @@ class IngestRunFactory extends Factory
     public function definition(): array
     {
         return [
-            'importer_slug' => $this->faker->slug,
+            'importer' => $this->faker->slug,
             'user_id' => null,
             'status' => IngestStatus::PENDING,
             'original_filename' => $this->faker->word . '.csv',

@@ -34,13 +34,11 @@ it('shows a warning if the batch does not exist', function () {
 });
 
 it('shows a message if the batch has already finished', function () {
-    // FIX: Set a non-null batch_id on the factory
     $run = IngestRun::factory()->create(['batch_id' => 'test-batch-id-123']);
 
     $batchMock = $this->mock(Batch::class);
     $batchMock->shouldReceive('finished')->once()->andReturn(true);
 
-    // FIX: Ensure the Bus facade returns the mock for the correct batch_id
     Bus::shouldReceive('findBatch')->with($run->batch_id)->andReturn($batchMock);
 
     $this->artisan('ingest:cancel', ['ingestRun' => $run->id])

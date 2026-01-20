@@ -13,7 +13,8 @@ return new class() extends Migration
     {
         Schema::create('ingest_runs', function (Blueprint $table) {
             $table->id();
-            $table->string('importer_slug')->index();
+            $table->foreignId('parent_id')->nullable()->constrained('ingest_runs')->nullOnDelete();
+            $table->string('importer')->index();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('status')->default(IngestStatus::PENDING->value)->index();
             $table->string('batch_id')->nullable()->index();

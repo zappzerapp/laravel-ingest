@@ -5,7 +5,7 @@ label: API Reference
 
 # API Reference
 
-Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with `/api/v1/ingest`.
+Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with `/api/v1/ingest` (configurable via `config/ingest.php`).
 
 ### Authentication
 The API routes are wrapped in the `api` middleware group by default. You will typically need to provide an authentication token (e.g., Sanctum or Passport) in the `Authorization` header.
@@ -46,7 +46,7 @@ Starts a new ingest run from a file upload.
 
 -   **Endpoint:** `POST /upload/{importerSlug}`
 -   **URL Parameters:**
-    -   `importerSlug` (string, required): The slug of the importer definition.
+    -   `importerSlug` (string, required): The slug of the importer definition (e.g., `user-importer`).
 -   **Body (`multipart/form-data`):**
     -   `file` (file, required): The data file to import (e.g., CSV, XLSX).
     -   `dry_run` (boolean, optional): If `1` or `true`, performs a simulation without saving data.

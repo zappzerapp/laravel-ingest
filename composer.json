@@ -1,6 +1,6 @@
 {
   "name": "zappzerapp/laravel-ingest",
-  "version": "v0.1.2",
+  "version": "v0.2.0",
   "description": "A configuration-driven data import framework for Laravel",
   "keywords": [
     "laravel",
@@ -39,6 +39,10 @@
     "pestphp/pest": "^2.0",
     "pestphp/pest-plugin-laravel": "^2.0",
     "roave/security-advisories": "dev-latest"
+  },
+  "suggests": {
+    "league/flysystem-ftp": "Required to use the FTP source handler.",
+    "league/flysystem-sftp-v3": "Required to use the SFTP source handler."
   },
   "autoload": {
     "psr-4": {
