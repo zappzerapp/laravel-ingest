@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
+use DateTimeInterface;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -26,13 +27,14 @@ class RowProcessor
     public function processChunk(IngestRun $ingestRun, IngestConfig $config, array $chunk, bool $isDryRun): array
     {
         $relationCache = $this->prefetchRelations($chunk, $config);
+        $manyRelationCache = $this->prefetchManyRelations($chunk, $config);
 
         /**
          * @throws Throwable
          * @throws PhpVersionNotSupportedException
          * @throws JsonException
          */
-        $processLogic = function () use ($ingestRun, $config, $chunk, $isDryRun, $relationCache) {
+        $processLogic = function () use ($ingestRun, $config, $chunk, $isDryRun, $relationCache, $manyRelationCache) {
             $results = ['processed' => 0, 'successful' => 0, 'failed' => 0];
             $rowsToLog = [];
 
@@ -41,7 +43,7 @@ class RowProcessor
                 $results['processed']++;
 
                 try {
-                    $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$model) {
+                    $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache, &$model) {
                         if ($config->beforeRowCallback) {
                             call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
                         }
@@ -53,6 +55,10 @@ class RowProcessor
 
                         if (!$isDryRun) {
                             $model = $this->persist($transformedData, $config, $modelClass);
+                        }
+
+                        if ($model && !$isDryRun) {
+                            $this->syncManyRelations($model, $rowData->originalData, $config, $manyRelationCache);
                         }
 
                         if ($config->afterRowCallback && $model) {
@@ -125,6 +131,38 @@ class RowProcessor
         return $cache;
     }
 
+    private function prefetchManyRelations(array $chunk, IngestConfig $config): array
+    {
+        $cache = [];
+        foreach ($config->manyRelations as $sourceField => $relationConfig) {
+            $rawValues = collect($chunk)
+                ->map(fn($item) => data_get($item, 'data.' . $sourceField))
+                ->filter()
+                ->values();
+
+            if ($rawValues->isEmpty()) {
+                continue;
+            }
+
+            $separator = $relationConfig['separator'];
+            $lookupKey = $relationConfig['key'];
+            $relatedModelClass = $relationConfig['model'];
+            $relatedInstance = app($relatedModelClass);
+            $pkName = $relatedInstance->getKeyName();
+
+            $allValues = $rawValues->flatMap(fn($value) => explode($separator, $value))->filter()->unique()->values();
+
+            if ($allValues->isEmpty()) {
+                continue;
+            }
+
+            $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$pkName, $lookupKey]);
+            $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
+        }
+
+        return $cache;
+    }
+
     private function validate(array $data, IngestConfig $config): void
     {
         $rules = $config->validationRules;
@@ -178,7 +216,7 @@ class RowProcessor
 
         $usedTopLevelKeys = $this->getUsedTopLevelKeys($config);
 
-        $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $usedTopLevelKeys);
+        $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $config->manyRelations, $usedTopLevelKeys);
         $modelInstance = app($modelClass);
         foreach ($unmappedData as $key => $value) {
             if ($modelInstance->isFillable($key)) {
@@ -189,9 +227,6 @@ class RowProcessor
         return $modelData;
     }
 
-    /**
-     * Check if a key exists in the data, supporting dot notation for nested keys.
-     */
     private function hasNestedKey(array $data, string $key): bool
     {
         if (!str_contains($key, '.')) {
@@ -211,9 +246,6 @@ class RowProcessor
         return true;
     }
 
-    /**
-     * Create a missing related model and update the cache.
-     */
     private function createMissingRelation(array $relationConfig, mixed $relationValue, array &$relationCache, string $sourceField): mixed
     {
         $relatedModelClass = $relationConfig['model'];
@@ -231,12 +263,46 @@ class RowProcessor
         return $newRelatedModel->getKey();
     }
 
-    /**
-     * Get top-level keys that are used by nested dot-notation paths in mappings and relations.
-     *
-     * This prevents nested source data (like 'user' in 'user.profile.name') from being
-     * treated as unmapped fillable data.
-     */
+    private function syncManyRelations(Model $model, array $originalData, IngestConfig $config, array $manyRelationCache): void
+    {
+        if (empty($config->manyRelations)) {
+            return;
+        }
+
+        foreach ($config->manyRelations as $sourceField => $relationConfig) {
+            if (!$this->hasNestedKey($originalData, $sourceField)) {
+                continue;
+            }
+
+            $relationValue = data_get($originalData, $sourceField);
+            if (empty($relationValue)) {
+                continue;
+            }
+
+            $separator = $relationConfig['separator'];
+            $values = array_filter(array_map('trim', explode($separator, (string) $relationValue)));
+
+            if (empty($values)) {
+                continue;
+            }
+
+            $ids = [];
+            $lookupKey = $relationConfig['key'];
+            $cache = $manyRelationCache[$sourceField] ?? [];
+
+            foreach ($values as $value) {
+                $id = $cache[$value] ?? null;
+                if ($id !== null) {
+                    $ids[] = $id;
+                }
+            }
+
+            if (!empty($ids)) {
+                $model->{$relationConfig['relation']}()->syncWithoutDetaching($ids);
+            }
+        }
+    }
+
     private function getUsedTopLevelKeys(IngestConfig $config): array
     {
         $topLevelKeys = [];
@@ -249,6 +315,13 @@ class RowProcessor
         }
 
         foreach (array_keys($config->relations) as $sourceField) {
+            if (str_contains($sourceField, '.')) {
+                $topLevelKey = explode('.', $sourceField)[0];
+                $topLevelKeys[$topLevelKey] = true;
+            }
+        }
+
+        foreach (array_keys($config->manyRelations) as $sourceField) {
             if (str_contains($sourceField, '.')) {
                 $topLevelKey = explode('.', $sourceField)[0];
                 $topLevelKeys[$topLevelKey] = true;
@@ -270,12 +343,55 @@ class RowProcessor
                     return $existingModel->fresh();
                 case DuplicateStrategy::SKIP:
                     return $existingModel;
+                case DuplicateStrategy::UPDATE_IF_NEWER:
+                    if ($this->shouldUpdate($existingModel, $modelData, $config)) {
+                        $existingModel->update($modelData);
+
+                        return $existingModel->fresh();
+                    }
+
+                    return $existingModel;
                 case DuplicateStrategy::FAIL:
                     throw new Exception("Duplicate entry found for key '{$config->keyedBy}'.");
             }
         }
 
         return $modelClass::create($modelData);
+    }
+
+    private function shouldUpdate(Model $existingModel, array $newData, IngestConfig $config): bool
+    {
+        if ($config->timestampComparison === null) {
+            return false;
+        }
+
+        $sourceColumn = $config->timestampComparison['source_column'];
+        $dbColumn = $config->timestampComparison['db_column'];
+
+        if (!isset($newData[$sourceColumn])) {
+            return false;
+        }
+
+        $dbTimestamp = $existingModel->{$dbColumn};
+        $sourceTimestamp = $newData[$sourceColumn];
+
+        if ($dbTimestamp === null) {
+            return true;
+        }
+
+        if ($sourceTimestamp instanceof DateTimeInterface && $dbTimestamp instanceof DateTimeInterface) {
+            return $sourceTimestamp > $dbTimestamp;
+        }
+
+        $sourceTime = $sourceTimestamp instanceof DateTimeInterface
+            ? $sourceTimestamp->getTimestamp()
+            : strtotime($sourceTimestamp);
+
+        $dbTime = $dbTimestamp instanceof DateTimeInterface
+            ? $dbTimestamp->getTimestamp()
+            : strtotime($dbTimestamp);
+
+        return $sourceTime > $dbTime;
     }
 
     private function findExistingModel(array $modelData, IngestConfig $config, string $modelClass): ?Model

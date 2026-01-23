@@ -14,6 +14,11 @@ class RegularUser extends Model
         'is_admin' => 'boolean',
     ];
 
+    public function roles()
+    {
+        return $this->belongsToMany('\LaravelIngest\Tests\Fixtures\Models\Role', 'user_role', 'user_id', 'role_id');
+    }
+
     protected static function booted(): void
     {
         static::creating(function (RegularUser $user) {

@@ -143,18 +143,21 @@ All configurations are handled via the fluent API in your `getConfig()` method.
 |-----------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `fromSource(SourceType, array)`                     | Defines the data source (e.g., `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                         |
 | `keyedBy(string)`                                   | Sets the unique field in the source data (e.g., `sku`, `email`).                                              |
-| `onDuplicate(DuplicateStrategy)`                    | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`).                                                   |
+| `onDuplicate(DuplicateStrategy)`                    | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`, `UPDATE_IF_NEWER`).                                                   |
 | `map(string\|array, string)`                        | Maps a source column (with optional aliases) to a model attribute.                                            |
 | `mapAndTransform(string\|array, string, callable)`  | Maps and transforms the value before saving.                                                                  |
 | `relate(string, string, string, string, bool)`      | Resolves a `BelongsTo` relationship with optional `createIfMissing`.                                          |
+| `relateMany(string, string, string, string, string)`| Resolves `BelongsToMany` relationships with separator support.                                                |
 | `validate(array)`                                   | Defines import-specific validation rules.                                                                     |
 | `validateWithModelRules()`                          | Uses the target model's `getRules()` method for validation.                                                   |
 | `setChunkSize(int)`                                 | Defines the number of rows per background job (Default: 100).                                                 |
 | `setDisk(string)`                                   | Defines the filesystem disk for `UPLOAD` or `FILESYSTEM` sources.                                             |
 | `atomic()`                                          | Wraps each chunk in a database transaction.                                                                   |
 | `beforeRow(callable)`                               | Hook executed before validation to modify raw data.                                                           |
-| `afterRow(callable)`                                | Hook executed after successful save with model and row data.                                                  |
+| `afterRow(callable)`                               | Hook executed after successful save with model and row data.                                                  |
 | `resolveModelUsing(callable)`                       | Dynamically resolve the target model class based on row data.                                                 |
+| `strictHeaders()`                                   | Validates that all mapped headers exist in the source file.                                                   |
+| `compareTimestamp(string, string)`                  | For `UPDATE_IF_NEWER` strategy: compares source timestamp with DB column.                                     |
 
 ## Advanced Scenarios
 

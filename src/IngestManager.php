@@ -211,17 +211,21 @@ class IngestManager
 
     protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
     {
-        $summary = [
-            'error' => $e->getMessage(),
-            'exception' => get_class($e),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => $e->getTraceAsString(),
-        ];
-
         $ingestRun->update([
             'status' => IngestStatus::FAILED,
-            'summary' => $summary,
+            'summary' => [
+                'errors' => [
+                    [
+                        'message' => $e->getMessage(),
+                        'exception' => get_class($e),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                    ],
+                ],
+                'warnings' => [],
+                'meta' => [],
+            ],
         ]);
 
         IngestRunFailed::dispatch($ingestRun, $e);

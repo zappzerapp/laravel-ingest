@@ -67,6 +67,7 @@ class TestCase extends Orchestra
             $table->string('sku')->unique();
             $table->string('name');
             $table->integer('stock');
+            $table->string('last_modified')->nullable();
             $table->timestamps();
         });
 
@@ -80,6 +81,20 @@ class TestCase extends Orchestra
             $table->id();
             $table->string('name');
             $table->foreignId('category_id')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->timestamps();
+        });
+
+        Schema::create('user_role', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id');
+            $table->foreignId('role_id');
             $table->timestamps();
         });
     }

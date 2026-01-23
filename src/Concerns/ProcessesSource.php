@@ -64,14 +64,42 @@ trait ProcessesSource
      */
     private function validateKeyedByHeader(IngestConfig $config, array $translationMap): void
     {
-        if (!$config->keyedBy) {
+        if ($config->keyedBy && !in_array($config->keyedBy, $translationMap, true)) {
+            throw new SourceException("The key column '{$config->keyedBy}' or one of its aliases was not found in the source file headers.");
+        }
+
+        if (!$config->strictHeaders) {
             return;
         }
 
-        $primaryKeyExists = in_array($config->keyedBy, $translationMap, true);
+        foreach ($config->mappings as $sourceField => $mapping) {
+            $hasMatch = in_array($sourceField, $translationMap, true);
 
-        if (!$primaryKeyExists) {
-            throw new SourceException("The key column '{$config->keyedBy}' or one of its aliases was not found in the source file headers.");
+            if (!$hasMatch) {
+                foreach ($mapping['aliases'] as $alias) {
+                    if (in_array($alias, $translationMap, true)) {
+                        $hasMatch = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$hasMatch) {
+                $aliasList = implode("', '", array_merge([$sourceField], $mapping['aliases']));
+                throw new SourceException("None of the required columns ['{$aliasList}'] were found in the source file headers. Strict header validation is enabled.");
+            }
+        }
+
+        foreach ($config->relations as $sourceField => $relationConfig) {
+            if (!in_array($sourceField, $translationMap, true)) {
+                throw new SourceException("The column '{$sourceField}' was not found in the source file headers. Strict header validation is enabled.");
+            }
+        }
+
+        foreach ($config->manyRelations as $sourceField => $relationConfig) {
+            if (!in_array($sourceField, $translationMap, true)) {
+                throw new SourceException("The column '{$sourceField}' was not found in the source file headers. Strict header validation is enabled.");
+            }
         }
     }
 

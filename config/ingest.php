@@ -31,5 +31,6 @@ return [
         'ftp' => LaravelIngest\Sources\RemoteDiskHandler::class,
         'sftp' => LaravelIngest\Sources\RemoteDiskHandler::class,
         'url' => LaravelIngest\Sources\UrlHandler::class,
+        'json-stream' => LaravelIngest\Sources\JsonHandler::class,
     ],
 ];

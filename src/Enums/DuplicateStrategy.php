@@ -9,4 +9,5 @@ enum DuplicateStrategy: string
     case UPDATE = 'update';
     case SKIP = 'skip';
     case FAIL = 'fail';
+    case UPDATE_IF_NEWER = 'update_if_newer';
 }

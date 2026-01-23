@@ -254,3 +254,25 @@ it('initializes relation cache when beforeRow callback adds relation value', fun
         'category_id' => null,
     ]);
 });
+
+it('skips relation processing when nested source field does not exist in data', function () {
+    $category = Category::create(['name' => 'Electronics']);
+
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product_name', 'name')
+        ->relate('meta.category_name', 'category', Category::class, 'name');
+
+    $chunk = [['number' => 1, 'data' => ['product_name' => 'iPhone', 'meta' => ['other_field' => 'value']]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'iPhone',
+        'category_id' => null,
+    ]);
+});

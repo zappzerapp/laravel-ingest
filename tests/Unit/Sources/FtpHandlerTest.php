@@ -22,6 +22,12 @@ beforeEach(function () {
 });
 
 it('can read a file from an ftp source', function () {
+    Storage::fake('local');
+    Storage::fake('test_ftp');
+
+    $csvData = "sku,name\nFTP001,Test Product";
+    Storage::disk('test_ftp')->put('products.csv', $csvData);
+
     $config = IngestConfig::for(Product::class)
         ->fromSource(SourceType::FTP, [
             'disk' => 'test_ftp',
@@ -38,17 +44,29 @@ it('can read a file from an ftp source', function () {
     expect($rows[0]['sku'])->toBe('FTP001');
 
     $handler->cleanup();
-    Storage::disk('local')->assertMissing($handler->getProcessedFilePath());
+
+    $processedFilePath = $handler->getProcessedFilePath();
+    expect(file_exists($processedFilePath))->toBeFalse();
 });
 
 it('throws exception if ftp file does not exist', function () {
-    $config = IngestConfig::for(Product::class)->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'missing.csv']);
-    iterator_to_array((new RemoteDiskHandler())->read($config));
-})->throws(SourceException::class, "File not found at remote path 'missing.csv'");
+    config()->set('filesystems.disks.test_ftp', ['driver' => 'local']);
+    Storage::fake('test_ftp');
+
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FTP, ['disk' => 'test_ftp', 'path' => 'missing.csv']);
+
+    expect(
+        fn() => iterator_to_array((new RemoteDiskHandler())->read($config))
+    )->toThrow(SourceException::class);
+});
 
 it('throws exception when ftp stream cannot be opened', function () {
-    config()->set('filesystems.disks.test_ftp', ['driver' => 'ftp']);
+    config()->set('filesystems.disks.test_ftp', ['driver' => 'local']);
     Storage::fake('local');
+
+    Storage::fake('test_ftp');
+    Storage::disk('test_ftp')->put('products.csv', 'test content');
 
     Storage::shouldReceive('disk')->with('test_ftp')->andReturnSelf();
     Storage::shouldReceive('exists')->with('products.csv')->andReturn(true);

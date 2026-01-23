@@ -190,3 +190,49 @@ it('gracefully ignores rows with malformed error data in summary', function () {
         ->assertJsonPath('data.error_summary.0.count', 1)
         ->assertJsonCount(1, 'data.error_summary');
 });
+
+it('can download failed rows as csv', function () {
+    $run = IngestRun::factory()->create();
+
+    IngestRow::factory()->create([
+        'ingest_run_id' => $run->id,
+        'row_number' => 1,
+        'status' => 'failed',
+        'data' => ['full_name' => 'John Doe', 'user_email' => 'john@example.com'],
+        'errors' => ['message' => 'Duplicate entry found.'],
+    ]);
+
+    IngestRow::factory()->create([
+        'ingest_run_id' => $run->id,
+        'row_number' => 2,
+        'status' => 'failed',
+        'data' => ['full_name' => 'Jane Doe', 'user_email' => 'jane@example.com'],
+        'errors' => ['message' => 'Invalid email format.'],
+    ]);
+
+    $response = $this->getJson("/api/v1/ingest/{$run->id}/failed-rows/download");
+
+    $response->assertStatus(200)
+        ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+    $csvContent = $response->streamedContent();
+
+    $lines = explode("\n", $csvContent);
+
+    expect($lines[0])->toContain('full_name');
+    expect($csvContent)->toContain('John Doe');
+    expect($csvContent)->toContain('john@example.com');
+    expect($csvContent)->toContain('Duplicate entry found.');
+    expect($csvContent)->toContain('Jane Doe');
+    expect($csvContent)->toContain('jane@example.com');
+    expect($csvContent)->toContain('Invalid email format.');
+});
+
+it('returns 404 when downloading failed rows for a run with no failed rows', function () {
+    $run = IngestRun::factory()->create();
+
+    $response = $this->getJson("/api/v1/ingest/{$run->id}/failed-rows/download");
+
+    $response->assertStatus(404)
+        ->assertJson(['message' => 'No failed rows found for this ingest run.']);
+});

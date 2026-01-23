@@ -133,6 +133,25 @@ curl -X GET \
 
 ---
 
+### Download Failed Rows as CSV
+
+Downloads a CSV file containing only the failed rows from an ingest run. The CSV includes all original data columns plus `_error_message` and `_row_number` columns. This enables a "Fix & Re-Upload" workflow.
+
+-   **Endpoint:** `GET /{ingestRun}/failed-rows/download`
+-   **URL Parameters:**
+    -   `ingestRun` (integer, required): The ID of the ingest run.
+-   **Success Response:** `200 OK` with a streamed CSV file download.
+-   **Error Response:** `404 Not Found` if the run has no failed rows.
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer <token>" \
+  -o failed-rows.csv \
+  https://myapp.com/api/v1/ingest/123/failed-rows/download
+```
+
+---
+
 ### IngestErrorSummaryResource Object
 
 The JSON representation for an error analysis summary.

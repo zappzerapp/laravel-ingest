@@ -260,7 +260,7 @@ it('handles an exception during retry setup', function () {
     $newRun = IngestRun::where('retried_from_run_id', $originalRun->id)->first();
     expect($newRun)->not->toBeNull();
     expect($newRun->status)->toBe(IngestStatus::FAILED);
-    expect($newRun->summary['error'])->toContain("No importer found with the slug 'unknown-importer'");
+    expect($newRun->summary['errors'][0]['message'])->toContain("No importer found with the slug 'unknown-importer'");
 
     Event::assertDispatched(IngestRunFailed::class, fn($event) => $event->ingestRun->id === $newRun->id);
 });

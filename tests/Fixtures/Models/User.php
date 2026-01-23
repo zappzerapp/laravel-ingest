@@ -13,6 +13,11 @@ class User extends Model
         'is_admin' => 'boolean',
     ];
 
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id');
+    }
+
     protected static function booted(): void
     {
         static::creating(function (User $user) {

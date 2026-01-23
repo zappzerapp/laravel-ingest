@@ -12,6 +12,7 @@ use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
 use Spatie\SimpleExcel\SimpleExcelReader;
+use Throwable;
 
 class RemoteDiskHandler implements SourceHandler
 {
@@ -35,29 +36,35 @@ class RemoteDiskHandler implements SourceHandler
             throw new SourceException('FTP/SFTP source requires a "path" option.');
         }
 
-        if (!Storage::disk($diskName)->exists($remotePath)) {
-            throw new SourceException("File not found at remote path '{$remotePath}' on disk '{$diskName}'.");
+        try {
+            if (!Storage::disk($diskName)->exists($remotePath)) {
+                throw new SourceException("File not found at remote path '{$remotePath}' on disk '{$diskName}'.");
+            }
+
+            $localDisk = config('ingest.disk', 'local');
+            $this->temporaryPath = 'ingest-temp/' . Str::random(40) . '/' . basename($remotePath);
+
+            $remoteStream = Storage::disk($diskName)->readStream($remotePath);
+            if ($remoteStream === null) {
+                throw new SourceException("Could not open read stream for remote file '{$remotePath}' on disk '{$diskName}'.");
+            }
+            Storage::disk($localDisk)->put($this->temporaryPath, $remoteStream);
+            if (is_resource($remoteStream)) {
+                fclose($remoteStream);
+            }
+
+            $fullPath = Storage::disk($localDisk)->path($this->temporaryPath);
+
+            $reader = SimpleExcelReader::create($fullPath);
+            $rows = $reader->getRows();
+            $this->totalRows = $rows->count();
+
+            yield from $this->processRows($rows, $config);
+        } catch (SourceException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            throw new SourceException('Failed to read from remote source: ' . $e->getMessage(), 0, $e);
         }
-
-        $localDisk = config('ingest.disk', 'local');
-        $this->temporaryPath = 'ingest-temp/' . Str::random(40) . '/' . basename($remotePath);
-
-        $remoteStream = Storage::disk($diskName)->readStream($remotePath);
-        if ($remoteStream === null) {
-            throw new SourceException("Could not open read stream for remote file '{$remotePath}' on disk '{$diskName}'.");
-        }
-        Storage::disk($localDisk)->put($this->temporaryPath, $remoteStream);
-        if (is_resource($remoteStream)) {
-            fclose($remoteStream);
-        }
-
-        $fullPath = Storage::disk($localDisk)->path($this->temporaryPath);
-
-        $reader = SimpleExcelReader::create($fullPath);
-        $rows = $reader->getRows();
-        $this->totalRows = $rows->count();
-
-        yield from $this->processRows($rows, $config);
     }
 
     public function getTotalRows(): ?int

@@ -44,9 +44,18 @@ Defines behavior when a record with the `keyedBy` value is found in the database
 - `DuplicateStrategy::SKIP`: (Default) Do nothing. Keep the old record.
 - `DuplicateStrategy::UPDATE`: Overwrite the database record with new data.
 - `DuplicateStrategy::FAIL`: Stop processing this row and mark it as failed.
+- `DuplicateStrategy::UPDATE_IF_NEWER`: Only update if the source data is newer (requires `compareTimestamp()`).
 
 ```php
 ->onDuplicate(DuplicateStrategy::UPDATE)
+```
+
+### `compareTimestamp(string $sourceColumn, string $dbColumn = 'updated_at')`
+Used with `DuplicateStrategy::UPDATE_IF_NEWER`. Compares a timestamp from the source data with a database column to determine if the record should be updated.
+
+```php
+->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+->compareTimestamp('last_modified', 'updated_at')
 ```
 
 ---
@@ -99,6 +108,15 @@ Automatically resolves `BelongsTo` relationships.
 
 // Auto-create missing categories
 ->relate('Category', 'category', \App\Models\Category::class, 'name', createIfMissing: true)
+```
+
+### `relateMany(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id', string $separator = ',')`
+Automatically resolves `BelongsToMany` relationships. Parses a delimited string from the source and syncs the pivot table.
+
+```php
+// Source: "Tags: PHP, Laravel, Backend"
+// Splits by comma, looks up each tag, syncs the pivot table
+->relateMany('Tags', 'tags', \App\Models\Tag::class, 'name', ',')
 ```
 
 ---
@@ -180,6 +198,15 @@ Wraps each chunk in a Database Transaction. If **one** row in the chunk fails, *
 Overrides the default filesystem disk (from `config/ingest.php`) for this specific importer.
 ```php
 ->setDisk('s3_private_bucket')
+```
+
+### `strictHeaders(bool $strict = true)`
+Enables strict header validation. When enabled, the import will fail immediately if any mapped source column is missing from the file headers. By default, only the `keyedBy` column is validated.
+
+```php
+->strictHeaders()
+->map('email', 'email')      // Must exist in source file
+->map('name', 'name')        // Must exist in source file
 ```
 
 ---

@@ -20,10 +20,13 @@ class IngestConfig
     public array $sourceOptions = [];
     public ?string $keyedBy = null;
     public DuplicateStrategy $duplicateStrategy = DuplicateStrategy::SKIP;
+    public ?array $timestampComparison = null;
     public array $mappings = [];
     public array $relations = [];
+    public array $manyRelations = [];
     public array $validationRules = [];
     public bool $useModelRules = false;
+    public bool $strictHeaders = false;
     public int $chunkSize;
     public ?string $disk = null;
     public TransactionMode $transactionMode = TransactionMode::NONE;
@@ -134,6 +137,23 @@ class IngestConfig
         return $this;
     }
 
+    public function strictHeaders(bool $strict = true): self
+    {
+        $this->strictHeaders = $strict;
+
+        return $this;
+    }
+
+    public function compareTimestamp(string $sourceColumn, string $dbColumn = 'updated_at'): self
+    {
+        $this->timestampComparison = [
+            'source_column' => $sourceColumn,
+            'db_column' => $dbColumn,
+        ];
+
+        return $this;
+    }
+
     public function setChunkSize(int $size): self
     {
         $this->chunkSize = $size;
@@ -179,10 +199,6 @@ class IngestConfig
     }
 
     /**
-     * Set a callback to dynamically resolve the model class based on row data.
-     *
-     * The callback receives the row data array and should return a model class string.
-     *
      * @throws PhpVersionNotSupportedException
      */
     public function resolveModelUsing(Closure $callback): self
@@ -192,12 +208,27 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * Resolve the model class for a given row.
-     *
-     * If a model resolver is set, it will be called with the row data.
-     * Otherwise, the default model class will be returned.
-     */
+    public function relateMany(
+        string $sourceField,
+        string $relationName,
+        string $relatedModel,
+        string $relatedKey = 'id',
+        string $separator = ','
+    ): self {
+        if (!is_subclass_of($relatedModel, Model::class)) {
+            throw new InvalidConfigurationException("Class {$relatedModel} must be an Eloquent Model.");
+        }
+
+        $this->manyRelations[$sourceField] = [
+            'relation' => $relationName,
+            'model' => $relatedModel,
+            'key' => $relatedKey,
+            'separator' => $separator,
+        ];
+
+        return $this;
+    }
+
     public function resolveModelClass(array $rowData): string
     {
         if ($this->modelResolver) {

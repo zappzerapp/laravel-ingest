@@ -101,3 +101,35 @@ it('can handle header aliases for mapping', function () {
         'E-Mail' => 'user_email',
     ]);
 });
+
+it('can set a model resolver', function () {
+    $config = IngestConfig::for(User::class)
+        ->resolveModelUsing(fn(array $rowData) => User::class);
+
+    expect($config->modelResolver)->toBeInstanceOf(SerializableClosure::class);
+});
+
+it('resolves model class using default when no resolver set', function () {
+    $config = IngestConfig::for(User::class);
+
+    $result = $config->resolveModelClass(['name' => 'Test']);
+
+    expect($result)->toBe(User::class);
+});
+
+it('resolves model class using custom resolver', function () {
+    $config = IngestConfig::for(User::class)
+        ->resolveModelUsing(fn(array $rowData) => Product::class);
+
+    $result = $config->resolveModelClass(['name' => 'Test']);
+
+    expect($result)->toBe(Product::class);
+});
+
+it('throws exception when resolver returns non-model class', function () {
+    $config = IngestConfig::for(User::class)
+        ->resolveModelUsing(fn(array $rowData) => stdClass::class);
+
+    expect(fn() => $config->resolveModelClass(['name' => 'Test']))
+        ->toThrow(InvalidConfigurationException::class, "must be an instance of Illuminate\Database\Eloquent\Model");
+});

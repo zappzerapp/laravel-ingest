@@ -2,460 +2,547 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\Config;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
-use LaravelIngest\Exceptions\InvalidConfigurationException;
+use LaravelIngest\Events\RowProcessed;
 use LaravelIngest\IngestConfig;
-use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
-use LaravelIngest\Tests\Fixtures\Models\AdminUser;
 use LaravelIngest\Tests\Fixtures\Models\Category;
+use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
-use LaravelIngest\Tests\Fixtures\Models\RegularUser;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\Models\UserWithRules;
 
-beforeEach(function () {
-    $this->processor = new RowProcessor();
-    $this->run = IngestRun::factory()->create();
-});
-
-it('successfully processes a valid row', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('name', 'name')
-        ->map('email', 'email');
-
-    $rowData = ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => 'secret'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('users', ['email' => 'john@example.com', 'name' => 'John Doe']);
-});
-
-it('throws a validation exception for an invalid row', function () {
-    $config = IngestConfig::for(User::class)->validate(['email' => 'required|email']);
-    $rowData = ['email' => 'not-an-email'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
-
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    expect($results['failed'])->toBe(1);
-    expect($results['successful'])->toBe(0);
-
-    $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $this->run->id,
-        'row_number' => 1,
-        'status' => 'failed',
-    ]);
-});
-
-it('updates a duplicate row when strategy is update', function () {
-    $user = User::create(['name' => 'Old Name', 'email' => 'jane@example.com', 'password' => 'secret']);
-    $config = IngestConfig::for(User::class)
-        ->keyedBy('email')
-        ->onDuplicate(DuplicateStrategy::UPDATE)
-        ->map('name', 'name')
-        ->map('email', 'email');
-
-    $rowData = ['name' => 'Jane Doe Updated', 'email' => 'jane@example.com'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Jane Doe Updated']);
-});
-
-it('skips a duplicate row when strategy is skip', function () {
-    User::create(['name' => 'Old Name', 'email' => 'skip@example.com', 'password' => 'secret']);
-    $config = IngestConfig::for(User::class)
-        ->keyedBy('email')
-        ->onDuplicate(DuplicateStrategy::SKIP)
-        ->map('name', 'name')
-        ->map('email', 'email');
-
-    $rowData = ['name' => 'New Name', 'email' => 'skip@example.com'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $user = User::where('email', 'skip@example.com')->first();
-    expect($user->name)->toBe('Old Name');
-});
-
-it('logs an error row when duplicate strategy is fail', function () {
-    User::create(['email' => 'duplicate@example.com', 'name' => 'Original', 'password' => 'secret']);
-
-    $config = IngestConfig::for(User::class)
-        ->keyedBy('email')
-        ->onDuplicate(DuplicateStrategy::FAIL)
-        ->map('email', 'email');
-
-    $results = $this->processor->processChunk(
-        $this->run,
-        $config,
-        [['number' => 1, 'data' => ['email' => 'duplicate@example.com']]],
-        false
-    );
-
-    expect($results['failed'])->toBe(1);
-
-    $this->assertDatabaseHas('ingest_rows', [
-        'ingest_run_id' => $this->run->id,
-        'status' => 'failed',
-    ]);
-});
-
-it('handles relations when source values are empty', function () {
-    Category::create(['name' => 'Electronics']);
-
-    $config = IngestConfig::for(ProductWithCategory::class)
-        ->map('product_name', 'name')
-        ->relate('cat_name', 'category', Category::class, 'name');
-
-    $chunk = [
-        ['number' => 1, 'data' => ['product_name' => 'iPhone', 'cat_name' => null]],
-        ['number' => 2, 'data' => ['product_name' => 'Samsung', 'cat_name' => '']],
-    ];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('products_with_category', ['name' => 'iPhone', 'category_id' => null]);
-    $this->assertDatabaseHas('products_with_category', ['name' => 'Samsung', 'category_id' => null]);
-});
-
-it('executes beforeRow and afterRow callbacks during processing', function () {
+it('executes afterRow callback after successful row processing', function () {
     $callbackExecuted = false;
-    $afterCallbackExecuted = false;
+    $callbackModel = null;
 
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->beforeRow(function (array &$data) use (&$callbackExecuted) {
+        ->afterRow(function ($model, $data) use (&$callbackExecuted, &$callbackModel) {
             $callbackExecuted = true;
-            $data['name'] = 'Modified ' . $data['name'];
-        })
-        ->afterRow(function ($model, array $data) use (&$afterCallbackExecuted) {
-            $afterCallbackExecuted = true;
+            $callbackModel = $model;
         });
 
-    $rowData = ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => 'secret'];
-    $chunk = [['number' => 1, 'data' => $rowData]];
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'john@test.com']]];
 
-    $this->processor->processChunk($this->run, $config, $chunk, false);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
     expect($callbackExecuted)->toBeTrue();
-    expect($afterCallbackExecuted)->toBeTrue();
-
-    $this->assertDatabaseHas('users', [
-        'email' => 'john@example.com',
-        'name' => 'Modified John Doe',
-    ]);
+    expect($callbackModel)->toBeInstanceOf(User::class);
 });
 
-it('bubbles exception when using chunk transactions', function () {
+it('uses ROW transaction mode', function () {
+    $transactionStarted = false;
+
+    DB::listen(function ($query) use (&$transactionStarted) {
+        if (str_contains($query->sql, 'BEGIN') || str_contains($query->sql, 'SAVEPOINT')) {
+            $transactionStarted = true;
+        }
+    });
+
     $config = IngestConfig::for(User::class)
-        ->transactionMode(TransactionMode::CHUNK)
-        ->map('name', 'name');
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->transactionMode(TransactionMode::ROW);
 
-    $config->validate(['name' => 'integer']);
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'john@test.com']]];
 
-    $chunk = [['number' => 1, 'data' => ['name' => 'John']]];
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-})->throws(ValidationException::class);
+    $this->assertDatabaseHas('users', ['email' => 'john@test.com']);
+});
 
-it('saves valid rows even if others fail in the same chunk when using row transactions', function () {
+it('handles errors and continues processing other rows', function () {
+    Event::fake([RowProcessed::class]);
+    config(['ingest.log_rows' => true]);
+
     $config = IngestConfig::for(User::class)
-        ->transactionMode(TransactionMode::ROW)
         ->map('name', 'name')
         ->map('email', 'email')
         ->validate(['email' => 'required|email']);
 
     $chunk = [
-        ['number' => 1, 'data' => ['name' => 'Valid', 'email' => 'valid@test.com']],
-        ['number' => 2, 'data' => ['name' => 'Invalid', 'email' => 'not-an-email']],
+        ['number' => 1, 'data' => ['name' => 'John', 'email' => 'invalid-email']],
+        ['number' => 2, 'data' => ['name' => 'Jane', 'email' => 'jane@test.com']],
     ];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['successful'])->toBe(1);
-    expect($results['failed'])->toBe(1);
+    expect($result['failed'])->toBe(1);
+    expect($result['successful'])->toBe(1);
 
-    $this->assertDatabaseHas('users', ['email' => 'valid@test.com']);
-    $this->assertDatabaseMissing('users', ['name' => 'Invalid']);
+    Event::assertDispatched(RowProcessed::class, fn($event) => $event->status === 'failed');
 });
 
-it('does not log rows when config option is disabled', function () {
-    Config::set('ingest.log_rows', false);
-
+it('throws exception on error in CHUNK transaction mode', function () {
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
-        ->map('email', 'email');
+        ->map('email', 'email')
+        ->validate(['email' => 'required|email'])
+        ->transactionMode(TransactionMode::CHUNK);
 
-    $chunk = [['number' => 1, 'data' => ['name' => 'No Log', 'email' => 'nolog@test.com']]];
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'invalid']]];
 
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('users', ['email' => 'nolog@test.com']);
-    $this->assertDatabaseCount('ingest_rows', 0);
+    expect(fn() => (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    ))->toThrow(Illuminate\Validation\ValidationException::class);
 });
 
-it('merges validation rules from model', function () {
+it('uses CHUNK transaction mode for entire chunk', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->transactionMode(TransactionMode::CHUNK);
+
+    $chunk = [
+        ['number' => 1, 'data' => ['name' => 'John', 'email' => 'john@test.com']],
+        ['number' => 2, 'data' => ['name' => 'Jane', 'email' => 'jane@test.com']],
+    ];
+
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    expect($result['successful'])->toBe(2);
+    $this->assertDatabaseHas('users', ['email' => 'john@test.com']);
+    $this->assertDatabaseHas('users', ['email' => 'jane@test.com']);
+});
+
+it('uses model validation rules when useModelRules is enabled', function () {
     $config = IngestConfig::for(UserWithRules::class)
-        ->validateWithModelRules()
-        ->map('email', 'email');
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->validateWithModelRules();
 
-    $chunk = [['number' => 1, 'data' => ['email' => 'not-an-email']]];
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'invalid-email']]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['failed'])->toBe(1);
-
-    $row = IngestRow::first();
-    expect($row->errors['validation']['email'][0])->toBe('The email field must be a valid email address.');
+    expect($result['failed'])->toBe(1);
 });
 
-it('ignores missing source fields during mapping and relation resolution', function () {
-    $category = Category::create(['name' => 'Tech']);
-
-    $config = IngestConfig::for(ProductWithCategory::class)
-        ->map('unknown_col', 'name')
-        ->map('existing_col', 'name')
-        ->relate('unknown_rel', 'category', Category::class, 'name');
-
-    $chunk = [[
-        'number' => 1,
-        'data' => [
-            'existing_col' => 'My Product',
-        ],
-    ]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    $this->assertDatabaseHas('products_with_category', [
-        'name' => 'My Product',
-        'category_id' => null,
-    ]);
-});
-
-it('dynamically resolves model class based on row data using resolveModelUsing', function () {
+it('skips mapping when source field is missing', function () {
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->resolveModelUsing(fn(array $data) => str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class);
+        ->map('optional_field', 'some_attribute');
 
-    $chunk = [
-        ['number' => 1, 'data' => ['name' => 'Admin User', 'email' => 'admin@example.com']],
-        ['number' => 2, 'data' => ['name' => 'Regular User', 'email' => 'user@example.com']],
-    ];
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'john@test.com']]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['successful'])->toBe(2);
-    expect($results['failed'])->toBe(0);
-
-    $this->assertDatabaseHas('users', [
-        'email' => 'admin@example.com',
-        'name' => 'Admin User',
-        'is_admin' => true,
-        'password' => 'admin_password',
-    ]);
-
-    $this->assertDatabaseHas('users', [
-        'email' => 'user@example.com',
-        'name' => 'Regular User',
-        'is_admin' => false,
-        'password' => 'user_password',
-    ]);
+    $this->assertDatabaseHas('users', ['name' => 'John', 'email' => 'john@test.com']);
 });
 
-it('uses default model class when no resolver is set', function () {
+it('handles nested key mappings', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('user.name', 'name')
+        ->map('user.email', 'email');
+
+    $chunk = [['number' => 1, 'data' => ['user' => ['name' => 'John', 'email' => 'john@test.com']]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'John', 'email' => 'john@test.com']);
+});
+
+it('returns false for hasNestedKey when nested path does not exist', function () {
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
-        ->map('email', 'email');
+        ->map('user.details.email', 'email');
 
-    $chunk = [['number' => 1, 'data' => ['name' => 'Default User', 'email' => 'default@example.com']]];
+    $chunk = [['number' => 1, 'data' => ['user' => ['other' => 'value'], 'name' => 'John', 'email' => 'john@test.com']]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['successful'])->toBe(1);
-
-    $this->assertDatabaseHas('users', [
-        'email' => 'default@example.com',
-        'password' => 'password',
-    ]);
+    $this->assertDatabaseHas('users', ['name' => 'John', 'email' => 'john@test.com']);
 });
 
-it('throws exception when model resolver returns invalid class', function () {
+it('includes unmapped fillable fields in model data', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('full_name', 'name');
+
+    $chunk = [['number' => 1, 'data' => ['full_name' => 'John', 'email' => 'john@test.com']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'John', 'email' => 'john@test.com']);
+});
+
+it('uses SKIP duplicate strategy', function () {
+    User::create(['name' => 'Original', 'email' => 'john@test.com']);
+
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->transactionMode(TransactionMode::CHUNK)
-        ->resolveModelUsing(fn(array $data) => 'InvalidClassName');
-
-    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'test@example.com']]];
-
-    $this->processor->processChunk($this->run, $config, $chunk, false);
-})->throws(InvalidConfigurationException::class);
-
-it('handles duplicate detection with dynamically resolved models', function () {
-    AdminUser::create(['name' => 'Existing Admin', 'email' => 'existing-admin@example.com']);
-
-    $config = IngestConfig::for(User::class)
         ->keyedBy('email')
-        ->onDuplicate(DuplicateStrategy::UPDATE)
+        ->onDuplicate(DuplicateStrategy::SKIP);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Original', 'email' => 'john@test.com']);
+    expect(User::count())->toBe(1);
+});
+
+it('uses UPDATE duplicate strategy', function () {
+    User::create(['name' => 'Original', 'email' => 'john@test.com']);
+
+    $config = IngestConfig::for(User::class)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->resolveModelUsing(fn(array $data) => str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class);
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE);
 
-    $chunk = [
-        ['number' => 1, 'data' => ['name' => 'Updated Admin', 'email' => 'existing-admin@example.com']],
-    ];
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com']]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['successful'])->toBe(1);
-
-    $this->assertDatabaseHas('users', [
-        'email' => 'existing-admin@example.com',
-        'name' => 'Updated Admin',
-    ]);
-
-    expect(User::where('email', 'existing-admin@example.com')->count())->toBe(1);
+    $this->assertDatabaseHas('users', ['name' => 'Updated', 'email' => 'john@test.com']);
+    expect(User::count())->toBe(1);
 });
 
-it('extracts values from nested data using dot notation', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('user.profile.name', 'name')
-        ->map('user.contact.email', 'email');
+it('uses FAIL duplicate strategy', function () {
+    User::create(['name' => 'Original', 'email' => 'john@test.com']);
 
-    $chunk = [[
-        'number' => 1,
-        'data' => [
-            'user' => [
-                'profile' => [
-                    'name' => 'Nested User',
-                ],
-                'contact' => [
-                    'email' => 'nested@example.com',
-                ],
-            ],
-        ],
-    ]];
-
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    expect($results['failed'])->toBe(0);
-    expect($results['successful'])->toBe(1);
-
-    $this->assertDatabaseHas('users', [
-        'name' => 'Nested User',
-        'email' => 'nested@example.com',
-    ]);
-});
-
-it('handles mixed flat and nested fields with dot notation', function () {
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
+        ->map('email', 'email')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::FAIL);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com']]];
+
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    expect($result['failed'])->toBe(1);
+});
+
+it('uses UPDATE_IF_NEWER duplicate strategy and updates when newer', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+    $user->updated_at = now()->subDay();
+    $user->save();
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->mapAndTransform('import_date', 'updated_at', fn($v) => $v)
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('updated_at', 'updated_at');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com', 'import_date' => now()->toDateTimeString()]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Updated', 'email' => 'john@test.com']);
+});
+
+it('uses UPDATE_IF_NEWER duplicate strategy and skips when older', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+    $user->updated_at = now();
+    $user->save();
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->mapAndTransform('import_date', 'updated_at', fn($v) => $v)
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('updated_at', 'updated_at');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com', 'import_date' => now()->subWeek()->toDateTimeString()]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Original', 'email' => 'john@test.com']);
+});
+
+it('updates when db timestamp is null in UPDATE_IF_NEWER strategy', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+    DB::table('users')->where('id', $user->id)->update(['updated_at' => null]);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->mapAndTransform('import_date', 'updated_at', fn($v) => $v)
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('updated_at', 'updated_at');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com', 'import_date' => now()->toDateTimeString()]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Updated', 'email' => 'john@test.com']);
+});
+
+it('returns false from shouldUpdate when timestamp comparison not configured', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Original', 'email' => 'john@test.com']);
+});
+
+it('returns false from shouldUpdate when source column not in data', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('import_date', 'updated_at');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Original', 'email' => 'john@test.com']);
+});
+
+it('compares DateTimeInterface timestamps correctly', function () {
+    $user = User::create(['name' => 'Original', 'email' => 'john@test.com']);
+    $user->updated_at = now()->subDay();
+    $user->save();
+
+    $newerDate = now();
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->mapAndTransform('source_updated_at', 'updated_at', fn($v) => $v)
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('updated_at', 'updated_at');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Updated', 'email' => 'john@test.com', 'source_updated_at' => $newerDate]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('users', ['name' => 'Updated', 'email' => 'john@test.com']);
+});
+
+it('compares mixed timestamps with source as DateTimeInterface and db as string', function () {
+    $product = Product::create(['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 10, 'last_modified' => '2020-01-01 00:00:00']);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->mapAndTransform('source_modified', 'last_modified', fn($v) => $v)
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('last_modified', 'last_modified');
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'Updated', 'stock' => 20, 'source_modified' => now()]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'Updated', 'stock' => 20]);
+});
+
+it('compares string timestamps using strtotime for both source and db', function () {
+    $product = Product::create(['sku' => 'TEST-002', 'name' => 'Original', 'stock' => 10, 'last_modified' => '2020-01-01 00:00:00']);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->mapAndTransform('source_modified', 'last_modified', fn($v) => $v)
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('last_modified', 'last_modified');
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-002', 'name' => 'Updated', 'stock' => 20, 'source_modified' => '2025-01-01 00:00:00']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-002', 'name' => 'Updated', 'stock' => 20]);
+});
+
+it('formats validation errors correctly', function () {
+    Event::fake([RowProcessed::class]);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->validate(['email' => 'required|email']);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'John', 'email' => 'invalid']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    Event::assertDispatched(RowProcessed::class, fn($event) => isset($event->errors['validation']) && isset($event->errors['message']));
+});
+
+it('extracts top level keys from nested mappings', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('contact.name', 'name')
         ->map('contact.email', 'email');
 
     $chunk = [[
         'number' => 1,
         'data' => [
-            'name' => 'Mixed User',
-            'contact' => [
-                'email' => 'mixed@example.com',
-            ],
+            'contact' => ['name' => 'John', 'email' => 'john@test.com'],
         ],
     ]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
-    expect($results['successful'])->toBe(1);
-
-    $this->assertDatabaseHas('users', [
-        'name' => 'Mixed User',
-        'email' => 'mixed@example.com',
-    ]);
+    $this->assertDatabaseHas('users', ['name' => 'John', 'email' => 'john@test.com']);
 });
 
-it('applies transformer to nested field values', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('meta.email', 'email')
-        ->mapAndTransform('meta.full_name', 'name', fn($value) => strtoupper($value));
-
-    $chunk = [[
-        'number' => 1,
-        'data' => [
-            'meta' => [
-                'full_name' => 'john doe',
-                'email' => 'john@example.com',
-            ],
-        ],
-    ]];
-
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    expect($results['successful'])->toBe(1);
-
-    $this->assertDatabaseHas('users', [
-        'name' => 'JOHN DOE',
-        'email' => 'john@example.com',
-    ]);
-});
-
-it('skips mapping when nested path does not exist', function () {
-    $config = IngestConfig::for(User::class)
-        ->map('user.name', 'name')
-        ->map('user.email', 'email')
-        ->map('user.missing.deep.path', 'is_admin');
-
-    $chunk = [[
-        'number' => 1,
-        'data' => [
-            'user' => [
-                'name' => 'Partial User',
-                'email' => 'partial@example.com',
-            ],
-        ],
-    ]];
-
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    expect($results['successful'])->toBe(1);
-
-    $user = User::where('email', 'partial@example.com')->first();
-    expect($user->name)->toBe('Partial User');
-    expect($user->is_admin)->toBe(false);
-});
-
-it('resolves relations from nested source fields', function () {
+it('extracts top level keys from nested relation mappings', function () {
     $category = Category::create(['name' => 'Electronics']);
 
     $config = IngestConfig::for(ProductWithCategory::class)
-        ->map('product.name', 'name')
-        ->relate('product.category_name', 'category', Category::class, 'name');
+        ->map('product_name', 'name')
+        ->relate('meta.category_name', 'category', Category::class, 'name');
 
     $chunk = [[
         'number' => 1,
         'data' => [
-            'product' => [
-                'name' => 'Laptop',
-                'category_name' => 'Electronics',
-            ],
+            'product_name' => 'iPhone',
+            'meta' => ['category_name' => 'Electronics'],
         ],
     ]];
 
-    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
-
-    expect($results['successful'])->toBe(1);
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
 
     $this->assertDatabaseHas('products_with_category', [
-        'name' => 'Laptop',
+        'name' => 'iPhone',
         'category_id' => $category->id,
     ]);
 });

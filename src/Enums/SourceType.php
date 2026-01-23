@@ -11,4 +11,5 @@ enum SourceType: string
     case SFTP = 'sftp';
     case URL = 'url';
     case FILESYSTEM = 'filesystem';
+    case JSON = 'json-stream';
 }
