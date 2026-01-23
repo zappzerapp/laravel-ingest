@@ -5,17 +5,23 @@ declare(strict_types=1);
 namespace LaravelIngest\Concerns;
 
 use Generator;
+use IteratorAggregate;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
+use Traversable;
 
 trait ProcessesSource
 {
     /**
+     * @param  IteratorAggregate<int, array<string, mixed>>|Traversable<int, array<string, mixed>>  $rows
+     *
      * @throws SourceException
      */
-    protected function processRows(iterable $rows, IngestConfig $config): Generator
+    protected function processRows(IteratorAggregate|Traversable $rows, IngestConfig $config): Generator
     {
-        $iterator = $rows->getIterator();
+        /** @var \Iterator<int, array<string, mixed>> $iterator */
+        $iterator = $rows instanceof IteratorAggregate ? $rows->getIterator() : $rows;
+
         if (!$iterator->valid()) {
             return;
         }
@@ -31,7 +37,10 @@ trait ProcessesSource
         yield $this->translateRow($firstRow, $translationMap);
 
         $iterator->next();
-        while ($iterator->valid()) {
+        while (true) {
+            if (!$iterator->valid()) {
+                break;
+            }
             yield $this->translateRow($iterator->current(), $translationMap);
             $iterator->next();
         }
