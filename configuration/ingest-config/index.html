@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822526516956">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822526516956" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822526516956" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822523158885" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822526516956" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822526516956" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -262,9 +262,21 @@
 <li><code v-pre>DuplicateStrategy::SKIP</code>: (Default) Do nothing. Keep the old record.</li>
 <li><code v-pre>DuplicateStrategy::UPDATE</code>: Overwrite the database record with new data.</li>
 <li><code v-pre>DuplicateStrategy::FAIL</code>: Stop processing this row and mark it as failed.</li>
+<li><code v-pre>DuplicateStrategy::UPDATE_IF_NEWER</code>: Only update if the source data is newer (requires <code v-pre>compareTimestamp()</code>).</li>
 </ul>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;onDuplicate(DuplicateStrategy::UPDATE)</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="comparetimestampstring-sourcecolumn-string-dbcolumn--updated_at">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#comparetimestampstring-sourcecolumn-string-dbcolumn--updated_at">#</doc-anchor-trigger>
+        <span><code v-pre>compareTimestamp(string $sourceColumn, string $dbColumn = 'updated_at')</code></span>
+    </h3>
+</doc-anchor-target>
+<p>Used with <code v-pre>DuplicateStrategy::UPDATE_IF_NEWER</code>. Compares a timestamp from the source data with a database column to determine if the record should be updated.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+-&gt;compareTimestamp('last_modified', 'updated_at')</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="mapping--transformation">
@@ -333,6 +345,18 @@
 
 // Auto-create missing categories
 -&gt;relate('Category', 'category', \App\Models\Category::class, 'name', createIfMissing: true)</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="relatemanystring-sourcefield-string-relationname-string-relatedmodel-string-relatedkey--id-string-separator--">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#relatemanystring-sourcefield-string-relationname-string-relatedmodel-string-relatedkey--id-string-separator--">#</doc-anchor-trigger>
+        <span><code v-pre>relateMany(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id', string $separator = ',')</code></span>
+    </h3>
+</doc-anchor-target>
+<p>Automatically resolves <code v-pre>BelongsToMany</code> relationships. Parses a delimited string from the source and syncs the pivot table.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Source: &quot;Tags: PHP, Laravel, Backend&quot;
+// Splits by comma, looks up each tag, syncs the pivot table
+-&gt;relateMany('Tags', 'tags', \App\Models\Tag::class, 'name', ',')</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="validation">
@@ -453,6 +477,18 @@ public static function getRules(): array
 <p>Overrides the default filesystem disk (from <code v-pre>config/ingest.php</code>) for this specific importer.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setDisk('s3_private_bucket')</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="strictheadersbool-strict--true">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#strictheadersbool-strict--true">#</doc-anchor-trigger>
+        <span><code v-pre>strictHeaders(bool $strict = true)</code></span>
+    </h3>
+</doc-anchor-target>
+<p>Enables strict header validation. When enabled, the import will fail immediately if any mapped source column is missing from the file headers. By default, only the <code v-pre>keyedBy</code> column is validated.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;strictHeaders()
+-&gt;map('email', 'email')      // Must exist in source file
+-&gt;map('name', 'name')        // Must exist in source file</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="dynamic-model-resolution">
