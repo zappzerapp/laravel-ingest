@@ -9,7 +9,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Response;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Http\Requests\UploadRequest;
 use LaravelIngest\Http\Resources\IngestErrorSummaryResource;
@@ -17,6 +16,7 @@ use LaravelIngest\Http\Resources\IngestRunResource;
 use LaravelIngest\IngestManager;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\ErrorAnalysisService;
+use LaravelIngest\Services\FailedRowsExportService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IngestController extends Controller
@@ -24,7 +24,10 @@ class IngestController extends Controller
     use AuthorizesRequests;
     use ValidatesRequests;
 
-    public function __construct(protected IngestManager $ingestManager) {}
+    public function __construct(
+        protected IngestManager $ingestManager,
+        protected FailedRowsExportService $exportService
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -105,54 +108,7 @@ class IngestController extends Controller
     {
         $this->authorizeAccess();
 
-        $failedRows = $ingestRun->rows()
-            ->where('status', 'failed')
-            ->orderBy('row_number')
-            ->get();
-
-        if ($failedRows->isEmpty()) {
-            abort(404, 'No failed rows found for this ingest run.');
-        }
-
-        $headers = [];
-        $firstRow = $failedRows->first();
-        if (is_array($firstRow->data)) {
-            $headers = array_keys($firstRow->data);
-        }
-        $headers[] = '_error_message';
-        $headers[] = '_row_number';
-
-        $filename = 'failed-rows-' . $ingestRun->id . '.csv';
-
-        $response = Response::stream(function () use ($headers, $failedRows) {
-            $output = fopen('php://output', 'w');
-            // @codeCoverageIgnoreStart
-            if ($output === false) {
-                return;
-            }
-            // @codeCoverageIgnoreEnd
-
-            fputcsv($output, $headers);
-
-            foreach ($failedRows as $row) {
-                $data = $row->data;
-                $outputRow = [];
-                foreach (array_slice($headers, 0, -2) as $header) {
-                    $outputRow[] = $data[$header] ?? '';
-                }
-                $outputRow[] = is_array($row->errors) ? ($row->errors['message'] ?? '') : '';
-                $outputRow[] = $row->row_number;
-
-                fputcsv($output, $outputRow);
-            }
-
-            fclose($output);
-        }, 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ]);
-
-        return $response;
+        return $this->exportService->exportFailedRows($ingestRun);
     }
 
     protected function authorizeAccess(): void

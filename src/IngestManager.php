@@ -50,34 +50,16 @@ class IngestManager
         $config = $definition->getConfig();
         $sourceHandler = $this->sourceHandlerFactory->make($config->sourceType);
 
-        $originalFilename = null;
-        if ($payload instanceof UploadedFile) {
-            $originalFilename = $payload->getClientOriginalName();
-        } elseif (is_string($payload)) {
-            $originalFilename = basename($payload);
-        }
-
-        $ingestRun = IngestRun::create([
-            'importer' => $importer,
-            'user_id' => $user?->getAuthIdentifier(),
-            'status' => IngestStatus::PROCESSING,
-            'original_filename' => $originalFilename,
-        ]);
+        $originalFilename = $this->extractOriginalFilename($payload);
+        $ingestRun = $this->createIngestRun($importer, $user, $originalFilename);
 
         IngestRunStarted::dispatch($ingestRun);
 
         try {
             $rowGenerator = $sourceHandler->read($config, $payload);
+            $this->updateIngestRunWithMetadata($ingestRun, $sourceHandler);
 
-            $ingestRun->update([
-                'total_rows' => $sourceHandler->getTotalRows() ?? 0,
-                'processed_filepath' => $sourceHandler->getProcessedFilePath(),
-            ]);
-
-            $this->dispatchBatch($ingestRun, $config, $rowGenerator, $isDryRun, function () use ($sourceHandler) {
-                $sourceHandler->cleanup();
-            });
-
+            $this->dispatchBatch($ingestRun, $config, $rowGenerator, $isDryRun, fn() => $sourceHandler->cleanup());
         } catch (Throwable $e) {
             $this->handleFailure($ingestRun, $e);
             $sourceHandler->cleanup();
@@ -153,6 +135,74 @@ class IngestManager
         bool $isDryRun,
         ?callable $cleanupCallback = null
     ): void {
+        $batchJobs = $this->createBatchJobs($ingestRun, $config, $rows, $isDryRun);
+
+        $this->updateTotalRowsIfRetry($ingestRun, $rows);
+
+        if (empty($batchJobs)) {
+            $this->handleEmptyBatch($ingestRun, $cleanupCallback);
+
+            return;
+        }
+
+        $this->dispatchBatchJobs($ingestRun, $batchJobs, $cleanupCallback);
+    }
+
+    protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
+    {
+        $ingestRun->update([
+            'status' => IngestStatus::FAILED,
+            'summary' => [
+                'errors' => [
+                    [
+                        'message' => $e->getMessage(),
+                        'exception' => get_class($e),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                    ],
+                ],
+                'warnings' => [],
+                'meta' => [],
+            ],
+        ]);
+
+        IngestRunFailed::dispatch($ingestRun, $e);
+    }
+
+    private function extractOriginalFilename(mixed $payload): ?string
+    {
+        if ($payload instanceof UploadedFile) {
+            return $payload->getClientOriginalName();
+        }
+
+        if (is_string($payload)) {
+            return basename($payload);
+        }
+
+        return null;
+    }
+
+    private function createIngestRun(string $importer, ?Authenticatable $user, ?string $originalFilename): IngestRun
+    {
+        return IngestRun::create([
+            'importer' => $importer,
+            'user_id' => $user?->getAuthIdentifier(),
+            'status' => IngestStatus::PROCESSING,
+            'original_filename' => $originalFilename,
+        ]);
+    }
+
+    private function updateIngestRunWithMetadata(IngestRun $ingestRun, mixed $sourceHandler): void
+    {
+        $ingestRun->update([
+            'total_rows' => $sourceHandler->getTotalRows() ?? 0,
+            'processed_filepath' => $sourceHandler->getProcessedFilePath(),
+        ]);
+    }
+
+    private function createBatchJobs(IngestRun $ingestRun, IngestConfig $config, iterable $rows, bool $isDryRun): array
+    {
         $batchJobs = [];
         $chunk = [];
         $rowCounter = 1;
@@ -170,20 +220,30 @@ class IngestManager
             $batchJobs[] = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
         }
 
-        if ($ingestRun->parent_id && $ingestRun->total_rows !== ($rowCounter - 1)) {
-            $ingestRun->update(['total_rows' => $rowCounter - 1]);
-        }
+        return $batchJobs;
+    }
 
-        if (empty($batchJobs)) {
-            $ingestRun->finalize();
-            if ($cleanupCallback) {
-                $cleanupCallback();
+    private function updateTotalRowsIfRetry(IngestRun $ingestRun, iterable $rows): void
+    {
+        if ($ingestRun->parent_id) {
+            $totalRows = is_countable($rows) ? count($rows) : iterator_count($rows);
+            if ($ingestRun->total_rows !== $totalRows) {
+                $ingestRun->update(['total_rows' => $totalRows]);
             }
-            IngestRunCompleted::dispatch($ingestRun);
-
-            return;
         }
+    }
 
+    private function handleEmptyBatch(IngestRun $ingestRun, ?callable $cleanupCallback): void
+    {
+        $ingestRun->finalize();
+        if ($cleanupCallback) {
+            $cleanupCallback();
+        }
+        IngestRunCompleted::dispatch($ingestRun);
+    }
+
+    private function dispatchBatchJobs(IngestRun $ingestRun, array $batchJobs, ?callable $cleanupCallback): void
+    {
         $queueConnection = Config::get('ingest.queue.connection');
         $queueName = Config::get('ingest.queue.name');
 
@@ -207,27 +267,5 @@ class IngestManager
             ->dispatch();
 
         $ingestRun->update(['batch_id' => $batch->id]);
-    }
-
-    protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
-    {
-        $ingestRun->update([
-            'status' => IngestStatus::FAILED,
-            'summary' => [
-                'errors' => [
-                    [
-                        'message' => $e->getMessage(),
-                        'exception' => get_class($e),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'trace' => $e->getTraceAsString(),
-                    ],
-                ],
-                'warnings' => [],
-                'meta' => [],
-            ],
-        ]);
-
-        IngestRunFailed::dispatch($ingestRun, $e);
     }
 }

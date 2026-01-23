@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use JsonException;
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
@@ -29,80 +27,118 @@ class RowProcessor
         $relationCache = $this->prefetchRelations($chunk, $config);
         $manyRelationCache = $this->prefetchManyRelations($chunk, $config);
 
-        /**
-         * @throws Throwable
-         * @throws PhpVersionNotSupportedException
-         * @throws JsonException
-         */
-        $processLogic = function () use ($ingestRun, $config, $chunk, $isDryRun, $relationCache, $manyRelationCache) {
-            $results = ['processed' => 0, 'successful' => 0, 'failed' => 0];
-            $rowsToLog = [];
+        $processLogic = fn() => $this->processChunkLogic(
+            $ingestRun,
+            $config,
+            $chunk,
+            $isDryRun,
+            $relationCache,
+            $manyRelationCache
+        );
 
-            foreach ($chunk as $rowItem) {
-                $rowData = new RowData($rowItem['data'], $rowItem['number']);
-                $results['processed']++;
+        return $config->transactionMode === TransactionMode::CHUNK && !$isDryRun
+            ? DB::transaction($processLogic)
+            : $processLogic();
+    }
 
-                try {
-                    $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache, &$model) {
-                        if ($config->beforeRowCallback) {
-                            call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
-                        }
+    private function processChunkLogic(
+        IngestRun $ingestRun,
+        IngestConfig $config,
+        array $chunk,
+        bool $isDryRun,
+        array $relationCache,
+        array $manyRelationCache
+    ): array {
+        $results = ['processed' => 0, 'successful' => 0, 'failed' => 0];
+        $rowsToLog = [];
 
-                        $this->validate($rowData->processedData, $config);
+        foreach ($chunk as $rowItem) {
+            $rowData = new RowData($rowItem['data'], $rowItem['number']);
+            $results['processed']++;
 
-                        $modelClass = $config->resolveModelClass($rowData->processedData);
-                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass, $isDryRun);
-
-                        if (!$isDryRun) {
-                            $model = $this->persist($transformedData, $config, $modelClass);
-                        }
-
-                        if ($model && !$isDryRun) {
-                            $this->syncManyRelations($model, $rowData->originalData, $config, $manyRelationCache);
-                        }
-
-                        if ($config->afterRowCallback && $model) {
-                            call_user_func($config->afterRowCallback->getClosure(), $model, $rowData->originalData);
-                        }
-                    };
-
-                    if ($config->transactionMode === TransactionMode::ROW && !$isDryRun) {
-                        DB::transaction($rowLogic);
-                    } else {
-                        $rowLogic();
-                    }
-
-                } catch (Throwable $e) {
-                    if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
-                        throw $e;
-                    }
-
-                    $errors = $this->formatErrors($e);
-                    $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'failed', $errors);
-                    $results['failed']++;
-                    RowProcessed::dispatch($ingestRun, 'failed', $rowData->originalData, null, $errors);
-
-                    continue;
-                }
+            try {
+                $model = $this->processRow($config, $rowData, $isDryRun, $relationCache, $manyRelationCache);
 
                 $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'success');
                 $results['successful']++;
-                RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model ?? null);
-                $model = null;
+                RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model);
+            } catch (Throwable $e) {
+                $this->handleRowFailure($config, $e, $ingestRun, $rowData, $rowsToLog, $results, $isDryRun);
             }
-
-            if (!empty($rowsToLog) && config('ingest.log_rows')) {
-                IngestRow::toBase()->insert($rowsToLog);
-            }
-
-            return $results;
-        };
-
-        if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
-            return DB::transaction($processLogic);
         }
 
-        return $processLogic();
+        $this->logRowsIfEnabled($rowsToLog);
+
+        return $results;
+    }
+
+    private function processRow(
+        IngestConfig $config,
+        RowData $rowData,
+        bool $isDryRun,
+        array &$relationCache,
+        array &$manyRelationCache
+    ): ?Model {
+        $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache) {
+            $this->executeBeforeRowCallback($config, $rowData);
+            $this->validate($rowData->processedData, $config);
+
+            $modelClass = $config->resolveModelClass($rowData->processedData);
+            $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass, $isDryRun);
+
+            $model = null;
+            if (!$isDryRun) {
+                $model = $this->persist($transformedData, $config, $modelClass);
+                $this->syncManyRelations($model, $rowData->originalData, $config, $manyRelationCache);
+                $this->executeAfterRowCallback($config, $model, $rowData);
+            }
+
+            return $model;
+        };
+
+        return $config->transactionMode === TransactionMode::ROW && !$isDryRun
+            ? DB::transaction($rowLogic)
+            : $rowLogic();
+    }
+
+    private function executeBeforeRowCallback(IngestConfig $config, RowData $rowData): void
+    {
+        if ($config->beforeRowCallback) {
+            call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
+        }
+    }
+
+    private function executeAfterRowCallback(IngestConfig $config, ?Model $model, RowData $rowData): void
+    {
+        if ($config->afterRowCallback && $model) {
+            call_user_func($config->afterRowCallback->getClosure(), $model, $rowData->originalData);
+        }
+    }
+
+    private function handleRowFailure(
+        IngestConfig $config,
+        Throwable $e,
+        IngestRun $ingestRun,
+        RowData $rowData,
+        array &$rowsToLog,
+        array &$results,
+        bool $isDryRun
+    ): void {
+        if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
+            throw $e;
+        }
+
+        $errors = $this->formatErrors($e);
+        $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'failed', $errors);
+        $results['failed']++;
+        RowProcessed::dispatch($ingestRun, 'failed', $rowData->originalData, null, $errors);
+    }
+
+    private function logRowsIfEnabled(array $rowsToLog): void
+    {
+        if (!empty($rowsToLog) && config('ingest.log_rows')) {
+            IngestRow::toBase()->insert($rowsToLog);
+        }
     }
 
     private function prefetchRelations(array $chunk, IngestConfig $config): array
