@@ -6,6 +6,7 @@ namespace LaravelIngest\Sources;
 
 use Generator;
 use Illuminate\Support\Facades\Storage;
+use LaravelIngest\Concerns\ProcessesSource;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -13,6 +14,8 @@ use Spatie\SimpleExcel\SimpleExcelReader;
 
 class FilesystemHandler implements SourceHandler
 {
+    use ProcessesSource;
+
     protected ?int $totalRows = null;
     protected ?string $path = null;
 
@@ -51,7 +54,7 @@ class FilesystemHandler implements SourceHandler
         $rows = $reader->getRows();
         $this->totalRows = $rows->count();
 
-        yield from $rows;
+        yield from $this->processRows($rows, $config);
     }
 
     public function getTotalRows(): ?int

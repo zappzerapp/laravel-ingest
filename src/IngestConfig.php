@@ -10,6 +10,7 @@ use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
+use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 
 class IngestConfig
@@ -25,7 +26,7 @@ class IngestConfig
     public bool $useModelRules = false;
     public int $chunkSize;
     public ?string $disk = null;
-    public bool $useTransaction = false;
+    public TransactionMode $transactionMode = TransactionMode::NONE;
     public ?SerializableClosure $beforeRowCallback = null;
     public ?SerializableClosure $afterRowCallback = null;
 
@@ -69,21 +70,29 @@ class IngestConfig
         return $this;
     }
 
-    public function map(string $sourceField, string $modelAttribute): self
+    public function map(string|array $sourceField, string $modelAttribute): self
     {
-        $this->mappings[$sourceField] = [
+        $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
+        $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
+
+        $this->mappings[$primaryField] = [
             'attribute' => $modelAttribute,
             'transformer' => null,
+            'aliases' => $aliases,
         ];
 
         return $this;
     }
 
-    public function mapAndTransform(string $sourceField, string $modelAttribute, Closure $transformer): self
+    public function mapAndTransform(string|array $sourceField, string $modelAttribute, Closure $transformer): self
     {
-        $this->mappings[$sourceField] = [
+        $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
+        $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
+
+        $this->mappings[$primaryField] = [
             'attribute' => $modelAttribute,
             'transformer' => new SerializableClosure($transformer),
+            'aliases' => $aliases,
         ];
 
         return $this;
@@ -134,7 +143,14 @@ class IngestConfig
 
     public function atomic(): self
     {
-        $this->useTransaction = true;
+        $this->transactionMode = TransactionMode::CHUNK;
+
+        return $this;
+    }
+
+    public function transactionMode(TransactionMode $mode): self
+    {
+        $this->transactionMode = $mode;
 
         return $this;
     }
@@ -153,5 +169,18 @@ class IngestConfig
         $this->afterRowCallback = new SerializableClosure($callback);
 
         return $this;
+    }
+
+    public function getHeaderNormalizationMap(): array
+    {
+        $map = [];
+        foreach ($this->mappings as $primaryField => $config) {
+            $map[$primaryField] = $primaryField;
+            foreach ($config['aliases'] as $alias) {
+                $map[$alias] = $primaryField;
+            }
+        }
+
+        return $map;
     }
 }

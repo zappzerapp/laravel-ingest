@@ -125,3 +125,68 @@ it('returns bad request when retrying a run with no failed rows via api', functi
         ->assertStatus(400)
         ->assertJson(['message' => 'The original run has no failed rows to retry.']);
 });
+
+it('can get an aggregated error summary for a failed run', function () {
+    $run = IngestRun::factory()->create();
+
+    IngestRow::factory()->count(2)->create([
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+        'errors' => ['message' => 'Duplicate entry found.'],
+    ]);
+
+    IngestRow::factory()->count(2)->create([
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+        'errors' => [
+            'message' => 'The given data was invalid.',
+            'validation' => ['user_email' => ['The user email field is required.']],
+        ],
+    ]);
+
+    IngestRow::factory()->create([
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+        'errors' => [
+            'message' => 'The given data was invalid.',
+            'validation' => ['full_name' => ['The full name field is required.']],
+        ],
+    ]);
+
+    $response = $this->getJson("/api/v1/ingest/{$run->id}/errors/summary");
+
+    $response->assertOk()
+        ->assertJsonPath('data.total_failed_rows', 5)
+        ->assertJsonPath('data.error_summary.0.message', 'The given data was invalid.')
+        ->assertJsonPath('data.error_summary.0.count', 3)
+        ->assertJsonPath('data.error_summary.1.message', 'Duplicate entry found.')
+        ->assertJsonPath('data.error_summary.1.count', 2)
+        ->assertJsonPath('data.validation_summary.0.message', 'user_email: The user email field is required.')
+        ->assertJsonPath('data.validation_summary.0.count', 2)
+        ->assertJsonPath('data.validation_summary.1.message', 'full_name: The full name field is required.')
+        ->assertJsonPath('data.validation_summary.1.count', 1);
+});
+
+it('gracefully ignores rows with malformed error data in summary', function () {
+    $run = IngestRun::factory()->create();
+
+    IngestRow::factory()->create([
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+        'errors' => ['message' => 'A valid error.'],
+    ]);
+
+    IngestRow::factory()->create([
+        'ingest_run_id' => $run->id,
+        'status' => 'failed',
+        'errors' => null,
+    ]);
+
+    $response = $this->getJson("/api/v1/ingest/{$run->id}/errors/summary");
+
+    $response->assertOk()
+        ->assertJsonPath('data.total_failed_rows', 2)
+        ->assertJsonPath('data.error_summary.0.message', 'A valid error.')
+        ->assertJsonPath('data.error_summary.0.count', 1)
+        ->assertJsonCount(1, 'data.error_summary');
+});

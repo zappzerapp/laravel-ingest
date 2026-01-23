@@ -145,7 +145,6 @@ class IngestManager
 
     /**
      * @throws Throwable
-     * @throws SourceException
      */
     protected function dispatchBatch(
         IngestRun $ingestRun,
@@ -157,16 +156,8 @@ class IngestManager
         $batchJobs = [];
         $chunk = [];
         $rowCounter = 1;
-        $headersChecked = false;
 
         foreach ($rows as $row) {
-            if (!$headersChecked && $config->keyedBy) {
-                if (!array_key_exists($config->keyedBy, $row)) {
-                    throw new SourceException("The key column '{$config->keyedBy}' was not found in the source file headers.");
-                }
-                $headersChecked = true;
-            }
-
             $chunk[] = ['number' => $rowCounter++, 'data' => $row];
 
             if (count($chunk) >= $config->chunkSize) {

@@ -7,6 +7,7 @@ namespace LaravelIngest\Sources;
 use Generator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use LaravelIngest\Concerns\ProcessesSource;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -14,6 +15,8 @@ use Spatie\SimpleExcel\SimpleExcelReader;
 
 class UploadHandler implements SourceHandler
 {
+    use ProcessesSource;
+
     protected ?string $path = null;
     protected ?int $totalRows = null;
 
@@ -34,7 +37,7 @@ class UploadHandler implements SourceHandler
         $rows = $reader->getRows();
         $this->totalRows = $rows->count();
 
-        yield from $rows;
+        yield from $this->processRows($rows, $config);
     }
 
     public function getTotalRows(): ?int

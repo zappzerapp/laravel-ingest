@@ -14,6 +14,7 @@ use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
+use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Events\RowProcessed;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
@@ -40,21 +41,33 @@ class RowProcessor
                 $results['processed']++;
 
                 try {
-                    if ($config->beforeRowCallback) {
-                        call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
-                    }
+                    $rowLogic = function () use ($ingestRun, $config, $rowData, $isDryRun, $relationCache, &$model) {
+                        if ($config->beforeRowCallback) {
+                            call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
+                        }
 
-                    $this->validate($rowData->processedData, $config);
+                        $this->validate($rowData->processedData, $config);
 
-                    $transformedData = $this->transform($config, $rowData->processedData, $relationCache);
+                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache);
 
-                    $model = null;
-                    if (!$isDryRun) {
-                        $model = $this->persist($transformedData, $config);
+                        if (!$isDryRun) {
+                            $model = $this->persist($transformedData, $config);
+                        }
+
+                        if ($config->afterRowCallback && $model) {
+                            call_user_func($config->afterRowCallback->getClosure(), $model, $rowData->originalData);
+                        }
+                    };
+
+                    if ($config->transactionMode === TransactionMode::ROW && !$isDryRun) {
+                        DB::transaction($rowLogic);
+                    } else {
+                        $rowLogic();
                     }
 
                 } catch (Throwable $e) {
-                    if ($config->useTransaction && !$isDryRun) {
+                    // In CHUNK mode, we bubble up the exception to trigger the outer transaction rollback
+                    if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
                         throw $e;
                     }
 
@@ -66,13 +79,10 @@ class RowProcessor
                     continue;
                 }
 
-                if ($config->afterRowCallback && $model) {
-                    call_user_func($config->afterRowCallback->getClosure(), $model, $rowData->originalData);
-                }
-
                 $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'success');
                 $results['successful']++;
-                RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model);
+                RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model ?? null);
+                $model = null; // Reset for next iteration
             }
 
             if (!empty($rowsToLog) && config('ingest.log_rows')) {
@@ -82,7 +92,7 @@ class RowProcessor
             return $results;
         };
 
-        if ($config->useTransaction && !$isDryRun) {
+        if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
             return DB::transaction($processLogic);
         }
 

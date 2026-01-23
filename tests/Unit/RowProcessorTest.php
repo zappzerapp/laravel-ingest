@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use LaravelIngest\Enums\DuplicateStrategy;
+use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
@@ -152,9 +153,9 @@ it('executes beforeRow and afterRow callbacks during processing', function () {
     ]);
 });
 
-it('bubbles exception when using atomic transactions', function () {
+it('bubbles exception when using chunk transactions', function () {
     $config = IngestConfig::for(User::class)
-        ->atomic()
+        ->transactionMode(TransactionMode::CHUNK)
         ->map('name', 'name');
 
     $config->validate(['name' => 'integer']);
@@ -163,6 +164,27 @@ it('bubbles exception when using atomic transactions', function () {
 
     $this->processor->processChunk($this->run, $config, $chunk, false);
 })->throws(ValidationException::class);
+
+it('saves valid rows even if others fail in the same chunk when using row transactions', function () {
+    $config = IngestConfig::for(User::class)
+        ->transactionMode(TransactionMode::ROW)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->validate(['email' => 'required|email']);
+
+    $chunk = [
+        ['number' => 1, 'data' => ['name' => 'Valid', 'email' => 'valid@test.com']],
+        ['number' => 2, 'data' => ['name' => 'Invalid', 'email' => 'not-an-email']],
+    ];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+    expect($results['failed'])->toBe(1);
+
+    $this->assertDatabaseHas('users', ['email' => 'valid@test.com']);
+    $this->assertDatabaseMissing('users', ['name' => 'Invalid']);
+});
 
 it('does not log rows when config option is disabled', function () {
     Config::set('ingest.log_rows', false);
@@ -191,7 +213,7 @@ it('merges validation rules from model', function () {
     expect($results['failed'])->toBe(1);
 
     $row = IngestRow::first();
-    expect($row->errors)->toContain('The email field must be a valid email address.');
+    expect($row->errors['validation']['email'][0])->toBe('The email field must be a valid email address.');
 });
 
 it('ignores missing source fields during mapping and relation resolution', function () {

@@ -8,6 +8,7 @@ use Generator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use LaravelIngest\Concerns\ProcessesSource;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -16,6 +17,8 @@ use Throwable;
 
 class UrlHandler implements SourceHandler
 {
+    use ProcessesSource;
+
     protected ?string $temporaryPath = null;
     protected ?int $totalRows = null;
 
@@ -51,7 +54,7 @@ class UrlHandler implements SourceHandler
         $rows = $reader->getRows();
         $this->totalRows = $rows->count();
 
-        yield from $rows;
+        yield from $this->processRows($rows, $config);
     }
 
     public function getTotalRows(): ?int

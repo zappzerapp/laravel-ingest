@@ -7,6 +7,7 @@ use LaravelIngest\Http\Controllers\IngestController;
 
 Route::get('/', [IngestController::class, 'index']);
 Route::get('/{ingestRun}', [IngestController::class, 'show']);
+Route::get('/{ingestRun}/errors/summary', [IngestController::class, 'errorSummary']);
 
 Route::post('/upload/{importerSlug}', [IngestController::class, 'upload']);
 Route::post('/trigger/{importerSlug}', [IngestController::class, 'trigger']);

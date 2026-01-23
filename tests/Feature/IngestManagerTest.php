@@ -52,14 +52,14 @@ it('throws source exception if keyedBy column is missing in header', function ()
 
     $config = IngestConfig::for(User::class)
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
-        ->keyedBy('user_email');
+        ->keyedBy('user_email'); // Note: 'user_email' is not in the file
 
     $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['testimporter' => $definition], app(SourceHandlerFactory::class));
 
     $manager->start('testimporter', 'users.csv');
 
-})->throws(SourceException::class, "The key column 'user_email' was not found in the source file headers.");
+})->throws(SourceException::class, "The key column 'user_email' or one of its aliases was not found in the source file headers.");
 
 it('handles a failed batch correctly', function () {
     Event::fake();
@@ -282,4 +282,24 @@ it('corrects total rows count on retry if it mismatches actual failed rows', fun
 
     expect($newRun->total_rows)->toBe(3);
     Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1);
+});
+
+it('successfully imports a file with aliased headers', function () {
+    Storage::fake('local');
+    Storage::put('users.csv', "full_name,email_address\nAliased User,aliased@test.com");
+
+    $config = IngestConfig::for(User::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
+        ->map('full_name', 'name')
+        ->map(['user_email', 'email_address'], 'email');
+
+    $definition = $this->createTestDefinition($config);
+    $manager = new IngestManager(['aliastest' => $definition], app(SourceHandlerFactory::class));
+
+    $manager->start('aliastest', 'users.csv');
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Aliased User',
+        'email' => 'aliased@test.com',
+    ]);
 });

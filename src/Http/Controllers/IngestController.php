@@ -12,9 +12,11 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Http\Requests\UploadRequest;
+use LaravelIngest\Http\Resources\IngestErrorSummaryResource;
 use LaravelIngest\Http\Resources\IngestRunResource;
 use LaravelIngest\IngestManager;
 use LaravelIngest\Models\IngestRun;
+use LaravelIngest\Services\ErrorAnalysisService;
 
 class IngestController extends Controller
 {
@@ -89,11 +91,17 @@ class IngestController extends Controller
         }
     }
 
-    /**
-     * Check if the user is authorized to perform ingest operations.
-     */
+    public function errorSummary(IngestRun $ingestRun, ErrorAnalysisService $analysisService): JsonResponse
+    {
+        $this->authorizeAccess();
+
+        $summary = $analysisService->analyze($ingestRun);
+
+        return IngestErrorSummaryResource::make($summary)->response();
+    }
+
     protected function authorizeAccess(): void
     {
-        Gate::authorize('viewIngest');
+        $this->authorize('viewIngest');
     }
 }

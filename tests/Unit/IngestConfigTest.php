@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
+use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
@@ -69,9 +70,14 @@ it('throws an exception when relating to a non-model class', function () {
         ->relate('field', 'relation', stdClass::class, 'id');
 })->throws(InvalidConfigurationException::class);
 
-it('can enable atomic transactions', function () {
+it('can enable atomic transactions via atomic helper', function () {
     $config = IngestConfig::for(User::class)->atomic();
-    expect($config->useTransaction)->toBeTrue();
+    expect($config->transactionMode)->toBe(TransactionMode::CHUNK);
+});
+
+it('can set transaction mode explicitly', function () {
+    $config = IngestConfig::for(User::class)->transactionMode(TransactionMode::ROW);
+    expect($config->transactionMode)->toBe(TransactionMode::ROW);
 });
 
 it('can set before and after row callbacks', function () {
@@ -81,4 +87,17 @@ it('can set before and after row callbacks', function () {
 
     expect($config->beforeRowCallback)->toBeInstanceOf(SerializableClosure::class);
     expect($config->afterRowCallback)->toBeInstanceOf(SerializableClosure::class);
+});
+
+it('can handle header aliases for mapping', function () {
+    $config = IngestConfig::for(User::class)
+        ->map(['user_email', 'email', 'E-Mail'], 'email');
+
+    $normalizationMap = $config->getHeaderNormalizationMap();
+
+    expect($normalizationMap)->toBe([
+        'user_email' => 'user_email',
+        'email' => 'user_email',
+        'E-Mail' => 'user_email',
+    ]);
 });
