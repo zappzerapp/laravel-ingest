@@ -29,6 +29,7 @@ class IngestConfig
     public TransactionMode $transactionMode = TransactionMode::NONE;
     public ?SerializableClosure $beforeRowCallback = null;
     public ?SerializableClosure $afterRowCallback = null;
+    public ?SerializableClosure $modelResolver = null;
 
     private function __construct(string $modelClass)
     {
@@ -169,6 +170,44 @@ class IngestConfig
         $this->afterRowCallback = new SerializableClosure($callback);
 
         return $this;
+    }
+
+    /**
+     * Set a callback to dynamically resolve the model class based on row data.
+     *
+     * The callback receives the row data array and should return a model class string.
+     *
+     * @throws PhpVersionNotSupportedException
+     */
+    public function resolveModelUsing(Closure $callback): self
+    {
+        $this->modelResolver = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    /**
+     * Resolve the model class for a given row.
+     *
+     * If a model resolver is set, it will be called with the row data.
+     * Otherwise, the default model class will be returned.
+     */
+    public function resolveModelClass(array $rowData): string
+    {
+        if ($this->modelResolver) {
+            $resolvedClass = call_user_func($this->modelResolver->getClosure(), $rowData);
+
+            if (!is_subclass_of($resolvedClass, Model::class)) {
+                throw new InvalidConfigurationException(sprintf(
+                    "The resolved class '%s' must be an instance of Illuminate\Database\Eloquent\Model.",
+                    $resolvedClass
+                ));
+            }
+
+            return $resolvedClass;
+        }
+
+        return $this->model;
     }
 
     public function getHeaderNormalizationMap(): array

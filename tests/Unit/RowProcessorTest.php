@@ -10,8 +10,11 @@ use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
+use LaravelIngest\Exceptions\InvalidConfigurationException;
+use LaravelIngest\Tests\Fixtures\Models\AdminUser;
 use LaravelIngest\Tests\Fixtures\Models\Category;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
+use LaravelIngest\Tests\Fixtures\Models\RegularUser;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\Models\UserWithRules;
 
@@ -236,5 +239,237 @@ it('ignores missing source fields during mapping and relation resolution', funct
     $this->assertDatabaseHas('products_with_category', [
         'name' => 'My Product',
         'category_id' => null,
+    ]);
+});
+
+it('dynamically resolves model class based on row data using resolveModelUsing', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->resolveModelUsing(function (array $data) {
+            // Decide model based on a naming convention in the data
+            return str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class;
+        });
+
+    $chunk = [
+        ['number' => 1, 'data' => ['name' => 'Admin User', 'email' => 'admin@example.com']],
+        ['number' => 2, 'data' => ['name' => 'Regular User', 'email' => 'user@example.com']],
+    ];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(2);
+    expect($results['failed'])->toBe(0);
+
+    // AdminUser model sets is_admin = true and password = 'admin_password'
+    $this->assertDatabaseHas('users', [
+        'email' => 'admin@example.com',
+        'name' => 'Admin User',
+        'is_admin' => true,
+        'password' => 'admin_password',
+    ]);
+
+    // RegularUser model sets is_admin = false and password = 'user_password'
+    $this->assertDatabaseHas('users', [
+        'email' => 'user@example.com',
+        'name' => 'Regular User',
+        'is_admin' => false,
+        'password' => 'user_password',
+    ]);
+});
+
+it('uses default model class when no resolver is set', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email');
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Default User', 'email' => 'default@example.com']]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    // Default User model sets password = 'password'
+    $this->assertDatabaseHas('users', [
+        'email' => 'default@example.com',
+        'password' => 'password',
+    ]);
+});
+
+it('throws exception when model resolver returns invalid class', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->transactionMode(TransactionMode::CHUNK)
+        ->resolveModelUsing(function (array $data) {
+            return 'InvalidClassName';
+        });
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'test@example.com']]];
+
+    $this->processor->processChunk($this->run, $config, $chunk, false);
+})->throws(InvalidConfigurationException::class);
+
+it('handles duplicate detection with dynamically resolved models', function () {
+    // Create an existing admin user
+    AdminUser::create(['name' => 'Existing Admin', 'email' => 'existing-admin@example.com']);
+
+    $config = IngestConfig::for(User::class)
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->resolveModelUsing(function (array $data) {
+            return str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class;
+        });
+
+    $chunk = [
+        ['number' => 1, 'data' => ['name' => 'Updated Admin', 'email' => 'existing-admin@example.com']],
+    ];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    // The existing record should be updated
+    $this->assertDatabaseHas('users', [
+        'email' => 'existing-admin@example.com',
+        'name' => 'Updated Admin',
+    ]);
+
+    // Should only have one user with this email
+    expect(User::where('email', 'existing-admin@example.com')->count())->toBe(1);
+});
+
+it('extracts values from nested data using dot notation', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('user.profile.name', 'name')
+        ->map('user.contact.email', 'email');
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'user' => [
+                'profile' => [
+                    'name' => 'Nested User',
+                ],
+                'contact' => [
+                    'email' => 'nested@example.com',
+                ],
+            ],
+        ],
+    ]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['failed'])->toBe(0);
+    expect($results['successful'])->toBe(1);
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Nested User',
+        'email' => 'nested@example.com',
+    ]);
+});
+
+it('handles mixed flat and nested fields with dot notation', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('contact.email', 'email');
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'name' => 'Mixed User',
+            'contact' => [
+                'email' => 'mixed@example.com',
+            ],
+        ],
+    ]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'Mixed User',
+        'email' => 'mixed@example.com',
+    ]);
+});
+
+it('applies transformer to nested field values', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('meta.email', 'email')
+        ->mapAndTransform('meta.full_name', 'name', fn ($value) => strtoupper($value));
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'meta' => [
+                'full_name' => 'john doe',
+                'email' => 'john@example.com',
+            ],
+        ],
+    ]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    $this->assertDatabaseHas('users', [
+        'name' => 'JOHN DOE',
+        'email' => 'john@example.com',
+    ]);
+});
+
+it('skips mapping when nested path does not exist', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('user.name', 'name')
+        ->map('user.email', 'email')
+        ->map('user.missing.deep.path', 'is_admin');
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'user' => [
+                'name' => 'Partial User',
+                'email' => 'partial@example.com',
+            ],
+        ],
+    ]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    $user = User::where('email', 'partial@example.com')->first();
+    expect($user->name)->toBe('Partial User');
+    // is_admin should remain default (false) since the nested path doesn't exist
+    expect($user->is_admin)->toBe(false);
+});
+
+it('resolves relations from nested source fields', function () {
+    $category = Category::create(['name' => 'Electronics']);
+
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product.name', 'name')
+        ->relate('product.category_name', 'category', Category::class, 'name');
+
+    $chunk = [[
+        'number' => 1,
+        'data' => [
+            'product' => [
+                'name' => 'Laptop',
+                'category_name' => 'Electronics',
+            ],
+        ],
+    ]];
+
+    $results = $this->processor->processChunk($this->run, $config, $chunk, false);
+
+    expect($results['successful'])->toBe(1);
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'Laptop',
+        'category_id' => $category->id,
     ]);
 });

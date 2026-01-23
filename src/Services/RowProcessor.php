@@ -48,10 +48,11 @@ class RowProcessor
 
                         $this->validate($rowData->processedData, $config);
 
-                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache);
+                        $modelClass = $config->resolveModelClass($rowData->processedData);
+                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass);
 
                         if (!$isDryRun) {
-                            $model = $this->persist($transformedData, $config);
+                            $model = $this->persist($transformedData, $config, $modelClass);
                         }
 
                         if ($config->afterRowCallback && $model) {
@@ -103,7 +104,13 @@ class RowProcessor
     {
         $cache = [];
         foreach ($config->relations as $sourceField => $relationConfig) {
-            $values = collect($chunk)->pluck('data.' . $sourceField)->filter()->unique()->values();
+            // Use data_get to support dot notation for nested source fields
+            $values = collect($chunk)
+                ->map(fn ($item) => data_get($item, 'data.' . $sourceField))
+                ->filter()
+                ->unique()
+                ->values();
+
             if ($values->isEmpty()) {
                 continue;
             }
@@ -133,16 +140,16 @@ class RowProcessor
         }
     }
 
-    private function transform(IngestConfig $config, array $processedData, array $relationCache): array
+    private function transform(IngestConfig $config, array $processedData, array $relationCache, string $modelClass): array
     {
         $modelData = [];
 
         foreach ($config->mappings as $sourceField => $mapping) {
-            if (!array_key_exists($sourceField, $processedData)) {
+            if (!$this->hasNestedKey($processedData, $sourceField)) {
                 continue;
             }
 
-            $value = $processedData[$sourceField];
+            $value = data_get($processedData, $sourceField);
             if ($mapping['transformer'] instanceof SerializableClosure) {
                 $value = call_user_func($mapping['transformer']->getClosure(), $value, $processedData);
             }
@@ -150,12 +157,12 @@ class RowProcessor
         }
 
         foreach ($config->relations as $sourceField => $relationConfig) {
-            if (!array_key_exists($sourceField, $processedData)) {
+            if (!$this->hasNestedKey($processedData, $sourceField)) {
                 continue;
             }
 
-            $modelInstance = app($config->model);
-            $relationValue = $processedData[$sourceField];
+            $modelInstance = app($modelClass);
+            $relationValue = data_get($processedData, $sourceField);
             $relatedId = null;
 
             if (!empty($relationValue) && isset($relationCache[$sourceField])) {
@@ -167,8 +174,11 @@ class RowProcessor
             $modelData[$foreignKey] = $relatedId;
         }
 
-        $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations);
-        $modelInstance = app($config->model);
+        // Collect top-level keys that are used by nested mappings/relations
+        $usedTopLevelKeys = $this->getUsedTopLevelKeys($config);
+
+        $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $usedTopLevelKeys);
+        $modelInstance = app($modelClass);
         foreach ($unmappedData as $key => $value) {
             if ($modelInstance->isFillable($key)) {
                 $modelData[$key] = $value;
@@ -178,9 +188,60 @@ class RowProcessor
         return $modelData;
     }
 
-    private function persist(array $modelData, IngestConfig $config): ?Model
+    /**
+     * Check if a key exists in the data, supporting dot notation for nested keys.
+     */
+    private function hasNestedKey(array $data, string $key): bool
     {
-        $existingModel = $this->findExistingModel($modelData, $config);
+        // For non-nested keys, use simple array_key_exists
+        if (!str_contains($key, '.')) {
+            return array_key_exists($key, $data);
+        }
+
+        // For nested keys, traverse the array
+        $segments = explode('.', $key);
+        $current = $data;
+
+        foreach ($segments as $segment) {
+            if (!is_array($current) || !array_key_exists($segment, $current)) {
+                return false;
+            }
+            $current = $current[$segment];
+        }
+
+        return true;
+    }
+
+    /**
+     * Get top-level keys that are used by nested dot-notation paths in mappings and relations.
+     *
+     * This prevents nested source data (like 'user' in 'user.profile.name') from being
+     * treated as unmapped fillable data.
+     */
+    private function getUsedTopLevelKeys(IngestConfig $config): array
+    {
+        $topLevelKeys = [];
+
+        foreach (array_keys($config->mappings) as $sourceField) {
+            if (str_contains($sourceField, '.')) {
+                $topLevelKey = explode('.', $sourceField)[0];
+                $topLevelKeys[$topLevelKey] = true;
+            }
+        }
+
+        foreach (array_keys($config->relations) as $sourceField) {
+            if (str_contains($sourceField, '.')) {
+                $topLevelKey = explode('.', $sourceField)[0];
+                $topLevelKeys[$topLevelKey] = true;
+            }
+        }
+
+        return $topLevelKeys;
+    }
+
+    private function persist(array $modelData, IngestConfig $config, string $modelClass): ?Model
+    {
+        $existingModel = $this->findExistingModel($modelData, $config, $modelClass);
 
         if ($existingModel) {
             switch ($config->duplicateStrategy) {
@@ -195,10 +256,10 @@ class RowProcessor
             }
         }
 
-        return $config->model::create($modelData);
+        return $modelClass::create($modelData);
     }
 
-    private function findExistingModel(array $modelData, IngestConfig $config): ?Model
+    private function findExistingModel(array $modelData, IngestConfig $config, string $modelClass): ?Model
     {
         $modelKey = null;
         foreach ($config->mappings as $source => $map) {
@@ -211,7 +272,7 @@ class RowProcessor
             return null;
         }
 
-        return $config->model::where($modelKey, $modelData[$modelKey])->first();
+        return $modelClass::where($modelKey, $modelData[$modelKey])->first();
     }
 
     private function prepareLogRow(IngestRun $ingestRun, RowData $rowData, string $status, ?array $errors = null): array
