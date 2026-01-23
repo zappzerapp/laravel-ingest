@@ -53,14 +53,20 @@ Defines behavior when a record with the `keyedBy` value is found in the database
 
 ## Mapping & Transformation
 
-### `map(string $sourceColumn, string $modelAttribute)`
-A 1:1 copy from source to database.
+### `map(string|array $sourceColumn, string $modelAttribute)`
+A 1:1 copy from source to database. Supports column aliases for files with varying headers.
+
 ```php
+// Simple mapping
 ->map('First Name', 'first_name')
+
+// With aliases - first match wins
+->map(['email', 'E-Mail', 'user_email'], 'email')
+->map(['name', 'full_name', 'Name'], 'name')
 ```
 
-### `mapAndTransform(string $sourceColumn, string $modelAttribute, callable $callback)`
-Transforms the value before saving.
+### `mapAndTransform(string|array $sourceColumn, string $modelAttribute, callable $callback)`
+Transforms the value before saving. Also supports column aliases.
 - **Callback Signature**: `fn($value, array $row)`
 - **$value**: The value of the specific column.
 - **$row**: The entire raw row array (useful for combining columns).
@@ -73,19 +79,26 @@ Transforms the value before saving.
 
 // Format currency
 ->mapAndTransform('Price', 'price_in_cents', fn($val) => (int)($val * 100))
+
+// With aliases
+->mapAndTransform(['status', 'Status', 'STATE'], 'is_active', fn($val) => $val === 'active')
 ```
 
-### `relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey)`
+### `relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey, bool $createIfMissing = false)`
 Automatically resolves `BelongsTo` relationships.
 1. Takes the value from `$sourceColumn`.
 2. Searches `$relatedModel` where `$relatedKey` matches that value.
 3. If found, assigns the ID to the foreign key of `$relationName`.
+4. If `createIfMissing` is `true` and no match is found, creates the related record automatically.
 
 ```php
 // Source: "Category: Smartphones"
 // Database lookup: Category::where('name', 'Smartphones')->first()
 // Result: $product->category_id = $foundCategory->id
 ->relate('Category', 'category', \App\Models\Category::class, 'name')
+
+// Auto-create missing categories
+->relate('Category', 'category', \App\Models\Category::class, 'name', createIfMissing: true)
 ```
 
 ---
@@ -103,14 +116,21 @@ Applies Laravel validation rules to the incoming data *before* it is transformed
 ```
 
 ### `validateWithModelRules()`
-Merges validation rules defined in the target model's static `getRules()` method. Useful for DRY (Don't Repeat Yourself).
+Merges validation rules defined in the target model's static `getRules()` method. Useful for DRY (Don't Repeat Yourself). Rules from `validate()` take precedence over model rules.
 
 ```php
 // In Product.php
-public static function getRules() { return ['sku' => 'required']; }
+public static function getRules(): array
+{
+    return [
+        'sku' => 'required|string',
+        'name' => 'required|min:3',
+    ];
+}
 
 // In Config
 ->validateWithModelRules()
+->validate(['price' => 'required|numeric']) // Additional rules
 ```
 
 ---
@@ -160,4 +180,48 @@ Wraps each chunk in a Database Transaction. If **one** row in the chunk fails, *
 Overrides the default filesystem disk (from `config/ingest.php`) for this specific importer.
 ```php
 ->setDisk('s3_private_bucket')
+```
+
+---
+
+## Dynamic Model Resolution
+
+### `resolveModelUsing(callable $callback)`
+Allows you to dynamically determine which Eloquent model to use based on the row data. This is useful when importing heterogeneous data into different tables.
+
+- **Callback Signature**: `fn(array $rowData): string`
+- **Returns**: A fully qualified model class name.
+
+```php
+use App\Models\{User, AdminUser, Customer};
+
+IngestConfig::for(User::class)
+    ->resolveModelUsing(function(array $row) {
+        return match($row['user_type'] ?? 'user') {
+            'admin' => AdminUser::class,
+            'customer' => Customer::class,
+            default => User::class,
+        };
+    })
+    ->map('email', 'email')
+    ->map('name', 'name');
+```
+
+> **Note:** The base model class passed to `IngestConfig::for()` is used as a fallback if no resolver is set.
+
+---
+
+## Transaction Modes
+
+### `transactionMode(TransactionMode $mode)`
+Fine-grained control over database transaction behavior.
+
+- `TransactionMode::NONE`: No transactions (default). Each row is committed individually.
+- `TransactionMode::CHUNK`: Wraps each chunk in a transaction. Same as calling `atomic()`.
+- `TransactionMode::ROW`: Wraps each individual row in its own transaction.
+
+```php
+use LaravelIngest\Enums\TransactionMode;
+
+->transactionMode(TransactionMode::ROW)
 ```

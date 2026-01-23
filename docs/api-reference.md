@@ -116,6 +116,45 @@ curl -X POST \
 
 ---
 
+### Get Error Summary
+
+Retrieves an aggregated summary of errors for a specific ingest run. Useful for quickly understanding the most common issues without fetching all failed rows.
+
+-   **Endpoint:** `GET /{ingestRun}/errors/summary`
+-   **URL Parameters:**
+    -   `ingestRun` (integer, required): The ID of the ingest run.
+-   **Success Response:** `200 OK` with an [IngestErrorSummaryResource](#ingesterrorsummaryresource-object) object.
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer <token>" \
+  https://myapp.com/api/v1/ingest/123/errors/summary
+```
+
+---
+
+### IngestErrorSummaryResource Object
+
+The JSON representation for an error analysis summary.
+
+```json
+{
+  "data": {
+    "total_failed_rows": 15,
+    "error_summary": [
+      { "message": "Duplicate entry found for key 'email'.", "count": 8 },
+      { "message": "The given data was invalid.", "count": 7 }
+    ],
+    "validation_summary": [
+      { "message": "email: The email field is required.", "count": 5 },
+      { "message": "name: The name must be at least 2 characters.", "count": 2 }
+    ]
+  }
+}
+```
+
+---
+
 ### IngestRunResource Object
 
 The standard JSON representation for an ingest run.

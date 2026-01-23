@@ -72,3 +72,32 @@ curl -X POST \
   https://myapp.com/api/v1/ingest/1/retry
 ```
 The response will be the JSON representation of the *new* ingest run that has been created.
+
+### Analyzing Errors
+
+For runs with failed rows, you can get an aggregated error summary to quickly identify the most common issues.
+
+#### Via API
+-   **Endpoint:** `GET /api/v1/ingest/{ingestRun}/errors/summary`
+
+```bash
+curl -X GET \
+  -H "Authorization: Bearer <token>" \
+  https://myapp.com/api/v1/ingest/1/errors/summary
+```
+
+The response groups errors by type and shows their frequency:
+
+```json
+{
+  "data": {
+    "total_failed_rows": 15,
+    "error_summary": [
+      { "message": "Duplicate entry found for key 'email'.", "count": 8 }
+    ],
+    "validation_summary": [
+      { "message": "email: The email field is required.", "count": 5 }
+    ]
+  }
+}
+```

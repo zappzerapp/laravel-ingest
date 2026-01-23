@@ -20,5 +20,9 @@ Importing data (CSV, Excel, etc.) is often a painful process: repetitive code, l
 - **Source Agnostic**: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (`s3`, `local`). Easily extensible for other sources.
 - **Robust Background Processing**: Uses the Laravel Queue by default for maximum reliability.
 - **Comprehensive Mapping & Validation**: Transform data on-the-fly, resolve relationships, and use the validation rules of your Eloquent models.
+- **Column Aliases**: Support multiple header names for the same field (e.g., `['email', 'E-Mail', 'user_email']`).
+- **Dynamic Model Resolution**: Route rows to different Eloquent models based on row data.
+- **Auto-Create Relations**: Automatically create missing related records during import.
 - **Auto-generated API & CLI**: Control and monitor imports via RESTful endpoints or the included Artisan commands.
 - **"Dry Runs"**: Simulate an import to detect validation errors without writing a single database entry.
+- **Error Analysis**: Aggregated error summaries via dedicated API endpoint.

@@ -80,6 +80,12 @@ First, configure your disk in `config/filesystems.php`:
 ],
 ```
 
+> **Note:** FTP support requires `league/flysystem-ftp`. SFTP support requires `league/flysystem-sftp-v3`. Install via:
+> ```bash
+> composer require league/flysystem-ftp      # for FTP
+> composer require league/flysystem-sftp-v3  # for SFTP
+> ```
+
 #### Example IngestConfig
 
 Then, use the configured disk in your importer:
@@ -89,4 +95,11 @@ Then, use the configured disk in your importer:
     'disk' => 'erp_ftp',
     'path' => '/exports/stock-levels.csv',
 ])
+```
+
+---
+
+## Custom Source Handlers
+
+You can create your own source handlers for custom data sources (APIs, XML, etc.). See the [Custom Source Handlers](/advanced/custom-source-handlers/) guide for details.
 ```

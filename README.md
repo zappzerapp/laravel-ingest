@@ -139,20 +139,33 @@ $retryRun = Ingest::retry($run);
 
 All configurations are handled via the fluent API in your `getConfig()` method.
 
-| Method                                      | Description                                                                                                   |
-|---------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `fromSource(SourceType, array)`             | Defines the data source (e.g., `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                         |
-| `keyedBy(string)`                           | Sets the unique field in the source data (e.g., `sku`, `email`).                                              |
-| `onDuplicate(DuplicateStrategy)`            | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`).                                                   |
-| `map(string, string)`                       | Maps a source column directly to a model attribute.                                                           |
-| `mapAndTransform(string, string, callable)` | Maps and transforms the value before saving.                                                                  |
-| `relate(string, string, string, string)`    | Resolves a `BelongsTo` relationship. Maps `sourceField` to `relationName` using `relatedModel`::`relatedKey`. |
-| `validate(array)`                           | Defines import-specific validation rules.                                                                     |
-| `validateWithModelRules()`                  | Uses the target model's `$rules` property for validation.                                                     |
-| `setChunkSize(int)`                         | Defines the number of rows per background job (Default: 100).                                                 |
-| `setDisk(string)`                           | Defines the filesystem disk for `UPLOAD` or `FILESYSTEM` sources.                                             |
+| Method                                              | Description                                                                                                   |
+|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `fromSource(SourceType, array)`                     | Defines the data source (e.g., `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                         |
+| `keyedBy(string)`                                   | Sets the unique field in the source data (e.g., `sku`, `email`).                                              |
+| `onDuplicate(DuplicateStrategy)`                    | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`).                                                   |
+| `map(string\|array, string)`                        | Maps a source column (with optional aliases) to a model attribute.                                            |
+| `mapAndTransform(string\|array, string, callable)`  | Maps and transforms the value before saving.                                                                  |
+| `relate(string, string, string, string, bool)`      | Resolves a `BelongsTo` relationship with optional `createIfMissing`.                                          |
+| `validate(array)`                                   | Defines import-specific validation rules.                                                                     |
+| `validateWithModelRules()`                          | Uses the target model's `getRules()` method for validation.                                                   |
+| `setChunkSize(int)`                                 | Defines the number of rows per background job (Default: 100).                                                 |
+| `setDisk(string)`                                   | Defines the filesystem disk for `UPLOAD` or `FILESYSTEM` sources.                                             |
+| `atomic()`                                          | Wraps each chunk in a database transaction.                                                                   |
+| `beforeRow(callable)`                               | Hook executed before validation to modify raw data.                                                           |
+| `afterRow(callable)`                                | Hook executed after successful save with model and row data.                                                  |
+| `resolveModelUsing(callable)`                       | Dynamically resolve the target model class based on row data.                                                 |
 
 ## Advanced Scenarios
+
+### Column Aliases
+
+Support for files with varying header names:
+
+```php
+->map(['email', 'E-Mail', 'user_email'], 'email')  // First match wins
+->map(['name', 'full_name', 'username'], 'name')
+```
 
 ### Nightly FTP Import
 
@@ -160,11 +173,8 @@ All configurations are handled via the fluent API in your `getConfig()` method.
 // app/Ingest/DailyStockImporter.php
 return IngestConfig::for(ProductStock::class)
     ->fromSource(SourceType::FTP, [
-        'host' => config('services.erp.host'),
-        'username' => config('services.erp.username'),
-        'password' => config('services.erp.password'),
+        'disk' => 'erp_ftp',  // Configured in filesystems.php
         'path' => '/stock/daily_update.csv',
-        'disk' => 'ftp_disk' // Ensure this disk is defined in filesystems.php
     ])
     ->keyedBy('product_sku')
     ->onDuplicate(DuplicateStrategy::UPDATE)
@@ -175,8 +185,31 @@ return IngestConfig::for(ProductStock::class)
 Set up a scheduled command to trigger the import:
 
 ```php
-// app/Console/Kernel.php
-$schedule->command('ingest:run daily-stock-importer')->dailyAt('03:00');
+// routes/console.php (Laravel 11+)
+Schedule::command('ingest:run daily-stock-importer')->dailyAt('03:00');
+```
+
+### Dynamic Model Resolution
+
+Import different model types based on row data:
+
+```php
+return IngestConfig::for(User::class)
+    ->resolveModelUsing(fn(array $row) => match($row['type']) {
+        'admin' => AdminUser::class,
+        'customer' => Customer::class,
+        default => User::class,
+    })
+    ->map('email', 'email')
+    ->map('name', 'name');
+```
+
+### Auto-Create Missing Relations
+
+Create related records on-the-fly if they don't exist:
+
+```php
+->relate('category_name', 'category', Category::class, 'name', createIfMissing: true)
 ```
 
 ## Testing
