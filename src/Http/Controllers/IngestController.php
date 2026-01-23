@@ -9,7 +9,6 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Gate;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Http\Requests\UploadRequest;
 use LaravelIngest\Http\Resources\IngestErrorSummaryResource;

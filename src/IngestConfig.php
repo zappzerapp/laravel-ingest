@@ -99,8 +99,13 @@ class IngestConfig
         return $this;
     }
 
-    public function relate(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id'): self
-    {
+    public function relate(
+        string $sourceField,
+        string $relationName,
+        string $relatedModel,
+        string $relatedKey = 'id',
+        bool $createIfMissing = false
+    ): self {
         if (!is_subclass_of($relatedModel, Model::class)) {
             throw new InvalidConfigurationException("Class {$relatedModel} must be an Eloquent Model.");
         }
@@ -109,6 +114,7 @@ class IngestConfig
             'relation' => $relationName,
             'model' => $relatedModel,
             'key' => $relatedKey,
+            'createIfMissing' => $createIfMissing,
         ];
 
         return $this;

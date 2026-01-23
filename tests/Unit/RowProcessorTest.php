@@ -6,11 +6,11 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
+use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
-use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Tests\Fixtures\Models\AdminUser;
 use LaravelIngest\Tests\Fixtures\Models\Category;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
@@ -246,10 +246,7 @@ it('dynamically resolves model class based on row data using resolveModelUsing',
     $config = IngestConfig::for(User::class)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->resolveModelUsing(function (array $data) {
-            // Decide model based on a naming convention in the data
-            return str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class;
-        });
+        ->resolveModelUsing(fn(array $data) => str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class);
 
     $chunk = [
         ['number' => 1, 'data' => ['name' => 'Admin User', 'email' => 'admin@example.com']],
@@ -261,7 +258,6 @@ it('dynamically resolves model class based on row data using resolveModelUsing',
     expect($results['successful'])->toBe(2);
     expect($results['failed'])->toBe(0);
 
-    // AdminUser model sets is_admin = true and password = 'admin_password'
     $this->assertDatabaseHas('users', [
         'email' => 'admin@example.com',
         'name' => 'Admin User',
@@ -269,7 +265,6 @@ it('dynamically resolves model class based on row data using resolveModelUsing',
         'password' => 'admin_password',
     ]);
 
-    // RegularUser model sets is_admin = false and password = 'user_password'
     $this->assertDatabaseHas('users', [
         'email' => 'user@example.com',
         'name' => 'Regular User',
@@ -289,7 +284,6 @@ it('uses default model class when no resolver is set', function () {
 
     expect($results['successful'])->toBe(1);
 
-    // Default User model sets password = 'password'
     $this->assertDatabaseHas('users', [
         'email' => 'default@example.com',
         'password' => 'password',
@@ -301,9 +295,7 @@ it('throws exception when model resolver returns invalid class', function () {
         ->map('name', 'name')
         ->map('email', 'email')
         ->transactionMode(TransactionMode::CHUNK)
-        ->resolveModelUsing(function (array $data) {
-            return 'InvalidClassName';
-        });
+        ->resolveModelUsing(fn(array $data) => 'InvalidClassName');
 
     $chunk = [['number' => 1, 'data' => ['name' => 'Test', 'email' => 'test@example.com']]];
 
@@ -311,7 +303,6 @@ it('throws exception when model resolver returns invalid class', function () {
 })->throws(InvalidConfigurationException::class);
 
 it('handles duplicate detection with dynamically resolved models', function () {
-    // Create an existing admin user
     AdminUser::create(['name' => 'Existing Admin', 'email' => 'existing-admin@example.com']);
 
     $config = IngestConfig::for(User::class)
@@ -319,9 +310,7 @@ it('handles duplicate detection with dynamically resolved models', function () {
         ->onDuplicate(DuplicateStrategy::UPDATE)
         ->map('name', 'name')
         ->map('email', 'email')
-        ->resolveModelUsing(function (array $data) {
-            return str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class;
-        });
+        ->resolveModelUsing(fn(array $data) => str_contains($data['email'], 'admin') ? AdminUser::class : RegularUser::class);
 
     $chunk = [
         ['number' => 1, 'data' => ['name' => 'Updated Admin', 'email' => 'existing-admin@example.com']],
@@ -331,13 +320,11 @@ it('handles duplicate detection with dynamically resolved models', function () {
 
     expect($results['successful'])->toBe(1);
 
-    // The existing record should be updated
     $this->assertDatabaseHas('users', [
         'email' => 'existing-admin@example.com',
         'name' => 'Updated Admin',
     ]);
 
-    // Should only have one user with this email
     expect(User::where('email', 'existing-admin@example.com')->count())->toBe(1);
 });
 
@@ -399,7 +386,7 @@ it('handles mixed flat and nested fields with dot notation', function () {
 it('applies transformer to nested field values', function () {
     $config = IngestConfig::for(User::class)
         ->map('meta.email', 'email')
-        ->mapAndTransform('meta.full_name', 'name', fn ($value) => strtoupper($value));
+        ->mapAndTransform('meta.full_name', 'name', fn($value) => strtoupper($value));
 
     $chunk = [[
         'number' => 1,
@@ -443,7 +430,6 @@ it('skips mapping when nested path does not exist', function () {
 
     $user = User::where('email', 'partial@example.com')->first();
     expect($user->name)->toBe('Partial User');
-    // is_admin should remain default (false) since the nested path doesn't exist
     expect($user->is_admin)->toBe(false);
 });
 

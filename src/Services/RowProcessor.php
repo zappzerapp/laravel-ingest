@@ -41,7 +41,7 @@ class RowProcessor
                 $results['processed']++;
 
                 try {
-                    $rowLogic = function () use ($ingestRun, $config, $rowData, $isDryRun, $relationCache, &$model) {
+                    $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$model) {
                         if ($config->beforeRowCallback) {
                             call_user_func_array($config->beforeRowCallback->getClosure(), [&$rowData->processedData]);
                         }
@@ -49,7 +49,7 @@ class RowProcessor
                         $this->validate($rowData->processedData, $config);
 
                         $modelClass = $config->resolveModelClass($rowData->processedData);
-                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass);
+                        $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass, $isDryRun);
 
                         if (!$isDryRun) {
                             $model = $this->persist($transformedData, $config, $modelClass);
@@ -67,7 +67,6 @@ class RowProcessor
                     }
 
                 } catch (Throwable $e) {
-                    // In CHUNK mode, we bubble up the exception to trigger the outer transaction rollback
                     if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
                         throw $e;
                     }
@@ -83,7 +82,7 @@ class RowProcessor
                 $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'success');
                 $results['successful']++;
                 RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model ?? null);
-                $model = null; // Reset for next iteration
+                $model = null;
             }
 
             if (!empty($rowsToLog) && config('ingest.log_rows')) {
@@ -104,9 +103,8 @@ class RowProcessor
     {
         $cache = [];
         foreach ($config->relations as $sourceField => $relationConfig) {
-            // Use data_get to support dot notation for nested source fields
             $values = collect($chunk)
-                ->map(fn ($item) => data_get($item, 'data.' . $sourceField))
+                ->map(fn($item) => data_get($item, 'data.' . $sourceField))
                 ->filter()
                 ->unique()
                 ->values();
@@ -140,7 +138,7 @@ class RowProcessor
         }
     }
 
-    private function transform(IngestConfig $config, array $processedData, array $relationCache, string $modelClass): array
+    private function transform(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun = false): array
     {
         $modelData = [];
 
@@ -165,8 +163,12 @@ class RowProcessor
             $relationValue = data_get($processedData, $sourceField);
             $relatedId = null;
 
-            if (!empty($relationValue) && isset($relationCache[$sourceField])) {
+            if (!empty($relationValue)) {
                 $relatedId = $relationCache[$sourceField][$relationValue] ?? null;
+
+                if ($relatedId === null && ($relationConfig['createIfMissing'] ?? false) && !$isDryRun) {
+                    $relatedId = $this->createMissingRelation($relationConfig, $relationValue, $relationCache, $sourceField);
+                }
             }
 
             $relationObject = $modelInstance->{$relationConfig['relation']}();
@@ -174,7 +176,6 @@ class RowProcessor
             $modelData[$foreignKey] = $relatedId;
         }
 
-        // Collect top-level keys that are used by nested mappings/relations
         $usedTopLevelKeys = $this->getUsedTopLevelKeys($config);
 
         $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $usedTopLevelKeys);
@@ -193,12 +194,10 @@ class RowProcessor
      */
     private function hasNestedKey(array $data, string $key): bool
     {
-        // For non-nested keys, use simple array_key_exists
         if (!str_contains($key, '.')) {
             return array_key_exists($key, $data);
         }
 
-        // For nested keys, traverse the array
         $segments = explode('.', $key);
         $current = $data;
 
@@ -210,6 +209,26 @@ class RowProcessor
         }
 
         return true;
+    }
+
+    /**
+     * Create a missing related model and update the cache.
+     */
+    private function createMissingRelation(array $relationConfig, mixed $relationValue, array &$relationCache, string $sourceField): mixed
+    {
+        $relatedModelClass = $relationConfig['model'];
+        $lookupKey = $relationConfig['key'];
+
+        $newRelatedModel = $relatedModelClass::create([
+            $lookupKey => $relationValue,
+        ]);
+
+        if (!isset($relationCache[$sourceField])) {
+            $relationCache[$sourceField] = [];
+        }
+        $relationCache[$sourceField][$relationValue] = $newRelatedModel->getKey();
+
+        return $newRelatedModel->getKey();
     }
 
     /**
@@ -275,6 +294,16 @@ class RowProcessor
         return $modelClass::where($modelKey, $modelData[$modelKey])->first();
     }
 
+    private function formatErrors(Throwable $e): array
+    {
+        $errors = ['message' => $e->getMessage()];
+        if ($e instanceof ValidationException) {
+            $errors['validation'] = $e->errors();
+        }
+
+        return $errors;
+    }
+
     private function prepareLogRow(IngestRun $ingestRun, RowData $rowData, string $status, ?array $errors = null): array
     {
         return [
@@ -286,15 +315,5 @@ class RowProcessor
             'created_at' => now(),
             'updated_at' => now(),
         ];
-    }
-
-    private function formatErrors(Throwable $e): array
-    {
-        $errors = ['message' => $e->getMessage()];
-        if ($e instanceof ValidationException) {
-            $errors['validation'] = $e->errors();
-        }
-
-        return $errors;
     }
 }

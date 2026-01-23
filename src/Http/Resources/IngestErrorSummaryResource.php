@@ -22,7 +22,7 @@ class IngestErrorSummaryResource extends JsonResource
     }
 
     /**
-     * @param array<string, int> $summary
+     * @param  array<string, int>  $summary
      * @return array<int, array<string, string|int>>
      */
     private function formatSummary(array $summary): array

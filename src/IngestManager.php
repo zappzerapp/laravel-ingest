@@ -87,6 +87,19 @@ class IngestManager
         return $ingestRun;
     }
 
+    /** @throws DefinitionNotFoundException */
+    public function getDefinition(string $slug): IngestDefinition
+    {
+        if (!isset($this->definitions[$slug])) {
+            throw new DefinitionNotFoundException(
+                "No importer found with the slug '{$slug}'. " .
+                "Please check your spelling or run 'php artisan ingest:list' to see available importers."
+            );
+        }
+
+        return $this->definitions[$slug];
+    }
+
     /**
      * @throws Throwable
      * @throws DefinitionNotFoundException
@@ -128,19 +141,6 @@ class IngestManager
         }
 
         return $newRun;
-    }
-
-    /** @throws DefinitionNotFoundException */
-    public function getDefinition(string $slug): IngestDefinition
-    {
-        if (!isset($this->definitions[$slug])) {
-            throw new DefinitionNotFoundException(
-                "No importer found with the slug '{$slug}'. " .
-                "Please check your spelling or run 'php artisan ingest:list' to see available importers."
-            );
-        }
-
-        return $this->definitions[$slug];
     }
 
     /**

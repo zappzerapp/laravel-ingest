@@ -49,17 +49,6 @@ trait ProcessesSource
         return $map;
     }
 
-    private function translateRow(array $row, array $translationMap): array
-    {
-        $newRow = [];
-        foreach ($row as $key => $value) {
-            $newKey = $translationMap[$key] ?? $key;
-            $newRow[$newKey] = $value;
-        }
-
-        return $newRow;
-    }
-
     /**
      * @throws SourceException
      */
@@ -74,5 +63,16 @@ trait ProcessesSource
         if (!$primaryKeyExists) {
             throw new SourceException("The key column '{$config->keyedBy}' or one of its aliases was not found in the source file headers.");
         }
+    }
+
+    private function translateRow(array $row, array $translationMap): array
+    {
+        $newRow = [];
+        foreach ($row as $key => $value) {
+            $newKey = $translationMap[$key] ?? $key;
+            $newRow[$newKey] = $value;
+        }
+
+        return $newRow;
     }
 }

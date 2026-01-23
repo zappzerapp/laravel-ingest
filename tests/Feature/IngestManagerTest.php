@@ -52,7 +52,7 @@ it('throws source exception if keyedBy column is missing in header', function ()
 
     $config = IngestConfig::for(User::class)
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
-        ->keyedBy('user_email'); // Note: 'user_email' is not in the file
+        ->keyedBy('user_email');
 
     $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['testimporter' => $definition], app(SourceHandlerFactory::class));
