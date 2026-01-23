@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822523158885" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -273,23 +273,28 @@
         <span>Mapping &amp; Transformation</span>
     </h2>
 </doc-anchor-target>
-<doc-anchor-target id="mapstring-sourcecolumn-string-modelattribute">
+<doc-anchor-target id="mapstringarray-sourcecolumn-string-modelattribute">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#mapstring-sourcecolumn-string-modelattribute">#</doc-anchor-trigger>
-        <span><code v-pre>map(string $sourceColumn, string $modelAttribute)</code></span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#mapstringarray-sourcecolumn-string-modelattribute">#</doc-anchor-trigger>
+        <span><code v-pre>map(string|array $sourceColumn, string $modelAttribute)</code></span>
     </h3>
 </doc-anchor-target>
-<p>A 1:1 copy from source to database.</p>
+<p>A 1:1 copy from source to database. Supports column aliases for files with varying headers.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;map('First Name', 'first_name')</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Simple mapping
+-&gt;map('First Name', 'first_name')
+
+// With aliases - first match wins
+-&gt;map(['email', 'E-Mail', 'user_email'], 'email')
+-&gt;map(['name', 'full_name', 'Name'], 'name')</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="mapandtransformstring-sourcecolumn-string-modelattribute-callable-callback">
+<doc-anchor-target id="mapandtransformstringarray-sourcecolumn-string-modelattribute-callable-callback">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#mapandtransformstring-sourcecolumn-string-modelattribute-callable-callback">#</doc-anchor-trigger>
-        <span><code v-pre>mapAndTransform(string $sourceColumn, string $modelAttribute, callable $callback)</code></span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#mapandtransformstringarray-sourcecolumn-string-modelattribute-callable-callback">#</doc-anchor-trigger>
+        <span><code v-pre>mapAndTransform(string|array $sourceColumn, string $modelAttribute, callable $callback)</code></span>
     </h3>
 </doc-anchor-target>
-<p>Transforms the value before saving.</p>
+<p>Transforms the value before saving. Also supports column aliases.</p>
 <ul>
 <li><strong>Callback Signature</strong>: <code v-pre>fn($value, array $row)</code></li>
 <li><strong>$value</strong>: The value of the specific column.</li>
@@ -302,12 +307,15 @@
 })
 
 // Format currency
--&gt;mapAndTransform('Price', 'price_in_cents', fn($val) =&gt; (int)($val * 100))</code></pre>
+-&gt;mapAndTransform('Price', 'price_in_cents', fn($val) =&gt; (int)($val * 100))
+
+// With aliases
+-&gt;mapAndTransform(['status', 'Status', 'STATE'], 'is_active', fn($val) =&gt; $val === 'active')</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="relatestring-sourcecolumn-string-relationname-string-relatedmodel-string-relatedkey">
+<doc-anchor-target id="relatestring-sourcecolumn-string-relationname-string-relatedmodel-string-relatedkey-bool-createifmissing--false">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#relatestring-sourcecolumn-string-relationname-string-relatedmodel-string-relatedkey">#</doc-anchor-trigger>
-        <span><code v-pre>relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey)</code></span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#relatestring-sourcecolumn-string-relationname-string-relatedmodel-string-relatedkey-bool-createifmissing--false">#</doc-anchor-trigger>
+        <span><code v-pre>relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey, bool $createIfMissing = false)</code></span>
     </h3>
 </doc-anchor-target>
 <p>Automatically resolves <code v-pre>BelongsTo</code> relationships.</p>
@@ -315,12 +323,16 @@
 <li>Takes the value from <code v-pre>$sourceColumn</code>.</li>
 <li>Searches <code v-pre>$relatedModel</code> where <code v-pre>$relatedKey</code> matches that value.</li>
 <li>If found, assigns the ID to the foreign key of <code v-pre>$relationName</code>.</li>
+<li>If <code v-pre>createIfMissing</code> is <code v-pre>true</code> and no match is found, creates the related record automatically.</li>
 </ol>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// Source: &quot;Category: Smartphones&quot;
 // Database lookup: Category::where('name', 'Smartphones')-&gt;first()
 // Result: $product-&gt;category_id = $foundCategory-&gt;id
--&gt;relate('Category', 'category', \App\Models\Category::class, 'name')</code></pre>
+-&gt;relate('Category', 'category', \App\Models\Category::class, 'name')
+
+// Auto-create missing categories
+-&gt;relate('Category', 'category', \App\Models\Category::class, 'name', createIfMissing: true)</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="validation">
@@ -348,13 +360,20 @@
         <span><code v-pre>validateWithModelRules()</code></span>
     </h3>
 </doc-anchor-target>
-<p>Merges validation rules defined in the target model&#x27;s static <code v-pre>getRules()</code> method. Useful for DRY (Don&#x27;t Repeat Yourself).</p>
+<p>Merges validation rules defined in the target model&#x27;s static <code v-pre>getRules()</code> method. Useful for DRY (Don&#x27;t Repeat Yourself). Rules from <code v-pre>validate()</code> take precedence over model rules.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// In Product.php
-public static function getRules() { return ['sku' =&gt; 'required']; }
+public static function getRules(): array
+{
+    return [
+        'sku' =&gt; 'required|string',
+        'name' =&gt; 'required|min:3',
+    ];
+}
 
 // In Config
--&gt;validateWithModelRules()</code></pre>
+-&gt;validateWithModelRules()
+-&gt;validate(['price' =&gt; 'required|numeric']) // Additional rules</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="hooks">
@@ -434,6 +453,65 @@ public static function getRules() { return ['sku' =&gt; 'required']; }
 <p>Overrides the default filesystem disk (from <code v-pre>config/ingest.php</code>) for this specific importer.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setDisk('s3_private_bucket')</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="dynamic-model-resolution">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#dynamic-model-resolution">#</doc-anchor-trigger>
+        <span>Dynamic Model Resolution</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="resolvemodelusingcallable-callback">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#resolvemodelusingcallable-callback">#</doc-anchor-trigger>
+        <span><code v-pre>resolveModelUsing(callable $callback)</code></span>
+    </h3>
+</doc-anchor-target>
+<p>Allows you to dynamically determine which Eloquent model to use based on the row data. This is useful when importing heterogeneous data into different tables.</p>
+<ul>
+<li><strong>Callback Signature</strong>: <code v-pre>fn(array $rowData): string</code></li>
+<li><strong>Returns</strong>: A fully qualified model class name.</li>
+</ul>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use App\Models\{User, AdminUser, Customer};
+
+IngestConfig::for(User::class)
+    -&gt;resolveModelUsing(function(array $row) {
+        return match($row['user_type'] ?? 'user') {
+            'admin' =&gt; AdminUser::class,
+            'customer' =&gt; Customer::class,
+            default =&gt; User::class,
+        };
+    })
+    -&gt;map('email', 'email')
+    -&gt;map('name', 'name');</code></pre>
+</doc-codeblock></div>
+<blockquote>
+<p><strong>Note:</strong> The base model class passed to <code v-pre>IngestConfig::for()</code> is used as a fallback if no resolver is set.</p>
+</blockquote>
+<hr>
+<doc-anchor-target id="transaction-modes">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#transaction-modes">#</doc-anchor-trigger>
+        <span>Transaction Modes</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="transactionmodetransactionmode-mode">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#transactionmodetransactionmode-mode">#</doc-anchor-trigger>
+        <span><code v-pre>transactionMode(TransactionMode $mode)</code></span>
+    </h3>
+</doc-anchor-target>
+<p>Fine-grained control over database transaction behavior.</p>
+<ul>
+<li><code v-pre>TransactionMode::NONE</code>: No transactions (default). Each row is committed individually.</li>
+<li><code v-pre>TransactionMode::CHUNK</code>: Wraps each chunk in a transaction. Same as calling <code v-pre>atomic()</code>.</li>
+<li><code v-pre>TransactionMode::ROW</code>: Wraps each individual row in its own transaction.</li>
+</ul>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Enums\TransactionMode;
+
+-&gt;transactionMode(TransactionMode::ROW)</code></pre>
 </doc-codeblock></div>
 
                                 

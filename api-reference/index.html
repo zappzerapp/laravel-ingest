@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
+    <link href="../resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
 
-    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../resources/js/prism.js?v=3.11.0.822523158885" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -345,6 +345,51 @@
   -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
   -H &quot;Content-Type: application/json&quot; \
   https://myapp.com/api/v1/ingest/123/retry</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="get-error-summary">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#get-error-summary">#</doc-anchor-trigger>
+        <span>Get Error Summary</span>
+    </h3>
+</doc-anchor-target>
+<p>Retrieves an aggregated summary of errors for a specific ingest run. Useful for quickly understanding the most common issues without fetching all failed rows.</p>
+<ul>
+<li><strong>Endpoint:</strong> <code v-pre>GET /{ingestRun}/errors/summary</code></li>
+<li><strong>URL Parameters:</strong>
+<ul>
+<li><code v-pre>ingestRun</code> (integer, required): The ID of the ingest run.</li>
+</ul>
+</li>
+<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with an <doc-anchor-trigger to="#ingesterrorsummaryresource-object">IngestErrorSummaryResource</doc-anchor-trigger> object.</li>
+</ul>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X GET \
+  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
+  https://myapp.com/api/v1/ingest/123/errors/summary</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="ingesterrorsummaryresource-object">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingesterrorsummaryresource-object">#</doc-anchor-trigger>
+        <span>IngestErrorSummaryResource Object</span>
+    </h3>
+</doc-anchor-target>
+<p>The JSON representation for an error analysis summary.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-json"><code v-pre class="language-json">{
+  &quot;data&quot;: {
+    &quot;total_failed_rows&quot;: 15,
+    &quot;error_summary&quot;: [
+      { &quot;message&quot;: &quot;Duplicate entry found for key 'email'.&quot;, &quot;count&quot;: 8 },
+      { &quot;message&quot;: &quot;The given data was invalid.&quot;, &quot;count&quot;: 7 }
+    ],
+    &quot;validation_summary&quot;: [
+      { &quot;message&quot;: &quot;email: The email field is required.&quot;, &quot;count&quot;: 5 },
+      { &quot;message&quot;: &quot;name: The name must be at least 2 characters.&quot;, &quot;count&quot;: 2 }
+    ]
+  }
+}</code></pre>
 </doc-codeblock></div>
 <hr>
 <doc-anchor-target id="ingestrunresource-object">

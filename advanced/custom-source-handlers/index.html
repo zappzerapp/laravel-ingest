@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822523158885" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -210,6 +210,38 @@
 </doc-anchor-target>
 <p>A Source Handler is responsible for one thing: <strong>Converting a raw source into a Generator of arrays.</strong></p>
 <p>Laravel Ingest doesn&#x27;t care where the data comes from, as long as you yield it row by row. This ensures memory efficiency even for massive datasets.</p>
+<doc-anchor-target id="the-sourcehandler-interface">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#the-sourcehandler-interface">#</doc-anchor-trigger>
+        <span>The SourceHandler Interface</span>
+    </h2>
+</doc-anchor-target>
+<p>Every handler must implement <code v-pre>LaravelIngest\Contracts\SourceHandler</code>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">interface SourceHandler
+{
+    /**
+     * Read data from the source and yield rows as arrays.
+     * @param mixed|null $payload Data from the trigger (e.g., UploadedFile, path, or custom data)
+     */
+    public function read(IngestConfig $config, mixed $payload = null): Generator;
+
+    /**
+     * Return the total number of rows, or null if unknown.
+     */
+    public function getTotalRows(): ?int;
+
+    /**
+     * Return the path where the processed file was stored, or null.
+     */
+    public function getProcessedFilePath(): ?string;
+
+    /**
+     * Clean up any temporary files or resources.
+     */
+    public function cleanup(): void;
+}</code></pre>
+</doc-codeblock></div>
 <doc-anchor-target id="tutorial-building-a-json-array-handler">
     <h2>
         <doc-anchor-trigger class="header-anchor-trigger" to="#tutorial-building-a-json-array-handler">#</doc-anchor-trigger>
@@ -223,29 +255,30 @@
         <span>1. Implement the Interface</span>
     </h3>
 </doc-anchor-target>
-<p>Create <code v-pre>app/Ingest/Handlers/JsonStringHandler.php</code>:</p>
+<p>Create <code v-pre>app/Ingest/Handlers/JsonArrayHandler.php</code>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">namespace App\Ingest\Handlers;
 
 use Generator;
+use InvalidArgumentException;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\IngestConfig;
 
-class JsonStringHandler implements SourceHandler
+class JsonArrayHandler implements SourceHandler
 {
-    protected ?int $count = 0;
+    protected ?int $count = null;
 
     public function read(IngestConfig $config, mixed $payload = null): Generator
     {
         // $payload will be the raw JSON string passed to IngestManager::start()
         if (!is_string($payload)) {
-            throw new \InvalidArgumentException(&quot;Payload must be a JSON string&quot;);
+            throw new InvalidArgumentException(&quot;Payload must be a JSON string&quot;);
         }
 
         $data = json_decode($payload, true);
 
         if (!is_array($data)) {
-            throw new \InvalidArgumentException(&quot;Invalid JSON provided&quot;);
+            throw new InvalidArgumentException(&quot;Invalid JSON provided&quot;);
         }
 
         $this-&gt;count = count($data);
@@ -278,31 +311,102 @@ class JsonStringHandler implements SourceHandler
         <span>2. Register the Handler</span>
     </h3>
 </doc-anchor-target>
-<p>Add it to <code v-pre>config/ingest.php</code>. You can choose any key you like.</p>
+<p>Add it to <code v-pre>config/ingest.php</code> by mapping an existing <code v-pre>SourceType</code> enum value to your handler:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
 'handlers' =&gt; [
     'upload' =&gt; LaravelIngest\Sources\UploadHandler::class,
-    // ...
-    'json_string' =&gt; App\Ingest\Handlers\JsonStringHandler::class,
+    'filesystem' =&gt; LaravelIngest\Sources\FilesystemHandler::class,
+    'ftp' =&gt; LaravelIngest\Sources\RemoteDiskHandler::class,
+    'sftp' =&gt; LaravelIngest\Sources\RemoteDiskHandler::class,
+    'url' =&gt; LaravelIngest\Sources\UrlHandler::class,
+    
+    // Map an existing SourceType to your custom handler
+    // Option 1: Override an unused type
+    // 'sftp' =&gt; App\Ingest\Handlers\JsonArrayHandler::class,
 ],</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="3-use-it">
+<doc-anchor-target id="3-alternative-direct-handler-injection">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-use-it">#</doc-anchor-trigger>
-        <span>3. Use It</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-alternative-direct-handler-injection">#</doc-anchor-trigger>
+        <span>3. Alternative: Direct Handler Injection</span>
     </h3>
 </doc-anchor-target>
-<p>Update your Importer to use the new source type (you&#x27;ll need to define the enum or just use the string key if you modify the typing, but ideally, you map it to a <code v-pre>SourceType</code> case or cast it).</p>
-<p><em>Note: Since SourceType is an Enum in the core package, for custom handlers, you might strictly need to map it to an existing Enum case (like overriding <code v-pre>SourceType::SFTP</code> if unused) OR extend the package to allow string keys. For this tutorial, we assume we override an unused type or the package allows dynamic mapping.</em></p>
+<p>For more flexibility, you can bypass the SourceType enum entirely by using the handler directly in your code:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// In your IngestDefinition
--&gt;fromSource(SourceType::SFTP) // Mapped to 'json_string' in config</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use App\Ingest\Handlers\JsonArrayHandler;
+use LaravelIngest\IngestManager;
+
+// In a controller or service
+$json = '[{&quot;name&quot;: &quot;Item 1&quot;, &quot;email&quot;: &quot;item1@example.com&quot;}, {&quot;name&quot;: &quot;Item 2&quot;, &quot;email&quot;: &quot;item2@example.com&quot;}]';
+
+// Start the import with the custom handler
+$ingestManager = app(IngestManager::class);
+$run = $ingestManager-&gt;start('my-importer', $json);</code></pre>
 </doc-codeblock></div>
-<p>Now you can trigger it:</p>
+<doc-anchor-target id="example-api-response-handler">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#example-api-response-handler">#</doc-anchor-trigger>
+        <span>Example: API Response Handler</span>
+    </h2>
+</doc-anchor-target>
+<p>Here&#x27;s a more practical example that fetches data from an external API:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">$json = '[{&quot;name&quot;: &quot;Item 1&quot;}, {&quot;name&quot;: &quot;Item 2&quot;}]';
-$manager-&gt;start('my-importer', $json);</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">namespace App\Ingest\Handlers;
+
+use Generator;
+use Illuminate\Support\Facades\Http;
+use LaravelIngest\Contracts\SourceHandler;
+use LaravelIngest\IngestConfig;
+use LaravelIngest\Exceptions\SourceException;
+
+class ApiHandler implements SourceHandler
+{
+    protected ?int $count = null;
+
+    public function read(IngestConfig $config, mixed $payload = null): Generator
+    {
+        $url = $config-&gt;sourceOptions['url'] ?? null;
+        $headers = $config-&gt;sourceOptions['headers'] ?? [];
+
+        if (!$url) {
+            throw new SourceException(&quot;API URL is required in source options&quot;);
+        }
+
+        $response = Http::withHeaders($headers)-&gt;get($url);
+
+        if (!$response-&gt;successful()) {
+            throw new SourceException(&quot;API request failed: &quot; . $response-&gt;status());
+        }
+
+        $data = $response-&gt;json('data') ?? $response-&gt;json();
+        
+        if (!is_array($data)) {
+            throw new SourceException(&quot;API response must contain an array&quot;);
+        }
+
+        $this-&gt;count = count($data);
+
+        foreach ($data as $item) {
+            yield $item;
+        }
+    }
+
+    public function getTotalRows(): ?int
+    {
+        return $this-&gt;count;
+    }
+
+    public function getProcessedFilePath(): ?string
+    {
+        return null;
+    }
+
+    public function cleanup(): void
+    {
+        // Nothing to clean up
+    }
+}</code></pre>
 </doc-codeblock></div>
 
                                 

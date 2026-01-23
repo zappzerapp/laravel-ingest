@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822258555979" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822523158885" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -302,6 +302,13 @@
     ],
 ],</code></pre>
 </doc-codeblock></div>
+<blockquote>
+<p><strong>Note:</strong> FTP support requires <code v-pre>league/flysystem-ftp</code>. SFTP support requires <code v-pre>league/flysystem-sftp-v3</code>. Install via:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">composer require league/flysystem-ftp      # for FTP
+composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
+</doc-codeblock></div>
+</blockquote>
 <doc-anchor-target id="example-ingestconfig">
     <h4>
         <doc-anchor-trigger class="header-anchor-trigger" to="#example-ingestconfig">#</doc-anchor-trigger>
@@ -315,6 +322,17 @@
     'disk' =&gt; 'erp_ftp',
     'path' =&gt; '/exports/stock-levels.csv',
 ])</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="custom-source-handlers">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#custom-source-handlers">#</doc-anchor-trigger>
+        <span>Custom Source Handlers</span>
+    </h2>
+</doc-anchor-target>
+<p>You can create your own source handlers for custom data sources (APIs, XML, etc.). See the <a href="../../advanced/custom-source-handlers/">Custom Source Handlers</a> guide for details.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none"> </code></pre>
 </doc-codeblock></div>
 
                                 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822258555979">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822523158885">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,11 +31,11 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="resources/css/retype.css?v=3.11.0.822258555979" rel="stylesheet">
+    <link href="resources/css/retype.css?v=3.11.0.822523158885" rel="stylesheet">
 
-    <script data-cfasync="false" src="resources/js/config.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="resources/js/config.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="resources/js/lunr.js?v=3.11.0.822258555979" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="resources/js/lunr.js?v=3.11.0.822523158885" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -221,8 +221,12 @@
 <li><strong>Source Agnostic</strong>: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (<code v-pre>s3</code>, <code v-pre>local</code>). Easily extensible for other sources.</li>
 <li><strong>Robust Background Processing</strong>: Uses the Laravel Queue by default for maximum reliability.</li>
 <li><strong>Comprehensive Mapping &amp; Validation</strong>: Transform data on-the-fly, resolve relationships, and use the validation rules of your Eloquent models.</li>
+<li><strong>Column Aliases</strong>: Support multiple header names for the same field (e.g., <code v-pre>['email', 'E-Mail', 'user_email']</code>).</li>
+<li><strong>Dynamic Model Resolution</strong>: Route rows to different Eloquent models based on row data.</li>
+<li><strong>Auto-Create Relations</strong>: Automatically create missing related records during import.</li>
 <li><strong>Auto-generated API &amp; CLI</strong>: Control and monitor imports via RESTful endpoints or the included Artisan commands.</li>
 <li><strong>&quot;Dry Runs&quot;</strong>: Simulate an import to detect validation errors without writing a single database entry.</li>
+<li><strong>Error Analysis</strong>: Aggregated error summaries via dedicated API endpoint.</li>
 </ul>
 
                                 
