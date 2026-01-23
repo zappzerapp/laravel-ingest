@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelIngest\Concerns;
 
 use Generator;
+use Iterator;
 use IteratorAggregate;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -19,7 +20,7 @@ trait ProcessesSource
      */
     protected function processRows(IteratorAggregate|Traversable $rows, IngestConfig $config): Generator
     {
-        /** @var \Iterator<int, array<string, mixed>> $iterator */
+        /** @var Iterator<int, array<string, mixed>> $iterator */
         $iterator = $rows instanceof IteratorAggregate ? $rows->getIterator() : $rows;
 
         if (!$iterator->valid()) {
