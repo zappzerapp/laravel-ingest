@@ -11,6 +11,8 @@ use LaravelIngest\Concerns\ProcessesSource;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
+use League\Flysystem\FilesystemException;
+use RuntimeException;
 use Spatie\SimpleExcel\SimpleExcelReader;
 use Throwable;
 
@@ -35,6 +37,10 @@ class RemoteDiskHandler implements SourceHandler
             yield from $this->readAndProcessRows($fullPath, $config);
         } catch (SourceException $e) {
             throw $e;
+        } catch (FilesystemException $e) {
+            throw new SourceException('Failed to read from remote source: Filesystem error - ' . $e->getMessage(), 0, $e);
+        } catch (RuntimeException $e) {
+            throw new SourceException('Failed to read from remote source: ' . $e->getMessage(), 0, $e);
         } catch (Throwable $e) {
             throw new SourceException('Failed to read from remote source: ' . $e->getMessage(), 0, $e);
         }

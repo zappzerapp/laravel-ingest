@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelIngest\Sources;
 
 use Generator;
+use JsonException;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -14,6 +15,9 @@ class JsonHandler implements SourceHandler
     protected ?string $processedFilePath = null;
     protected ?string $tempFilePath = null;
 
+    /**
+     * @throws SourceException
+     */
     public function read(IngestConfig $config, mixed $payload = null): Generator
     {
         if (is_string($payload)) {
@@ -24,10 +28,10 @@ class JsonHandler implements SourceHandler
                 throw new SourceException("Unable to read JSON file from path: {$payload}");
             }
 
-            $data = json_decode($content, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new SourceException('Invalid JSON: ' . json_last_error_msg());
+            try {
+                $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            } catch (JsonException $e) {
+                throw new SourceException('Invalid JSON: ' . $e->getMessage());
             }
 
             foreach ($data as $row) {

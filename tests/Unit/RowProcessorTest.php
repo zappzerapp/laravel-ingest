@@ -546,3 +546,27 @@ it('extracts top level keys from nested relation mappings', function () {
         'category_id' => $category->id,
     ]);
 });
+
+it('returns false from shouldUpdate when timestamp parsing fails', function () {
+    $product = Product::create(['sku' => 'TEST-INVALID-DATE', 'name' => 'Original', 'stock' => 10, 'last_modified' => '2020-01-01 00:00:00']);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->mapAndTransform('source_modified', 'last_modified', fn($v) => $v)
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamp('last_modified', 'last_modified');
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-INVALID-DATE', 'name' => 'Updated', 'stock' => 20, 'source_modified' => 'invalid-date-string']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-INVALID-DATE', 'name' => 'Original', 'stock' => 10]);
+});

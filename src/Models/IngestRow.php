@@ -38,9 +38,6 @@ class IngestRow extends Model
         'errors' => 'array',
     ];
 
-    /**
-     * @return Builder<IngestRow>
-     */
     public function prunable(): Builder
     {
         $days = config('ingest.prune_days', 30);

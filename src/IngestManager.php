@@ -110,12 +110,16 @@ class IngestManager
             $definition = $this->getDefinition($originalRun->importer);
             $config = $definition->getConfig();
 
-            $failedRowsCursor = $originalRun->rows()
+            $failedRowsData = [];
+            $originalRun->rows()
                 ->where('status', 'failed')
-                ->cursor()
-                ->map(fn($row) => $row->data);
+                ->chunkById(1000, function ($rows) use (&$failedRowsData) {
+                    foreach ($rows as $row) {
+                        $failedRowsData[] = $row->data;
+                    }
+                });
 
-            $this->dispatchBatch($newRun, $config, $failedRowsCursor, $isDryRun);
+            $this->dispatchBatch($newRun, $config, $failedRowsData, $isDryRun);
 
         } catch (Throwable $e) {
             $this->handleFailure($newRun, $e);
@@ -242,6 +246,9 @@ class IngestManager
         IngestRunCompleted::dispatch($ingestRun);
     }
 
+    /**
+     * @throws Throwable
+     */
     private function dispatchBatchJobs(IngestRun $ingestRun, array $batchJobs, ?callable $cleanupCallback): void
     {
         $queueConnection = Config::get('ingest.queue.connection');

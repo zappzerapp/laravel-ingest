@@ -11,9 +11,6 @@ use LaravelIngest\Models\IngestRow;
 /** @mixin IngestRow */
 class IngestRowResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [

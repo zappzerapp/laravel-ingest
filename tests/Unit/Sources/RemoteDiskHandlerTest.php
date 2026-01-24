@@ -149,3 +149,49 @@ it('wraps non-SourceException throwables in SourceException with original messag
         fn() => iterator_to_array($handler->read($config))
     )->toThrow(SourceException::class, 'Failed to read from remote source: Simulated connection failure');
 });
+
+it('wraps FilesystemException in SourceException', function () {
+    Storage::fake('local');
+
+    Storage::shouldReceive('disk')
+        ->with('remote-disk-fs')
+        ->andReturnSelf();
+    Storage::shouldReceive('exists')
+        ->with('test.csv')
+        ->andReturn(true);
+    Storage::shouldReceive('readStream')
+        ->with('test.csv')
+        ->andThrow(new League\Flysystem\UnableToReadFile('Simulated FS error'));
+
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FTP, ['disk' => 'remote-disk-fs', 'path' => 'test.csv']);
+
+    $handler = new RemoteDiskHandler();
+
+    expect(
+        fn() => iterator_to_array($handler->read($config))
+    )->toThrow(SourceException::class, 'Filesystem error - Simulated FS error');
+});
+
+it('wraps generic Throwable in SourceException', function () {
+    Storage::fake('local');
+
+    Storage::shouldReceive('disk')
+        ->with('remote-disk-error')
+        ->andReturnSelf();
+    Storage::shouldReceive('exists')
+        ->with('test.csv')
+        ->andReturn(true);
+    Storage::shouldReceive('readStream')
+        ->with('test.csv')
+        ->andThrow(new Error('Simulated critical error'));
+
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FTP, ['disk' => 'remote-disk-error', 'path' => 'test.csv']);
+
+    $handler = new RemoteDiskHandler();
+
+    expect(
+        fn() => iterator_to_array($handler->read($config))
+    )->toThrow(SourceException::class, 'Failed to read from remote source: Simulated critical error');
+});

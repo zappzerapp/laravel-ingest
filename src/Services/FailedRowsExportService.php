@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Response;
 use LaravelIngest\Models\IngestRun;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,7 +25,7 @@ class FailedRowsExportService
         return $this->createCsvResponse($headers, $failedRows, $filename);
     }
 
-    private function getFailedRows(IngestRun $ingestRun)
+    private function getFailedRows(IngestRun $ingestRun): Collection
     {
         return $ingestRun->rows()
             ->where('status', 'failed')
@@ -50,7 +51,7 @@ class FailedRowsExportService
     private function createCsvResponse(array $headers, $failedRows, string $filename): StreamedResponse
     {
         return Response::stream(function () use ($headers, $failedRows) {
-            $output = fopen('php://output', 'w');
+            $output = fopen('php://output', 'wb');
 
             // @codeCoverageIgnoreStart
             if ($output === false) {

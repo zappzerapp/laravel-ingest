@@ -34,6 +34,9 @@ class IngestConfig
     public ?SerializableClosure $afterRowCallback = null;
     public ?SerializableClosure $modelResolver = null;
 
+    /**
+     * @throws InvalidConfigurationException
+     */
     private function __construct(string $modelClass)
     {
         if (!is_subclass_of($modelClass, Model::class)) {
@@ -47,6 +50,9 @@ class IngestConfig
         $this->disk = config('ingest.disk', 'local');
     }
 
+    /**
+     * @throws InvalidConfigurationException
+     */
     public static function for(string $modelClass): self
     {
         return new self($modelClass);
@@ -88,6 +94,9 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function mapAndTransform(string|array $sourceField, string $modelAttribute, Closure $transformer): self
     {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
@@ -102,6 +111,9 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * @throws InvalidConfigurationException
+     */
     public function relate(
         string $sourceField,
         string $relationName,
@@ -208,6 +220,9 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * @throws InvalidConfigurationException
+     */
     public function relateMany(
         string $sourceField,
         string $relationName,
@@ -229,6 +244,10 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * @throws InvalidConfigurationException
+     * @throws PhpVersionNotSupportedException
+     */
     public function resolveModelClass(array $rowData): string
     {
         if ($this->modelResolver) {

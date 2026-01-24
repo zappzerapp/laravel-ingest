@@ -37,6 +37,20 @@ class FilesystemHandler implements SourceHandler
             );
         }
 
+        $realPath = realpath($this->path);
+
+        if ($realPath !== false && !str_starts_with($realPath, realpath(base_path()))) {
+            throw new SourceException('Invalid file path detected for security reasons.');
+        }
+
+        if ($realPath !== false) {
+            $this->path = $realPath;
+        }
+
+        if ($realPath !== false) {
+            $this->path = $realPath;
+        }
+
         if (!Storage::disk($disk)->exists($this->path)) {
             throw new SourceException(
                 sprintf(

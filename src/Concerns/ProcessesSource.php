@@ -14,8 +14,6 @@ use Traversable;
 trait ProcessesSource
 {
     /**
-     * @param  IteratorAggregate<int, array<string, mixed>>|Traversable<int, array<string, mixed>>  $rows
-     *
      * @throws SourceException
      */
     protected function processRows(IteratorAggregate|Traversable $rows, IngestConfig $config): Generator

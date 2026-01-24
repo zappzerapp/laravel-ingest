@@ -29,6 +29,22 @@ class UploadHandler implements SourceHandler
             throw new SourceException('UploadHandler expects an instance of UploadedFile.');
         }
 
+        $allowedMimes = $config->sourceOptions['allowed_mimes'] ?? ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain'];
+        $maxSizeBytes = $config->sourceOptions['max_size_mb'] ?? 50 * 1024 * 1024;
+
+        $clientMimeType = $payload->getClientMimeType();
+        $finfoMimeType = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $payload->getPathname());
+
+        if ($clientMimeType !== $finfoMimeType && !in_array($finfoMimeType, $allowedMimes, true) && !in_array($clientMimeType, ['text/plain', 'text/csv'], true)) {
+            if (!in_array($finfoMimeType, $allowedMimes, true)) {
+                throw new SourceException("File type '{$finfoMimeType}' is not allowed. Allowed types: " . implode(', ', $allowedMimes));
+            }
+        }
+
+        if ($payload->getSize() > $maxSizeBytes) {
+            throw new SourceException('File size exceeds maximum allowed size of ' . ($maxSizeBytes / 1024 / 1024) . ' MB');
+        }
+
         $disk = $config->disk ?? config('ingest.disk');
         $this->path = $payload->store('ingest-uploads', $disk);
         $fullPath = Storage::disk($disk)->path($this->path);

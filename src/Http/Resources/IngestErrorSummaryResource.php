@@ -9,9 +9,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class IngestErrorSummaryResource extends JsonResource
 {
-    /**
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
@@ -21,10 +18,6 @@ class IngestErrorSummaryResource extends JsonResource
         ];
     }
 
-    /**
-     * @param  array<string, int>  $summary
-     * @return array<int, array<string, string|int>>
-     */
     private function formatSummary(array $summary): array
     {
         $formatted = [];

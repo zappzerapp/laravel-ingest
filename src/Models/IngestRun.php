@@ -81,18 +81,20 @@ class IngestRun extends Model
             $finalStatus = IngestStatus::COMPLETED_WITH_ERRORS;
         }
 
+        $summary = $this->summary ?? [
+            'errors' => [],
+            'warnings' => [],
+            'meta' => [
+                'successful_rows' => $this->successful_rows,
+                'failed_rows' => $this->failed_rows,
+                'total_rows' => $this->total_rows,
+            ],
+        ];
+
         $this->update([
             'status' => $finalStatus,
             'completed_at' => now(),
-            'summary' => $this->summary ?? [
-                'errors' => [],
-                'warnings' => [],
-                'meta' => [
-                    'successful_rows' => $this->successful_rows,
-                    'failed_rows' => $this->failed_rows,
-                    'total_rows' => $this->total_rows,
-                ],
-            ],
+            'summary' => $summary,
         ]);
     }
 

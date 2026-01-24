@@ -57,3 +57,87 @@ it('getTotalRows returns null before read', function () {
     $handler = new FilesystemHandler();
     expect($handler->getTotalRows())->toBeNull();
 });
+
+it('throws exception for file path outside base path', function () {
+    $tempFile = sys_get_temp_dir() . '/ingest_test_security.csv';
+    touch($tempFile);
+
+    try {
+        $config = IngestConfig::for(Product::class)
+            ->fromSource(SourceType::FILESYSTEM, ['path' => $tempFile]);
+
+        $handler = new FilesystemHandler();
+        iterator_to_array($handler->read($config));
+    } catch (SourceException $e) {
+        expect($e->getMessage())->toBe('Invalid file path detected for security reasons.');
+
+        return;
+    } finally {
+        if (file_exists($tempFile)) {
+            unlink($tempFile);
+        }
+    }
+
+    throw new Exception('Should have thrown SourceException');
+});
+
+it('resolves realpath and updates path when file exists', function () {
+    $fileName = 'test_realpath_file.csv';
+    $filePath = base_path($fileName);
+    $content = "name,email\nJohn,john@example.com\nJane,jane@example.com";
+
+    file_put_contents($filePath, $content);
+
+    Storage::fake('local');
+
+    Storage::disk('local')->put($filePath, $content);
+
+    Storage::disk('local')->put($fileName, $content);
+
+    try {
+        $config = IngestConfig::for('\LaravelIngest\Tests\Fixtures\Models\User')
+            ->fromSource(SourceType::FILESYSTEM, ['path' => $filePath]);
+
+        $handler = new FilesystemHandler();
+
+        $reflection = new ReflectionClass($handler);
+        $property = $reflection->getProperty('path');
+        $property->setAccessible(true);
+
+        $rows = iterator_to_array($handler->read($config));
+
+        $finalPath = $property->getValue($handler);
+
+        expect($finalPath)->toBe(realpath($filePath));
+        expect($finalPath)->toBeString()->not->toBeEmpty();
+        expect($rows)->toHaveCount(2);
+
+    } finally {
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+    }
+});
+
+it('resolves realpath inside base path but fails storage check if absolute', function () {
+    $file = base_path('ingest_test_valid.csv');
+    touch($file);
+
+    try {
+        $config = IngestConfig::for(Product::class)
+            ->fromSource(SourceType::FILESYSTEM, ['path' => 'ingest_test_valid.csv']);
+
+        $handler = new FilesystemHandler();
+        iterator_to_array($handler->read($config));
+    } catch (SourceException $e) {
+        expect($e->getMessage())->toContain('We could not find the file');
+
+        return;
+    } finally {
+        if (file_exists($file)) {
+            unlink($file);
+        }
+    }
+
+    throw new Exception('Should have thrown SourceException');
+});

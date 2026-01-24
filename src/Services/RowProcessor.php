@@ -10,14 +10,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use JsonException;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Events\RowProcessed;
+use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
+use RuntimeException;
 use Throwable;
 
 class RowProcessor
@@ -41,6 +45,9 @@ class RowProcessor
             : $processLogic();
     }
 
+    /**
+     * @throws Throwable
+     */
     private function processChunkLogic(
         IngestRun $ingestRun,
         IngestConfig $config,
@@ -72,6 +79,11 @@ class RowProcessor
         return $results;
     }
 
+    /**
+     * @throws Throwable
+     * @throws InvalidConfigurationException
+     * @throws PhpVersionNotSupportedException
+     */
     private function processRow(
         IngestConfig $config,
         RowData $rowData,
@@ -79,6 +91,11 @@ class RowProcessor
         array &$relationCache,
         array &$manyRelationCache
     ): ?Model {
+        /**
+         * @throws InvalidConfigurationException
+         * @throws PhpVersionNotSupportedException
+         * @throws Exception
+         */
         $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache) {
             $this->executeBeforeRowCallback($config, $rowData);
             $this->validate($rowData->processedData, $config);
@@ -214,10 +231,19 @@ class RowProcessor
 
     private function transform(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun = false): array
     {
+        $modelData = $this->processMappings($config, $processedData);
+        $this->processRelations($config, $processedData, $relationCache, $modelClass, $isDryRun, $modelData);
+        $this->processUnmappedData($config, $processedData, $modelClass, $modelData);
+
+        return $modelData;
+    }
+
+    private function processMappings(IngestConfig $config, array $processedData): array
+    {
         $modelData = [];
 
         foreach ($config->mappings as $sourceField => $mapping) {
-            if (!$this->hasNestedKey($processedData, $sourceField)) {
+            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
                 continue;
             }
 
@@ -228,8 +254,13 @@ class RowProcessor
             $modelData[$mapping['attribute']] = $value;
         }
 
+        return $modelData;
+    }
+
+    private function processRelations(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun, array &$modelData): void
+    {
         foreach ($config->relations as $sourceField => $relationConfig) {
-            if (!$this->hasNestedKey($processedData, $sourceField)) {
+            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
                 continue;
             }
 
@@ -241,7 +272,7 @@ class RowProcessor
                 $relatedId = $relationCache[$sourceField][$relationValue] ?? null;
 
                 if ($relatedId === null && ($relationConfig['createIfMissing'] ?? false) && !$isDryRun) {
-                    $relatedId = $this->createMissingRelation($relationConfig, $relationValue, $relationCache, $sourceField);
+                    $relatedId = RelationService::createMissingRelation($relationConfig, $relationValue, $relationCache, $sourceField);
                 }
             }
 
@@ -249,7 +280,10 @@ class RowProcessor
             $foreignKey = $relationObject->getForeignKeyName();
             $modelData[$foreignKey] = $relatedId;
         }
+    }
 
+    private function processUnmappedData(IngestConfig $config, array $processedData, string $modelClass, array &$modelData): void
+    {
         $usedTopLevelKeys = $this->getUsedTopLevelKeys($config);
 
         $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $config->manyRelations, $usedTopLevelKeys);
@@ -259,44 +293,6 @@ class RowProcessor
                 $modelData[$key] = $value;
             }
         }
-
-        return $modelData;
-    }
-
-    private function hasNestedKey(array $data, string $key): bool
-    {
-        if (!str_contains($key, '.')) {
-            return array_key_exists($key, $data);
-        }
-
-        $segments = explode('.', $key);
-        $current = $data;
-
-        foreach ($segments as $segment) {
-            if (!is_array($current) || !array_key_exists($segment, $current)) {
-                return false;
-            }
-            $current = $current[$segment];
-        }
-
-        return true;
-    }
-
-    private function createMissingRelation(array $relationConfig, mixed $relationValue, array &$relationCache, string $sourceField): mixed
-    {
-        $relatedModelClass = $relationConfig['model'];
-        $lookupKey = $relationConfig['key'];
-
-        $newRelatedModel = $relatedModelClass::create([
-            $lookupKey => $relationValue,
-        ]);
-
-        if (!isset($relationCache[$sourceField])) {
-            $relationCache[$sourceField] = [];
-        }
-        $relationCache[$sourceField][$relationValue] = $newRelatedModel->getKey();
-
-        return $newRelatedModel->getKey();
     }
 
     private function syncManyRelations(Model $model, array $originalData, IngestConfig $config, array $manyRelationCache): void
@@ -306,7 +302,7 @@ class RowProcessor
         }
 
         foreach ($config->manyRelations as $sourceField => $relationConfig) {
-            if (!$this->hasNestedKey($originalData, $sourceField)) {
+            if (!RelationService::hasNestedKey($originalData, $sourceField)) {
                 continue;
             }
 
@@ -343,23 +339,15 @@ class RowProcessor
     {
         $topLevelKeys = [];
 
-        foreach (array_keys($config->mappings) as $sourceField) {
-            if (str_contains($sourceField, '.')) {
-                $topLevelKey = explode('.', $sourceField)[0];
-                $topLevelKeys[$topLevelKey] = true;
-            }
-        }
+        $sources = array_merge(
+            array_keys($config->mappings),
+            array_keys($config->relations),
+            array_keys($config->manyRelations)
+        );
 
-        foreach (array_keys($config->relations) as $sourceField) {
+        foreach ($sources as $sourceField) {
             if (str_contains($sourceField, '.')) {
-                $topLevelKey = explode('.', $sourceField)[0];
-                $topLevelKeys[$topLevelKey] = true;
-            }
-        }
-
-        foreach (array_keys($config->manyRelations) as $sourceField) {
-            if (str_contains($sourceField, '.')) {
-                $topLevelKey = explode('.', $sourceField)[0];
+                $topLevelKey = explode('.', $sourceField, 2)[0];
                 $topLevelKeys[$topLevelKey] = true;
             }
         }
@@ -388,7 +376,7 @@ class RowProcessor
 
                     return $existingModel;
                 case DuplicateStrategy::FAIL:
-                    throw new Exception("Duplicate entry found for key '{$config->keyedBy}'.");
+                    throw new RuntimeException("Duplicate entry found for key '{$config->keyedBy}'.");
             }
         }
 
@@ -427,6 +415,10 @@ class RowProcessor
             ? $dbTimestamp->getTimestamp()
             : strtotime($dbTimestamp);
 
+        if ($sourceTime === false || $dbTime === false) {
+            return false;
+        }
+
         return $sourceTime > $dbTime;
     }
 
@@ -456,6 +448,9 @@ class RowProcessor
         return $errors;
     }
 
+    /**
+     * @throws JsonException
+     */
     private function prepareLogRow(IngestRun $ingestRun, RowData $rowData, string $status, ?array $errors = null): array
     {
         return [
