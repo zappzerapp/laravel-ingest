@@ -2,20 +2,24 @@
 
 Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.
 
-### 1. Via Artisan Command
+## Artisan Commands
+
+Laravel Ingest provides several Artisan commands for managing imports.
+
+### ingest:run
 
 The `ingest:run` command is perfect for manual or scheduled imports where the source file is accessible on a local or configured filesystem disk.
 
-#### Command Signature
 ```bash
 php artisan ingest:run {slug} {--file=} {--dry-run}
 ```
 
--   `slug`: The slug of the importer you want to run (e.g., `user-importer`).
--   `--file`: (Optional) The path to the source file. This is required for `FILESYSTEM` sources and will be passed as the payload.
--   `--dry-run`: (Optional) Simulates the entire import process—including validation and transformation—without saving any data to the database. This is extremely useful for testing a new file.
+| Argument/Option | Description |
+|-----------------|-------------|
+| `slug` | The slug of the importer to run (e.g., `user-importer`) |
+| `--file` | Path to the source file (required for `FILESYSTEM` sources) |
+| `--dry-run` | Simulate the import without saving data |
 
-#### Example
 ```bash
 # Run a product import from a file on the default disk
 php artisan ingest:run product-importer --file="imports/products.csv"
@@ -23,6 +27,88 @@ php artisan ingest:run product-importer --file="imports/products.csv"
 # Perform a dry run to check for errors
 php artisan ingest:run product-importer --file="imports/products.csv" --dry-run
 ```
+
+### ingest:list
+
+List all registered importers and their configurations.
+
+```bash
+php artisan ingest:list
+```
+
+### ingest:status
+
+Check the status of a specific import run.
+
+```bash
+php artisan ingest:status {id}
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the IngestRun to check |
+
+### ingest:cancel
+
+Cancel a running import. This will stop processing new chunks but won't roll back already processed rows.
+
+```bash
+php artisan ingest:cancel {id}
+```
+
+| Argument | Description |
+|----------|-------------|
+| `id` | The ID of the IngestRun to cancel |
+
+### ingest:retry
+
+Retry failed rows from a previous import run.
+
+```bash
+php artisan ingest:retry {id} {--dry-run}
+```
+
+| Argument/Option | Description |
+|-----------------|-------------|
+| `id` | The ID of the IngestRun to retry |
+| `--dry-run` | Simulate the retry without saving data |
+
+### ingest:prune-files
+
+Clean up old temporary and uploaded files to free disk space.
+
+```bash
+php artisan ingest:prune-files {--hours=24}
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--hours` | `24` | Delete files older than this many hours |
+
+This command removes files from the `ingest-temp` and `ingest-uploads` directories that are older than the specified number of hours.
+
+#### Scheduling File Cleanup
+
+Add to your `routes/console.php` or scheduler:
+
+```php
+// Clean up files older than 24 hours, daily
+Schedule::command('ingest:prune-files')->daily();
+
+// Clean up files older than 6 hours, every hour
+Schedule::command('ingest:prune-files --hours=6')->hourly();
+```
+
+#### Row Log Pruning
+
+To automatically prune old row logs (stored in `ingest_rows` table), add Laravel's model pruning command to your scheduler:
+
+```php
+// In routes/console.php or App\Console\Kernel
+Schedule::command('model:prune')->daily();
+```
+
+The retention period is configured via `prune_days` in `config/ingest.php` (default: 30 days).
 
 ---
 
