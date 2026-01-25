@@ -37,14 +37,27 @@ class FilesystemHandler implements SourceHandler
             );
         }
 
-        $realPath = realpath($this->path);
-
-        if ($realPath !== false && !str_starts_with($realPath, realpath(base_path()))) {
+        $normalizedPath = str_replace('\\', '/', $this->path);
+        if (str_contains($normalizedPath, '../')) {
             throw new SourceException('Invalid file path detected for security reasons.');
         }
 
-        if ($realPath !== false) {
-            $this->path = $realPath;
+        $realPath = realpath($this->path);
+        $diskRoot = Storage::disk($disk)->path('');
+        $allowedRoots = array_filter([realpath($diskRoot), realpath(base_path())]);
+
+        if ($realPath !== false && !empty($allowedRoots)) {
+            $isAllowed = false;
+            foreach ($allowedRoots as $root) {
+                if (str_starts_with($realPath, $root)) {
+                    $isAllowed = true;
+                    break;
+                }
+            }
+
+            if (!$isAllowed) {
+                throw new SourceException('Invalid file path detected for security reasons.');
+            }
         }
 
         if ($realPath !== false) {
@@ -66,7 +79,6 @@ class FilesystemHandler implements SourceHandler
 
         $reader = SimpleExcelReader::create($fullPath);
         $rows = $reader->getRows();
-        $this->totalRows = $rows->count();
 
         yield from $this->processRows($rows, $config);
     }

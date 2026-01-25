@@ -11,6 +11,8 @@ use LaravelIngest\Concerns\ProcessesSource;
 use LaravelIngest\Contracts\SourceHandler;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
+use LaravelIngest\ValueObjects\FileSize;
+use LaravelIngest\ValueObjects\MimeType;
 use Spatie\SimpleExcel\SimpleExcelReader;
 
 class UploadHandler implements SourceHandler
@@ -29,29 +31,12 @@ class UploadHandler implements SourceHandler
             throw new SourceException('UploadHandler expects an instance of UploadedFile.');
         }
 
-        $allowedMimes = $config->sourceOptions['allowed_mimes'] ?? ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/plain'];
-        $maxSizeBytes = $config->sourceOptions['max_size_mb'] ?? 50 * 1024 * 1024;
+        $this->validateFile($payload, $config);
 
-        $clientMimeType = $payload->getClientMimeType();
-        $finfoMimeType = finfo_file(finfo_open(FILEINFO_MIME_TYPE), $payload->getPathname());
+        $this->path = $this->storeFile($payload, $config);
 
-        if ($clientMimeType !== $finfoMimeType && !in_array($finfoMimeType, $allowedMimes, true) && !in_array($clientMimeType, ['text/plain', 'text/csv'], true)) {
-            if (!in_array($finfoMimeType, $allowedMimes, true)) {
-                throw new SourceException("File type '{$finfoMimeType}' is not allowed. Allowed types: " . implode(', ', $allowedMimes));
-            }
-        }
-
-        if ($payload->getSize() > $maxSizeBytes) {
-            throw new SourceException('File size exceeds maximum allowed size of ' . ($maxSizeBytes / 1024 / 1024) . ' MB');
-        }
-
-        $disk = $config->disk ?? config('ingest.disk');
-        $this->path = $payload->store('ingest-uploads', $disk);
-        $fullPath = Storage::disk($disk)->path($this->path);
-
-        $reader = SimpleExcelReader::create($fullPath);
-        $rows = $reader->getRows();
-        $this->totalRows = $rows->count();
+        $fullPath = Storage::disk($config->disk ?? config('ingest.disk'))->path($this->path);
+        $rows = SimpleExcelReader::create($fullPath)->getRows();
 
         yield from $this->processRows($rows, $config);
     }
@@ -69,8 +54,60 @@ class UploadHandler implements SourceHandler
     public function cleanup(): void
     {
         if ($this->path) {
-            $disk = config('ingest.disk');
-            Storage::disk($disk)->delete($this->path);
+            Storage::disk(config('ingest.disk'))->delete($this->path);
         }
+    }
+
+    /**
+     * @throws SourceException
+     */
+    private function validateFile(UploadedFile $file, IngestConfig $config): void
+    {
+        $this->validateMimeType($file, $config);
+        $this->validateSize($file, $config);
+    }
+
+    /**
+     * @throws SourceException
+     */
+    private function validateMimeType(UploadedFile $file, IngestConfig $config): void
+    {
+        $allowedMimes = $config->sourceOptions['allowed_mimes'] ?? [
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain',
+        ];
+
+        $clientMime = new MimeType($file->getClientMimeType());
+        $realMime = new MimeType(finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file->getPathname()));
+
+        if (!$realMime->isIn($allowedMimes) && !$clientMime->isTextType()) {
+            throw new SourceException(
+                "File type '{$realMime->toString()}' is not allowed. Allowed types: " . implode(', ', $allowedMimes)
+            );
+        }
+    }
+
+    /**
+     * @throws SourceException
+     */
+    private function validateSize(UploadedFile $file, IngestConfig $config): void
+    {
+        $maxBytes = $config->sourceOptions['max_size_mb'] ?? 50 * 1024 * 1024;
+
+        $maxSize = new FileSize((int) $maxBytes);
+        $fileSize = new FileSize($file->getSize());
+
+        if ($fileSize->exceeds($maxSize)) {
+            throw new SourceException('File size exceeds maximum allowed size of ' . $maxSize->toString());
+        }
+    }
+
+    private function storeFile(UploadedFile $file, IngestConfig $config): string
+    {
+        $disk = $config->disk ?? config('ingest.disk');
+
+        return $file->store('ingest-uploads', $disk);
     }
 }

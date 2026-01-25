@@ -14,6 +14,8 @@ return [
 
     'chunk_size' => 100,
 
+    'max_show_rows' => env('INGEST_MAX_SHOW_ROWS', 100),
+
     'queue' => [
         'connection' => env('INGEST_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'sync')),
         'name' => env('INGEST_QUEUE_NAME', 'imports'),

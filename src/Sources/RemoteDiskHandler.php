@@ -32,8 +32,6 @@ class RemoteDiskHandler implements SourceHandler
 
         try {
             $fullPath = $this->downloadRemoteFile($config);
-            $this->totalRows = $this->countRows($fullPath);
-
             yield from $this->readAndProcessRows($fullPath, $config);
         } catch (SourceException $e) {
             throw $e;
@@ -64,6 +62,9 @@ class RemoteDiskHandler implements SourceHandler
         }
     }
 
+    /**
+     * @throws SourceException
+     */
     private function validateConfig(IngestConfig $config): void
     {
         $diskName = $config->sourceOptions['disk'] ?? null;
@@ -77,6 +78,9 @@ class RemoteDiskHandler implements SourceHandler
         }
     }
 
+    /**
+     * @throws SourceException
+     */
     private function downloadRemoteFile(IngestConfig $config): string
     {
         $diskName = $config->sourceOptions['disk'];
@@ -102,13 +106,9 @@ class RemoteDiskHandler implements SourceHandler
         return Storage::disk($localDisk)->path($this->temporaryPath);
     }
 
-    private function countRows(string $fullPath): int
-    {
-        $reader = SimpleExcelReader::create($fullPath);
-
-        return $reader->getRows()->count();
-    }
-
+    /**
+     * @throws SourceException
+     */
     private function readAndProcessRows(string $fullPath, IngestConfig $config): Generator
     {
         $reader = SimpleExcelReader::create($fullPath);

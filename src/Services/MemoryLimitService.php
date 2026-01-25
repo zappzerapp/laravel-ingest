@@ -55,11 +55,9 @@ class MemoryLimitService
     public function processInChunks(iterable $data, int $chunkSize, Closure $processor, int $memoryLimitMb = 512): void
     {
         $chunk = [];
-        $processed = 0;
 
         foreach ($data as $item) {
             $chunk[] = $item;
-            $processed++;
 
             if (count($chunk) >= $chunkSize) {
                 $this->executeWithLimit(function () use ($chunk, $processor) {

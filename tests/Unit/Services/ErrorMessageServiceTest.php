@@ -37,11 +37,11 @@ it('sanitizes db connection strings in production', function () {
 it('sanitizes tokens in production', function () {
     ErrorMessageService::setEnvironment(true);
 
-    $original = 'Invalid token: abcdefghijklmnopqrstuvwxyz123456';
+    $original = 'Invalid token: abcdefghijklmnopqrstuvwxyz1234567890123456';
     $sanitized = ErrorMessageService::sanitize($original);
 
     expect($sanitized)->toContain('[REDACTED_TOKEN]');
-    expect($sanitized)->not->toContain('abcdefghijklmnopqrstuvwxyz123456');
+    expect($sanitized)->not->toContain('abcdefghijklmnopqrstuvwxyz1234567890123456');
 });
 
 it('sanitizes stack traces in production', function () {

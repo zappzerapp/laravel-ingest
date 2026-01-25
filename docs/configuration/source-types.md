@@ -51,6 +51,44 @@ This handler downloads a file from a public URL and processes it. The file is st
 // IngestConfig
 ->fromSource(SourceType::URL, ['url' => 'https://example.com/data/export.csv'])
 ```
+---
+
+### `SourceType::JSON`
+
+This handler processes a file containing a JSON array of objects. It's useful for API-driven imports or when dealing with structured data feeds.
+
+-   **Payload:** The full path to the JSON file.
+-   **Options:** No options are required.
+
+#### Example IngestConfig
+```php
+// IngestConfig
+->fromSource(SourceType::JSON)
+```
+
+#### Example Usage
+```php
+// Programmatic trigger
+Ingest::start('user-importer', storage_path('app/imports/users.json'));
+```
+
+#### Example `users.json` File
+The file must contain a single top-level array. Each element in the array is treated as a row.
+
+```json
+[
+  {
+    "full_name": "John Doe",
+    "user_email": "john@example.com",
+    "is_admin": "yes"
+  },
+  {
+    "full_name": "Jane Smith",
+    "user_email": "jane@example.com",
+    "is_admin": "no"
+  }
+]
+```
 
 ---
 
@@ -102,4 +140,3 @@ Then, use the configured disk in your importer:
 ## Custom Source Handlers
 
 You can create your own source handlers for custom data sources (APIs, XML, etc.). See the [Custom Source Handlers](/advanced/custom-source-handlers/) guide for details.
-```

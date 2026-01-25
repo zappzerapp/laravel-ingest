@@ -1,59 +1,72 @@
 # Laravel Ingest
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/zappzerapp/laravel-ingest.svg?style=flat-square)](https://packagist.org/packages/zappzerapp/laravel-ingest)
-[![Total Downloads](https://img.shields.io/packagist/dt/zappzerapp/laravel-ingest.svg?style=flat-square)](https://packagist.org/packages/zappzerapp/laravel-ingest)
+<p align="center">
+    <img src="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/.github/header.png" alt="Laravel Ingest Banner" width="100%">
+    <!-- TIPP: Erstelle ein Banner Bild und verlinke es hier! -->
+</p>
 
-Laravel Ingest revolutionizes the way Laravel applications import data. We end the chaos of custom, error-prone import
-scripts and provide an elegant, declarative, and robust framework for defining complex data import processes.
+<p align="center">
+    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/v/zappzerapp/laravel-ingest.svg?style=flat-square" alt="Latest Version"></a>
+    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/dt/zappzerapp/laravel-ingest.svg?style=flat-square" alt="Total Downloads"></a>
+    <a href="https://github.com/zappzerapp/laravel-ingest/actions"><img src="https://img.shields.io/github/actions/workflow/status/zappzerapp/laravel-ingest/main-pipeline.yml?style=flat-square" alt="Build Status"></a>
+    <a href="https://zappzerapp.github.io/laravel-ingest/"><img src="https://img.shields.io/badge/docs-online-blue.svg?style=flat-square" alt="Documentation"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/packagist/l/zappzerapp/laravel-ingest.svg?style=flat-square" alt="License"></a>
+</p>
 
-The system handles the "dirty" work—file processing, streaming, validation, background jobs, error reporting, and API
-provision—so you can focus on the business logic.
+---
 
-## The Core Problem We Solve
+**Stop writing spaghetti code for imports.**
 
-Importing data (CSV, Excel, etc.) is often a painful process: repetitive code, lack of robustness with large files, poor
-user experience, and inadequate error handling. Laravel Ingest solves this with a **declarative, configuration-driven
-approach**.
+**Laravel Ingest** is a robust, configuration-driven ETL (Extract, Transform, Load) framework for Laravel. It replaces
+fragile, procedural import scripts with elegant, declarative configuration classes.
 
-## Key Features
+Whether you are importing **100 rows** or **10 million**, Laravel Ingest handles the heavy lifting: streaming, chunking,
+queueing, validation, relationships, and error reporting.
 
-- **Limitless Scalability**: By consistently utilizing **streams and queues**, there is no limit to file size. Whether
-  100 rows or 10 million, memory usage remains consistently low.
-- **Fluent & Expressive API**: Define imports in a readable and self-explanatory way using the `IngestConfig` class.
-- **Source Agnostic**: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (`s3`, `local`).
-  Easily extensible for other sources.
-- **Robust Background Processing**: Uses the Laravel Queue by default for maximum reliability.
-- **Comprehensive Mapping & Validation**: Transform data on-the-fly, resolve relationships, and use the validation rules
-  of your Eloquent models.
-- **Auto-generated API & CLI**: Control and monitor imports via RESTful endpoints or the included Artisan commands.
-- **"Dry Runs"**: Simulate an import to detect validation errors without writing a single database entry.
+## ⚡ Why use this?
 
-## Installation
+Most import implementations suffer from the same issues: memory leaks, timeouts, lack of validation, and messy
+controllers.
+
+Laravel Ingest solves this by treating imports as a first-class citizen:
+
+- **♾️ Infinite Scalability:** Uses Generators and Queues to process files of *any* size with flat memory usage.
+- **📝 Declarative Syntax:** Define *what* to import, not *how* to loop over it.
+- **🧪 Dry Runs:** Simulate imports to find validation errors without touching the database.
+- **🔗 Auto-Relations:** Automatically resolves `BelongsTo` and `BelongsToMany` relationships (e.g., finding IDs by
+  names).
+- **🛡️ Robust Error Handling:** Tracks every failed row and allows you to download a CSV of *only* the failures to fix
+  and retry.
+- **🔌 API & CLI Ready:** Comes with auto-generated API endpoints and Artisan commands.
+
+---
+
+## 📚 Documentation
+
+Full documentation is available at **[zappzerapp.github.io/laravel-ingest](https://zappzerapp.github.io/laravel-ingest/)
+**.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
 
 ```bash
 composer require zappzerapp/laravel-ingest
-```
 
-Publish the configuration and migrations:
-
-```bash
+# Publish config & migrations
 php artisan vendor:publish --provider="LaravelIngest\IngestServiceProvider"
-```
 
-Run the migrations to create the `ingest_runs` and `ingest_rows` tables:
-
-```bash
+# Create tables
 php artisan migrate
 ```
 
-## "Hello World": Your First Importer
+### 2. Define an Importer
 
-### 1. Define Importer Class
-
-Create a class that implements the `IngestDefinition` interface. This is where you define the entire process.
+Create a class implementing `IngestDefinition`. This is the only code you need to write.
 
 ```php
-// app/Ingest/UserImporter.php
 namespace App\Ingest;
 
 use App\Models\User;
@@ -68,23 +81,30 @@ class UserImporter implements IngestDefinition
     {
         return IngestConfig::for(User::class)
             ->fromSource(SourceType::UPLOAD)
-            ->keyedBy('email')
-            ->onDuplicate(DuplicateStrategy::UPDATE)
-            ->map('full_name', 'name')
-            ->map('user_email', 'email')
-            ->mapAndTransform('is_admin', 'is_admin', fn($value) => $value === 'yes')
-            ->validateWithModelRules();
+            ->keyedBy('email') // Identify records by email
+            ->onDuplicate(DuplicateStrategy::UPDATE) // Update if exists
+            
+            // Map CSV columns to DB attributes
+            ->map('Full Name', 'name')
+            ->map(['E-Mail', 'Email Address'], 'email') // Supports aliases
+            
+            // Handle Relationships automatically
+            ->relate('Role', 'role', Role::class, 'slug', createIfMissing: true)
+            
+            // Validate rows before processing
+            ->validate([
+                'email' => 'required|email',
+                'Full Name' => 'required|string|min:3'
+            ]);
     }
 }
 ```
 
-### 2. Tag the Model
+### 3. Register it
 
-To let the framework find your importer, tag it in the `register` method of your `AppServiceProvider`:
+In `App\Providers\AppServiceProvider`:
 
 ```php
-// app/Providers/AppServiceProvider.php
-use App\Ingest\UserImporter;
 use LaravelIngest\IngestServiceProvider;
 
 public function register(): void
@@ -93,165 +113,119 @@ public function register(): void
 }
 ```
 
-### 3. Run Import
+### 4. Run it!
 
-**Via API:** Send a `multipart/form-data` request with a `file` payload to the automatically generated endpoint. The
-importer slug is derived from the class name (`UserImporter` -> `user-importer`).
+You can now trigger the import via CLI or API.
+
+**Via Artisan (Backend / Cron):**
+
+```bash
+php artisan ingest:run user-importer --file=users.csv
+```
+
+**Via API (Frontend / Upload):**
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer <token>" \
-  -F "file=@/path/to/users.csv" \
-  https://myapp.com/api/v1/ingest/upload/user-importer
-```
-
-**Via CLI:**
-
-```bash
-php artisan ingest:run user-importer --file=path/to/users.csv
-```
-
-The import is now processed in the background. You can check the status via the API: `GET /api/v1/ingest/{run-id}`.
-
-## Programmatic Usage (Facade)
-
-You can define complex workflows or custom controllers using the `Ingest` facade.
-
-```php
-use LaravelIngest\Facades\Ingest;
-use Illuminate\Support\Facades\Auth;
-
-// Start an import
-$run = Ingest::start(
-    importer: 'user-importer',
-    payload: '/path/to/file.csv', // Or UploadedFile instance
-    user: Auth::user(),
-    isDryRun: false
-);
-
-echo "Import started with ID: {$run->id}";
-
-// Retry failed rows from a previous run
-$retryRun = Ingest::retry($run);
-```
-
-## Configuration Reference (`IngestConfig`)
-
-All configurations are handled via the fluent API in your `getConfig()` method.
-
-| Method                                              | Description                                                                                                   |
-|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `fromSource(SourceType, array)`                     | Defines the data source (e.g., `UPLOAD`, `FTP`, `URL`, `FILESYSTEM`).                                         |
-| `keyedBy(string)`                                   | Sets the unique field in the source data (e.g., `sku`, `email`).                                              |
-| `onDuplicate(DuplicateStrategy)`                    | Defines behavior for duplicates (`UPDATE`, `SKIP`, `FAIL`, `UPDATE_IF_NEWER`).                                                   |
-| `map(string\|array, string)`                        | Maps a source column (with optional aliases) to a model attribute.                                            |
-| `mapAndTransform(string\|array, string, callable)`  | Maps and transforms the value before saving.                                                                  |
-| `relate(string, string, string, string, bool)`      | Resolves a `BelongsTo` relationship with optional `createIfMissing`.                                          |
-| `relateMany(string, string, string, string, string)`| Resolves `BelongsToMany` relationships with separator support.                                                |
-| `validate(array)`                                   | Defines import-specific validation rules.                                                                     |
-| `validateWithModelRules()`                          | Uses the target model's `getRules()` method for validation.                                                   |
-| `setChunkSize(int)`                                 | Defines the number of rows per background job (Default: 100).                                                 |
-| `setDisk(string)`                                   | Defines the filesystem disk for `UPLOAD` or `FILESYSTEM` sources.                                             |
-| `atomic()`                                          | Wraps each chunk in a database transaction.                                                                   |
-| `beforeRow(callable)`                               | Hook executed before validation to modify raw data.                                                           |
-| `afterRow(callable)`                               | Hook executed after successful save with model and row data.                                                  |
-| `resolveModelUsing(callable)`                       | Dynamically resolve the target model class based on row data.                                                 |
-| `strictHeaders()`                                   | Validates that all mapped headers exist in the source file.                                                   |
-| `compareTimestamp(string, string)`                  | For `UPDATE_IF_NEWER` strategy: compares source timestamp with DB column.                                     |
-
-## Advanced Scenarios
-
-### Column Aliases
-
-Support for files with varying header names:
-
-```php
-->map(['email', 'E-Mail', 'user_email'], 'email')  // First match wins
-->map(['name', 'full_name', 'username'], 'name')
-```
-
-### Nightly FTP Import
-
-```php
-// app/Ingest/DailyStockImporter.php
-return IngestConfig::for(ProductStock::class)
-    ->fromSource(SourceType::FTP, [
-        'disk' => 'erp_ftp',  // Configured in filesystems.php
-        'path' => '/stock/daily_update.csv',
-    ])
-    ->keyedBy('product_sku')
-    ->onDuplicate(DuplicateStrategy::UPDATE)
-    ->map('SKU', 'product_sku')
-    ->map('Quantity', 'quantity');
-```
-
-Set up a scheduled command to trigger the import:
-
-```php
-// routes/console.php (Laravel 11+)
-Schedule::command('ingest:run daily-stock-importer')->dailyAt('03:00');
-```
-
-### Dynamic Model Resolution
-
-Import different model types based on row data:
-
-```php
-return IngestConfig::for(User::class)
-    ->resolveModelUsing(fn(array $row) => match($row['type']) {
-        'admin' => AdminUser::class,
-        'customer' => Customer::class,
-        default => User::class,
-    })
-    ->map('email', 'email')
-    ->map('name', 'name');
-```
-
-### Auto-Create Missing Relations
-
-Create related records on-the-fly if they don't exist:
-
-```php
-->relate('category_name', 'category', Category::class, 'name', createIfMissing: true)
-```
-
-## Testing
-
-To ensure a consistent test environment, we recommend running tests via Docker.
-
-**Prerequisites:**
-Start the environment once:
-
-```bash
-composer docker:up
-```
-
-**Run Tests:**
-
-```bash
-# Run tests inside the container
-composer docker:test
-
-# Run tests with coverage
-composer docker:coverage
-```
-
-Alternatively, you can run tests locally if you have PHP 8.3 and SQLite installed:
-
-```bash
-composer test
+  -F "file=@users.csv" \
+  https://your-app.com/api/v1/ingest/upload/user-importer
 ```
 
 ---
 
-## Contributing
+## 🛠 Features in Depth
 
-Please see [CONTRIBUTING](.github/CONTRIBUTING.md) for details.
+### Monitoring & Management
 
-## Credits
+Ingest runs happen in the background. You can monitor and manage them easily:
 
-- [Robin Kopp](https://github.com/zappzerapp)
+| Command              | Description                                                           |
+|:---------------------|:----------------------------------------------------------------------|
+| `ingest:list`        | Show all registered importers.                                        |
+| `ingest:status {id}` | Show progress bar, stats, and errors for a run.                       |
+| `ingest:cancel {id}` | Stop a running import gracefully.                                     |
+| `ingest:retry {id}`  | Create a **new run** containing only the rows that failed previously. |
 
-## License
+### API Endpoints
 
-The GNU Affero General Public License v3.0 (AGPL-3.0). Please see [License File](LICENSE) for more information.
+The package automatically exposes endpoints for building UI integrations (e.g., React/Vue progress bars).
+
+- `GET /api/v1/ingest` - List recent runs.
+- `GET /api/v1/ingest/{id}` - Get status and progress.
+- `GET /api/v1/ingest/{id}/errors/summary` - Get aggregated error stats (e.g., "50x Email invalid").
+- `GET /api/v1/ingest/{id}/failed-rows/download` - Download a CSV of failed rows to fix & re-upload.
+
+### Events
+
+Hook into the lifecycle to send notifications (e.g., Slack) or trigger downstream logic.
+
+- `LaravelIngest\Events\IngestRunStarted`
+- `LaravelIngest\Events\ChunkProcessed`
+- `LaravelIngest\Events\RowProcessed`
+- `LaravelIngest\Events\IngestRunCompleted`
+- `LaravelIngest\Events\IngestRunFailed`
+
+### Pruning
+
+To keep your database clean, logs are prunable. Add this to your scheduler:
+
+```php
+$schedule->command('model:prune', [
+    '--model' => [LaravelIngest\Models\IngestRow::class],
+])->daily();
+```
+
+---
+
+## 🧩 Configuration Reference
+
+The `IngestConfig` fluent API handles complex scenarios with ease.
+
+```php
+IngestConfig::for(Product::class)
+    // Sources: UPLOAD, FILESYSTEM, URL, FTP, SFTP
+    ->fromSource(SourceType::FTP, ['disk' => 'erp', 'path' => 'daily.csv'])
+    
+    // Performance
+    ->setChunkSize(1000)
+    ->atomic() // Wrap chunks in transactions
+    
+    // Logic
+    ->keyedBy('sku')
+    ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+    ->compareTimestamp('last_modified_at', 'updated_at')
+    
+    // Transformation
+    ->mapAndTransform('price_cents', 'price', fn($val) => $val / 100)
+    ->resolveModelUsing(fn($row) => $row['type'] === 'digital' ? DigitalProduct::class : Product::class);
+```
+
+See the [Documentation](https://zappzerapp.github.io/laravel-ingest/) for all available methods.
+
+---
+
+## 🧪 Testing
+
+We provide a Docker-based test environment to ensure consistency.
+
+```bash
+# Start Docker
+composer docker:up
+
+# Run Tests
+composer docker:test
+
+# Check Coverage
+composer docker:coverage
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details.
+
+## 📄 License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.

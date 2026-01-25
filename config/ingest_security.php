@@ -45,4 +45,12 @@ return [
         'data',
         'imports',
     ],
+
+    'allowed_url_hosts' => env('INGEST_ALLOWED_URL_HOSTS') ? explode(',', env('INGEST_ALLOWED_URL_HOSTS')) : null,
+
+    'blocked_url_hosts' => env('INGEST_BLOCKED_URL_HOSTS') ? explode(',', env('INGEST_BLOCKED_URL_HOSTS')) : [],
+
+    'url_timeout_seconds' => env('INGEST_URL_TIMEOUT', 15),
+
+    'url_max_redirects' => env('INGEST_URL_MAX_REDIRECTS', 5),
 ];

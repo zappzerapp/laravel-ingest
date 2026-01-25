@@ -39,7 +39,7 @@ it('getProcessedFilePath returns path', function () {
     expect($handler->getProcessedFilePath())->toBe('test/path.csv');
 });
 
-it('getTotalRows returns total rows after read', function () {
+it('getTotalRows remains null after read when count is deferred', function () {
     Storage::fake('local');
     $content = "name,email\nJohn,john@example.com\nJane,jane@example.com";
     Storage::disk('local')->put('test.csv', $content);
@@ -50,7 +50,7 @@ it('getTotalRows returns total rows after read', function () {
     $handler = new FilesystemHandler();
     iterator_to_array($handler->read($config));
 
-    expect($handler->getTotalRows())->toBe(2);
+    expect($handler->getTotalRows())->toBeNull();
 });
 
 it('getTotalRows returns null before read', function () {
@@ -141,3 +141,21 @@ it('resolves realpath inside base path but fails storage check if absolute', fun
 
     throw new Exception('Should have thrown SourceException');
 });
+
+it('throws exception for path containing directory traversal', function () {
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => '../../../etc/passwd']);
+
+    $handler = new FilesystemHandler();
+
+    iterator_to_array($handler->read($config));
+})->throws(SourceException::class, 'Invalid file path detected for security reasons.');
+
+it('throws exception for path with backslash directory traversal', function () {
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => '..\\..\\..\\windows\\system32']);
+
+    $handler = new FilesystemHandler();
+
+    iterator_to_array($handler->read($config));
+})->throws(SourceException::class, 'Invalid file path detected for security reasons.');

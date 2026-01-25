@@ -9,6 +9,8 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use LaravelIngest\Exceptions\DefinitionNotFoundException;
+use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Http\Requests\UploadRequest;
 use LaravelIngest\Http\Resources\IngestErrorSummaryResource;
@@ -18,6 +20,7 @@ use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\ErrorAnalysisService;
 use LaravelIngest\Services\FailedRowsExportService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class IngestController extends Controller
 {
@@ -42,7 +45,10 @@ class IngestController extends Controller
     {
         $this->authorizeAccess();
 
-        return IngestRunResource::make($ingestRun->load('rows'))->response();
+        $rowsLimit = config('ingest.max_show_rows', 100);
+        $ingestRun->load(['rows' => fn($query) => $query->limit($rowsLimit)]);
+
+        return IngestRunResource::make($ingestRun)->response()->setStatusCode(200);
     }
 
     public function upload(UploadRequest $request, string $importer): JsonResponse
@@ -60,6 +66,11 @@ class IngestController extends Controller
         return IngestRunResource::make($run)->response()->setStatusCode(202);
     }
 
+    /**
+     * @throws Throwable
+     * @throws InvalidConfigurationException
+     * @throws DefinitionNotFoundException
+     */
     public function trigger(string $importer): JsonResponse
     {
         $this->authorizeAccess();

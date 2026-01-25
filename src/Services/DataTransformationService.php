@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 
 class DataTransformationService
 {
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function processMappings(array $processedData, array $mappings): array
     {
         $modelData = [];
@@ -32,11 +36,12 @@ class DataTransformationService
     public function processRelations(
         array $processedData,
         array $relations,
-        $relationCache,
-        string $modelClass
+        array &$relationCache,
+        string $modelClass,
+        bool $isDryRun = false
     ): array {
         $modelData = [];
-        $modelInstance = new $modelClass();
+        $modelInstance = app($modelClass);
 
         foreach ($relations as $sourceField => $relationConfig) {
             if (!RelationService::hasNestedKey($processedData, $sourceField)) {
@@ -49,7 +54,7 @@ class DataTransformationService
             if (!empty($relationValue)) {
                 $relatedId = $relationCache[$sourceField][$relationValue] ?? null;
 
-                if ($relatedId === null && ($relationConfig['createIfMissing'] ?? false)) {
+                if ($relatedId === null && ($relationConfig['createIfMissing'] ?? false) && !$isDryRun) {
                     $relatedId = RelationService::createMissingRelation($relationConfig, $relationValue, $relationCache, $sourceField);
                 }
             }

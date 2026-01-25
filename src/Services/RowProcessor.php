@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
-use DateTimeInterface;
-use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use JsonException;
 use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
-use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
@@ -21,11 +18,22 @@ use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
+use LaravelIngest\ValueObjects\Timestamp;
 use RuntimeException;
 use Throwable;
 
 class RowProcessor
 {
+    private DataTransformationService $transformationService;
+
+    public function __construct(?DataTransformationService $transformationService = null)
+    {
+        $this->transformationService = $transformationService ?? new DataTransformationService();
+    }
+
+    /**
+     * @throws Throwable
+     */
     public function processChunk(IngestRun $ingestRun, IngestConfig $config, array $chunk, bool $isDryRun): array
     {
         $relationCache = $this->prefetchRelations($chunk, $config);
@@ -94,7 +102,6 @@ class RowProcessor
         /**
          * @throws InvalidConfigurationException
          * @throws PhpVersionNotSupportedException
-         * @throws Exception
          */
         $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache) {
             $this->executeBeforeRowCallback($config, $rowData);
@@ -118,6 +125,9 @@ class RowProcessor
             : $rowLogic();
     }
 
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     private function executeBeforeRowCallback(IngestConfig $config, RowData $rowData): void
     {
         if ($config->beforeRowCallback) {
@@ -125,6 +135,9 @@ class RowProcessor
         }
     }
 
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     private function executeAfterRowCallback(IngestConfig $config, ?Model $model, RowData $rowData): void
     {
         if ($config->afterRowCallback && $model) {
@@ -132,6 +145,10 @@ class RowProcessor
         }
     }
 
+    /**
+     * @throws Throwable
+     * @throws JsonException
+     */
     private function handleRowFailure(
         IngestConfig $config,
         Throwable $e,
@@ -229,70 +246,34 @@ class RowProcessor
         }
     }
 
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     private function transform(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun = false): array
     {
-        $modelData = $this->processMappings($config, $processedData);
-        $this->processRelations($config, $processedData, $relationCache, $modelClass, $isDryRun, $modelData);
-        $this->processUnmappedData($config, $processedData, $modelClass, $modelData);
+        $modelData = $this->transformationService->processMappings($processedData, $config->mappings);
 
-        return $modelData;
-    }
+        $relationData = $this->transformationService->processRelations(
+            $processedData,
+            $config->relations,
+            $relationCache,
+            $modelClass,
+            $isDryRun
+        );
 
-    private function processMappings(IngestConfig $config, array $processedData): array
-    {
-        $modelData = [];
+        $modelData = array_merge($modelData, $relationData);
 
-        foreach ($config->mappings as $sourceField => $mapping) {
-            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
-                continue;
-            }
+        $unmappedData = $this->transformationService->processUnmappedData(
+            $processedData,
+            $config->mappings,
+            $config->relations,
+            $config->manyRelations,
+            $this->getUsedTopLevelKeys($config),
+            $modelClass
+        );
 
-            $value = data_get($processedData, $sourceField);
-            if ($mapping['transformer'] instanceof SerializableClosure) {
-                $value = call_user_func($mapping['transformer']->getClosure(), $value, $processedData);
-            }
-            $modelData[$mapping['attribute']] = $value;
-        }
+        return array_merge($modelData, $unmappedData);
 
-        return $modelData;
-    }
-
-    private function processRelations(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun, array &$modelData): void
-    {
-        foreach ($config->relations as $sourceField => $relationConfig) {
-            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
-                continue;
-            }
-
-            $modelInstance = app($modelClass);
-            $relationValue = data_get($processedData, $sourceField);
-            $relatedId = null;
-
-            if (!empty($relationValue)) {
-                $relatedId = $relationCache[$sourceField][$relationValue] ?? null;
-
-                if ($relatedId === null && ($relationConfig['createIfMissing'] ?? false) && !$isDryRun) {
-                    $relatedId = RelationService::createMissingRelation($relationConfig, $relationValue, $relationCache, $sourceField);
-                }
-            }
-
-            $relationObject = $modelInstance->{$relationConfig['relation']}();
-            $foreignKey = $relationObject->getForeignKeyName();
-            $modelData[$foreignKey] = $relatedId;
-        }
-    }
-
-    private function processUnmappedData(IngestConfig $config, array $processedData, string $modelClass, array &$modelData): void
-    {
-        $usedTopLevelKeys = $this->getUsedTopLevelKeys($config);
-
-        $unmappedData = array_diff_key($processedData, $config->mappings, $config->relations, $config->manyRelations, $usedTopLevelKeys);
-        $modelInstance = app($modelClass);
-        foreach ($unmappedData as $key => $value) {
-            if ($modelInstance->isFillable($key)) {
-                $modelData[$key] = $value;
-            }
-        }
     }
 
     private function syncManyRelations(Model $model, array $originalData, IngestConfig $config, array $manyRelationCache): void
@@ -319,7 +300,6 @@ class RowProcessor
             }
 
             $ids = [];
-            $lookupKey = $relationConfig['key'];
             $cache = $manyRelationCache[$sourceField] ?? [];
 
             foreach ($values as $value) {
@@ -360,27 +340,43 @@ class RowProcessor
         $existingModel = $this->findExistingModel($modelData, $config, $modelClass);
 
         if ($existingModel) {
-            switch ($config->duplicateStrategy) {
-                case DuplicateStrategy::UPDATE:
-                    $existingModel->update($modelData);
-
-                    return $existingModel->fresh();
-                case DuplicateStrategy::SKIP:
-                    return $existingModel;
-                case DuplicateStrategy::UPDATE_IF_NEWER:
-                    if ($this->shouldUpdate($existingModel, $modelData, $config)) {
-                        $existingModel->update($modelData);
-
-                        return $existingModel->fresh();
-                    }
-
-                    return $existingModel;
-                case DuplicateStrategy::FAIL:
-                    throw new RuntimeException("Duplicate entry found for key '{$config->keyedBy}'.");
-            }
+            return $this->handleDuplicateStrategy($existingModel, $modelData, $config);
         }
 
         return $modelClass::create($modelData);
+    }
+
+    private function handleDuplicateStrategy(Model $existingModel, array $modelData, IngestConfig $config): Model
+    {
+        return match ($config->duplicateStrategy) {
+            DuplicateStrategy::UPDATE => $this->updateModel($existingModel, $modelData),
+            DuplicateStrategy::SKIP => $existingModel,
+            DuplicateStrategy::UPDATE_IF_NEWER => $this->updateIfNewer($existingModel, $modelData, $config),
+            DuplicateStrategy::FAIL => $this->handleFailStrategy($config),
+        };
+    }
+
+    private function updateModel(Model $model, array $modelData): Model
+    {
+        $model->update($modelData);
+
+        return $model->fresh();
+    }
+
+    private function updateIfNewer(Model $model, array $modelData, IngestConfig $config): Model
+    {
+        if ($this->shouldUpdate($model, $modelData, $config)) {
+            $model->update($modelData);
+
+            return $model->fresh();
+        }
+
+        return $model;
+    }
+
+    private function handleFailStrategy(IngestConfig $config): never
+    {
+        throw new RuntimeException("Duplicate entry found for key '{$config->keyedBy}'.");
     }
 
     private function shouldUpdate(Model $existingModel, array $newData, IngestConfig $config): bool
@@ -403,35 +399,17 @@ class RowProcessor
             return true;
         }
 
-        if ($sourceTimestamp instanceof DateTimeInterface && $dbTimestamp instanceof DateTimeInterface) {
-            return $sourceTimestamp > $dbTimestamp;
-        }
+        $source = new Timestamp($sourceTimestamp);
+        $db = new Timestamp($dbTimestamp);
 
-        $sourceTime = $sourceTimestamp instanceof DateTimeInterface
-            ? $sourceTimestamp->getTimestamp()
-            : strtotime($sourceTimestamp);
-
-        $dbTime = $dbTimestamp instanceof DateTimeInterface
-            ? $dbTimestamp->getTimestamp()
-            : strtotime($dbTimestamp);
-
-        if ($sourceTime === false || $dbTime === false) {
-            return false;
-        }
-
-        return $sourceTime > $dbTime;
+        return $source->isNewerThan($db);
     }
 
     private function findExistingModel(array $modelData, IngestConfig $config, string $modelClass): ?Model
     {
-        $modelKey = null;
-        foreach ($config->mappings as $source => $map) {
-            if ($source === $config->keyedBy) {
-                $modelKey = $map['attribute'];
-                break;
-            }
-        }
-        if (is_null($config->keyedBy) || is_null($modelKey) || !isset($modelData[$modelKey])) {
+        $modelKey = $config->getAttributeForKeyedBy();
+
+        if (is_null($modelKey) || !isset($modelData[$modelKey])) {
             return null;
         }
 

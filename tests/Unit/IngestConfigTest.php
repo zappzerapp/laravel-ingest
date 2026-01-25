@@ -133,3 +133,11 @@ it('throws exception when resolver returns non-model class', function () {
     expect(fn() => $config->resolveModelClass(['name' => 'Test']))
         ->toThrow(InvalidConfigurationException::class, "must be an instance of Illuminate\Database\Eloquent\Model");
 });
+
+it('returns null from getAttributeForKeyedBy when keyedBy does not match any mapping', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->keyedBy('non_existent_field');
+
+    expect($config->getAttributeForKeyedBy())->toBeNull();
+});

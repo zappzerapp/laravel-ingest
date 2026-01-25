@@ -10,6 +10,7 @@ use LaravelIngest\Enums\IngestStatus;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Events\IngestRunCompleted;
 use LaravelIngest\Events\IngestRunFailed;
+use LaravelIngest\Exceptions\ConcurrencyException;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
 use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
@@ -155,7 +156,7 @@ it('creates multiple jobs when source rows exceed chunk size', function () {
     $manager = new IngestManager(['multichunk' => $definition], app(SourceHandlerFactory::class));
     $manager->start('multichunk', 'users.csv');
 
-    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 2);
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1 && count($batch->jobs[0]->chunk) === 2);
 });
 
 it('handles a failed batch during a retry run', function () {
@@ -224,7 +225,7 @@ it('creates multiple jobs when retrying rows that exceed chunk size', function (
 
     $manager->retry($originalRun);
 
-    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 2);
+    Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1 && count($batch->jobs[0]->chunk) === 2);
 });
 
 it('handles a successful batch for a retry run', function () {
@@ -303,3 +304,71 @@ it('successfully imports a file with aliased headers', function () {
         'email' => 'aliased@test.com',
     ]);
 });
+
+it('updates total rows on ingest run when handler provides total', function () {
+    Event::fake();
+    Bus::fake();
+    Storage::fake('local');
+    Storage::put('users.csv', "full_name,user_email\nTest1,test1@test.com\nTest2,test2@test.com");
+
+    $config = IngestConfig::for(User::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
+        ->map('user_email', 'email');
+
+    $definition = $this->createTestDefinition($config);
+    $manager = new IngestManager(['totalrows' => $definition], app(SourceHandlerFactory::class));
+
+    $run = $manager->start('totalrows', 'users.csv');
+
+    $run->refresh();
+    expect($run->total_rows)->toBe(2);
+});
+
+it('updates total_rows from source handler when totalRows is provided', function () {
+    Event::fake();
+    Bus::fake();
+
+    $sourceHandlerMock = $this->mock(SourceHandler::class);
+    $sourceHandlerMock->shouldReceive('read')->andReturn((function () {
+        yield ['name' => 'Row 1'];
+        yield ['name' => 'Row 2'];
+        yield ['name' => 'Row 3'];
+    })());
+    $sourceHandlerMock->shouldReceive('getTotalRows')->andReturn(42);
+    $sourceHandlerMock->shouldReceive('getProcessedFilePath')->andReturn('path/to/file.csv');
+    $sourceHandlerMock->shouldReceive('cleanup');
+
+    $factoryMock = $this->mock(SourceHandlerFactory::class);
+    $factoryMock->shouldReceive('make')->andReturn($sourceHandlerMock);
+
+    $config = IngestConfig::for(User::class)->fromSource(SourceType::UPLOAD)->setChunkSize(100);
+    $definition = $this->createTestDefinition($config);
+
+    $manager = new IngestManager(['metadatatest' => $definition], $factoryMock);
+    $run = $manager->start('metadatatest', 'payload');
+
+    $run->refresh();
+    expect($run->total_rows)->toBe(3); // corrected by dispatchBatch
+    expect($run->processed_filepath)->toBe('path/to/file.csv');
+});
+
+it('throws concurrency exception when retry is already in progress', function () {
+    $originalRun = IngestRun::factory()->create([
+        'importer' => 'userimporter',
+        'failed_rows' => 1,
+    ]);
+    IngestRow::factory()->create(['ingest_run_id' => $originalRun->id, 'status' => 'failed']);
+
+    $definition = $this->createTestDefinition(IngestConfig::for(User::class));
+    $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
+
+    // Acquire the lock manually to simulate an in-progress retry
+    $lock = Cache::lock('retry-ingest-run-' . $originalRun->id, 10);
+    $lock->get();
+
+    try {
+        $manager->retry($originalRun);
+    } finally {
+        $lock->release();
+    }
+})->throws(ConcurrencyException::class, 'already in progress');

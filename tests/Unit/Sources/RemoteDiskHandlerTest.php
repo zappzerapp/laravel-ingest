@@ -49,7 +49,7 @@ it('getProcessedFilePath returns temporary path', function () {
     expect($handler->getProcessedFilePath())->toBe('ingest-temp/test/path.csv');
 });
 
-it('getTotalRows returns total rows after read', function () {
+it('getTotalRows remains null after read when count is deferred', function () {
     Storage::fake('local');
     $content = "name,email\nJohn,john@example.com\nJane,jane@example.com";
     Storage::disk('local')->put('remote-test.csv', $content);
@@ -60,7 +60,7 @@ it('getTotalRows returns total rows after read', function () {
     $handler = new RemoteDiskHandler();
     iterator_to_array($handler->read($config));
 
-    expect($handler->getTotalRows())->toBe(2);
+    expect($handler->getTotalRows())->toBeNull();
 });
 
 it('getTotalRows returns null before read', function () {

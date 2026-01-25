@@ -1,27 +1,46 @@
 {
   "name": "zappzerapp/laravel-ingest",
-  "version": "v0.3.0",
-  "description": "A configuration-driven data import framework for Laravel",
+  "description": "A robust, configuration-driven ETL and data import framework for Laravel. Handles CSV/Excel streaming, queues, validation, and relationships.",
   "keywords": [
     "laravel",
     "import",
     "csv",
     "excel",
-    "data",
-    "ingest",
-    "etl"
+    "etl",
+    "data-ingestion",
+    "streaming",
+    "queue",
+    "importer"
   ],
+  "type": "library",
   "homepage": "https://github.com/zappzerapp/laravel-ingest",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "authors": [
     {
       "name": "Robin Kopp",
-      "email": "robin@zebra-fruit.de"
+      "email": "robin@zebra-fruit.de",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/zappzerapp/laravel-ingest/issues",
+    "source": "https://github.com/zappzerapp/laravel-ingest",
+    "docs": "https://zappzerapp.github.io/laravel-ingest/"
+  },
+  "funding": [
+    {
+      "type": "patreon",
+      "url": "https://www.patreon.com/zappzerapp"
+    },
+    {
+      "type": "custom",
+      "url": "https://www.buymeacoffee.com/wbbl"
     }
   ],
   "require": {
     "php": "^8.3",
     "ext-fileinfo": "*",
+    "ext-json": "*",
     "illuminate/contracts": "^10.0 || ^11.0 || ^12.0",
     "illuminate/database": "^10.0 || ^11.0 || ^12.0",
     "illuminate/filesystem": "^10.0 || ^11.0 || ^12.0",
@@ -69,6 +88,7 @@
   },
   "config": {
     "sort-packages": true,
+    "optimize-autoloader": true,
     "allow-plugins": {
       "pestphp/pest-analyzer": true,
       "pestphp/pest-plugin": true

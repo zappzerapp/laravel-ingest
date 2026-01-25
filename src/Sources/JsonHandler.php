@@ -25,13 +25,15 @@ class JsonHandler implements SourceHandler
             $content = @file_get_contents($payload);
 
             if ($content === false) {
-                throw new SourceException("Unable to read JSON file from path: {$payload}");
+                $error = error_get_last();
+                $message = $error['message'] ?? 'Unable to read JSON file.';
+                throw new SourceException("Unable to read JSON file from path: {$payload}. {$message}");
             }
 
             try {
                 $data = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
             } catch (JsonException $e) {
-                throw new SourceException('Invalid JSON: ' . $e->getMessage());
+                throw new SourceException('Invalid JSON: ' . $e->getMessage(), 0, $e);
             }
 
             foreach ($data as $row) {
@@ -41,7 +43,7 @@ class JsonHandler implements SourceHandler
                 yield $row;
             }
 
-            return $this;
+            return;
         }
 
         throw new SourceException('JsonHandler expects a valid file path.');

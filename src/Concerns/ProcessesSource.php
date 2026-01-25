@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Concerns;
 
+use Exception;
 use Generator;
 use Iterator;
 use IteratorAggregate;
@@ -15,6 +16,7 @@ trait ProcessesSource
 {
     /**
      * @throws SourceException
+     * @throws Exception
      */
     protected function processRows(IteratorAggregate|Traversable $rows, IngestConfig $config): Generator
     {
@@ -26,20 +28,14 @@ trait ProcessesSource
         }
 
         $firstRow = $iterator->current();
-        $actualHeaders = array_keys($firstRow);
-        $normalizationMap = $config->getHeaderNormalizationMap();
-
-        $translationMap = $this->buildTranslationMap($actualHeaders, $normalizationMap);
+        $translationMap = $this->buildTranslationMap(array_keys($firstRow), $config->getHeaderNormalizationMap());
 
         $this->validateKeyedByHeader($config, $translationMap);
 
         yield $this->translateRow($firstRow, $translationMap);
 
         $iterator->next();
-        while (true) {
-            if (!$iterator->valid()) {
-                break;
-            }
+        while ($iterator->valid()) {
             yield $this->translateRow($iterator->current(), $translationMap);
             $iterator->next();
         }
@@ -66,35 +62,39 @@ trait ProcessesSource
             throw new SourceException("The key column '{$config->keyedBy}' or one of its aliases was not found in the source file headers.");
         }
 
-        if (!$config->strictHeaders) {
-            return;
+        if ($config->strictHeaders) {
+            $this->validateStrictMappings($config, $translationMap);
+            $this->validateStrictRelations($config->relations, $translationMap);
+            $this->validateStrictRelations($config->manyRelations, $translationMap);
         }
+    }
 
+    private function validateStrictMappings(IngestConfig $config, array $translationMap): void
+    {
         foreach ($config->mappings as $sourceField => $mapping) {
-            $hasMatch = in_array($sourceField, $translationMap, true);
+            $aliases = array_merge([$sourceField], $mapping['aliases']);
 
-            if (!$hasMatch) {
-                foreach ($mapping['aliases'] as $alias) {
-                    if (in_array($alias, $translationMap, true)) {
-                        $hasMatch = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!$hasMatch) {
-                $aliasList = implode("', '", array_merge([$sourceField], $mapping['aliases']));
+            if (!$this->hasMatchInHeaders($aliases, $translationMap)) {
+                $aliasList = implode("', '", $aliases);
                 throw new SourceException("None of the required columns ['{$aliasList}'] were found in the source file headers. Strict header validation is enabled.");
             }
         }
+    }
 
-        foreach ($config->relations as $sourceField => $relationConfig) {
-            if (!in_array($sourceField, $translationMap, true)) {
-                throw new SourceException("The column '{$sourceField}' was not found in the source file headers. Strict header validation is enabled.");
+    private function hasMatchInHeaders(array $candidates, array $translationMap): bool
+    {
+        foreach ($candidates as $candidate) {
+            if (in_array($candidate, $translationMap, true)) {
+                return true;
             }
         }
 
-        foreach ($config->manyRelations as $sourceField => $relationConfig) {
+        return false;
+    }
+
+    private function validateStrictRelations(array $relations, array $translationMap): void
+    {
+        foreach (array_keys($relations) as $sourceField) {
             if (!in_array($sourceField, $translationMap, true)) {
                 throw new SourceException("The column '{$sourceField}' was not found in the source file headers. Strict header validation is enabled.");
             }

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Events\IngestRunCompleted;
 use LaravelIngest\Events\IngestRunStarted;
-use LaravelIngest\IngestManager;
+use LaravelIngest\Facades\Ingest;
 use LaravelIngest\IngestServiceProvider;
 use LaravelIngest\Tests\Fixtures\ProductImporter;
 
@@ -17,10 +17,7 @@ it('dispatches events during lifecycle', function () {
 
     $this->app->tag([ProductImporter::class], IngestServiceProvider::INGEST_DEFINITION_TAG);
 
-    /** @var IngestManager $manager */
-    $manager = app(IngestManager::class);
-
-    $manager->start('productimporter', 'products.csv');
+    Ingest::start('productimporter', 'products.csv');
 
     Event::assertDispatched(IngestRunStarted::class);
     Event::assertDispatched(IngestRunCompleted::class);

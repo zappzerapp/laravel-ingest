@@ -5,7 +5,9 @@ label: Introduction
 
 # Introduction to Laravel Ingest
 
-Laravel Ingest revolutionizes the way Laravel applications import data. We end the chaos of custom, error-prone import scripts and provide an elegant, declarative, and robust framework for defining complex data import processes.
+**Stop writing spaghetti code for imports.**
+
+Laravel Ingest is a robust, configuration-driven ETL (Extract, Transform, Load) framework for Laravel. It replaces fragile, procedural import scripts with elegant, declarative configuration classes.
 
 The system handles the "dirty" work—file processing, streaming, validation, background jobs, error reporting, and API provision—so you can focus on the business logic.
 
@@ -15,14 +17,12 @@ Importing data (CSV, Excel, etc.) is often a painful process: repetitive code, l
 
 ## Key Features
 
-- **Limitless Scalability**: By consistently utilizing **streams and queues**, there is no limit to file size. Whether 100 rows or 10 million, memory usage remains consistently low.
-- **Fluent & Expressive API**: Define imports in a readable and self-explanatory way using the `IngestConfig` class.
-- **Source Agnostic**: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (`s3`, `local`). Easily extensible for other sources.
-- **Robust Background Processing**: Uses the Laravel Queue by default for maximum reliability.
-- **Comprehensive Mapping & Validation**: Transform data on-the-fly, resolve relationships, and use the validation rules of your Eloquent models.
-- **Column Aliases**: Support multiple header names for the same field (e.g., `['email', 'E-Mail', 'user_email']`).
-- **Dynamic Model Resolution**: Route rows to different Eloquent models based on row data.
-- **Auto-Create Relations**: Automatically create missing related records during import.
-- **Auto-generated API & CLI**: Control and monitor imports via RESTful endpoints or the included Artisan commands.
-- **"Dry Runs"**: Simulate an import to detect validation errors without writing a single database entry.
-- **Error Analysis**: Aggregated error summaries via dedicated API endpoint.
+-   **♾️ Infinite Scalability:** Uses Generators and Queues to process files of *any* size with flat memory usage.
+-   **📝 Declarative Syntax:** Define *what* to import, not *how* to loop over it, using a fluent `IngestConfig` class.
+-   **🧪 Dry Runs:** Simulate imports to find validation errors without touching the database.
+-   **🔗 Auto-Relations:** Automatically resolves `BelongsTo` and `BelongsToMany` relationships (e.g., finding IDs by names).
+-   **🛡️ Robust Error Handling:** Tracks every failed row and allows you to download a CSV of *only* the failures to fix and retry.
+-   **🔌 API & CLI Ready:** Comes with auto-generated API endpoints and Artisan commands for full control.
+-   **🗺️ Source Agnostic:** Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (`s3`, `local`).
+-   **🎭 Column Aliases:** Support multiple header names for the same field (e.g., `['email', 'E-Mail', 'user_email']`).
+-   **🚀 Dynamic Model Resolution:** Route rows to different Eloquent models based on row data.

@@ -194,7 +194,9 @@ class IngestConfig
         return $this;
     }
 
-    /** @throws PhpVersionNotSupportedException */
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function beforeRow(Closure $callback): self
     {
         $this->beforeRowCallback = new SerializableClosure($callback);
@@ -202,7 +204,9 @@ class IngestConfig
         return $this;
     }
 
-    /** @throws PhpVersionNotSupportedException */
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);
@@ -277,5 +281,21 @@ class IngestConfig
         }
 
         return $map;
+    }
+
+    public function getAttributeForKeyedBy(): ?string
+    {
+        if ($this->keyedBy === null) {
+            return null;
+        }
+
+        foreach ($this->mappings as $sourceField => $map) {
+            $allSourceFields = array_merge([$sourceField], $map['aliases']);
+            if (in_array($this->keyedBy, $allSourceFields, true)) {
+                return $map['attribute'];
+            }
+        }
+
+        return null;
     }
 }
