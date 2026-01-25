@@ -6,6 +6,11 @@ branding:
   title: Laravel Ingest
   label: Docs
 
+scripts:
+  - src: https://analytics.zebra-fruit.de/script.js
+    defer: true
+    data-website-id: "6f1b70fe-d321-4e14-987e-629870d98640"
+
 links:
   - text: Getting Started
     link: /getting-started/installation/
