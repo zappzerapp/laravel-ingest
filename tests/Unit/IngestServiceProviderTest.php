@@ -18,13 +18,12 @@ it('registers importers defined in config file', function () {
     $manager = $this->app->make(IngestManager::class);
     $definitions = $manager->getDefinitions();
 
-    expect($definitions)->toHaveCount(2);
-
-    expect($definitions)->toHaveKey('custom-slug');
-    expect($definitions['custom-slug'])->toBeInstanceOf(ConfigImporter::class);
+    expect($definitions)->toHaveCount(2)
+        ->and($definitions)->toHaveKey('custom-slug')
+        ->and($definitions['custom-slug'])->toBeInstanceOf(ConfigImporter::class);
 
     $expectedSlug = 'another-config-importer';
 
-    expect($definitions)->toHaveKey($expectedSlug);
-    expect($definitions[$expectedSlug])->toBeInstanceOf(AnotherConfigImporter::class);
+    expect($definitions)->toHaveKey($expectedSlug)
+        ->and($definitions[$expectedSlug])->toBeInstanceOf(AnotherConfigImporter::class);
 });

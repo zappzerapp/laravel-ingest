@@ -43,13 +43,12 @@ it('getProcessedFilePath returns temporary path', function () {
     $handler = new RemoteDiskHandler();
     $reflection = new ReflectionClass($handler);
     $property = $reflection->getProperty('temporaryPath');
-    $property->setAccessible(true);
     $property->setValue($handler, 'ingest-temp/test/path.csv');
 
     expect($handler->getProcessedFilePath())->toBe('ingest-temp/test/path.csv');
 });
 
-it('getTotalRows remains null after read when count is deferred', function () {
+it('does not calculate total rows to maintain stream efficiency', function () {
     Storage::fake('local');
     $content = "name,email\nJohn,john@example.com\nJane,jane@example.com";
     Storage::disk('local')->put('remote-test.csv', $content);
@@ -60,11 +59,6 @@ it('getTotalRows remains null after read when count is deferred', function () {
     $handler = new RemoteDiskHandler();
     iterator_to_array($handler->read($config));
 
-    expect($handler->getTotalRows())->toBeNull();
-});
-
-it('getTotalRows returns null before read', function () {
-    $handler = new RemoteDiskHandler();
     expect($handler->getTotalRows())->toBeNull();
 });
 

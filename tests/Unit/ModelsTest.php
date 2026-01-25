@@ -10,6 +10,6 @@ it('belongs to a user', function () {
     $user = UserFactory::new()->create();
     $run = IngestRun::factory()->create(['user_id' => $user->id]);
 
-    expect($run->user)->toBeInstanceOf(User::class);
-    expect($run->user->id)->toBe($user->id);
+    expect($run->user)->toBeInstanceOf(User::class)
+        ->and($run->user->id)->toBe($user->id);
 });

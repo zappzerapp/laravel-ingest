@@ -13,13 +13,13 @@ it('adds relateMany configuration', function () {
     $config = IngestConfig::for('\LaravelIngest\Tests\Fixtures\Models\User')
         ->relateMany('role_slugs', 'roles', '\LaravelIngest\Tests\Fixtures\Models\Role', 'slug', ',');
 
-    expect($config->manyRelations)->toHaveKey('role_slugs');
-    expect($config->manyRelations['role_slugs'])->toMatchArray([
-        'relation' => 'roles',
-        'model' => '\LaravelIngest\Tests\Fixtures\Models\Role',
-        'key' => 'slug',
-        'separator' => ',',
-    ]);
+    expect($config->manyRelations)->toHaveKey('role_slugs')
+        ->and($config->manyRelations['role_slugs'])->toMatchArray([
+            'relation' => 'roles',
+            'model' => '\LaravelIngest\Tests\Fixtures\Models\Role',
+            'key' => 'slug',
+            'separator' => ',',
+        ]);
 });
 
 it('throws exception when relating to non-model class', function () {
@@ -45,8 +45,8 @@ it('defaults db column to updated_at', function () {
 });
 
 it('has UPDATE_IF_NEWER duplicate strategy', function () {
-    expect(DuplicateStrategy::UPDATE_IF_NEWER)->toBeInstanceOf(DuplicateStrategy::class);
-    expect(DuplicateStrategy::UPDATE_IF_NEWER->value)->toBe('update_if_newer');
+    expect(DuplicateStrategy::UPDATE_IF_NEWER)->toBeInstanceOf(DuplicateStrategy::class)
+        ->and(DuplicateStrategy::UPDATE_IF_NEWER->value)->toBe('update_if_newer');
 });
 
 it('syncs many-to-many relations from comma separated values', function () {
@@ -68,8 +68,8 @@ it('syncs many-to-many relations from comma separated values', function () {
     );
 
     $user = User::where('email', 'john@test.com')->first();
-    expect($user->roles)->toHaveCount(2);
-    expect($user->roles->pluck('slug')->toArray())->toContain('admin', 'editor');
+    expect($user->roles)->toHaveCount(2)
+        ->and($user->roles->pluck('slug')->toArray())->toContain('admin', 'editor');
 });
 
 it('skips many relation sync when source field is missing', function () {
@@ -153,8 +153,8 @@ it('handles many relation sync with nested source field', function () {
     );
 
     $user = User::where('email', 'john@test.com')->first();
-    expect($user->roles)->toHaveCount(1);
-    expect($user->roles->first()->slug)->toBe('admin');
+    expect($user->roles)->toHaveCount(1)
+        ->and($user->roles->first()->slug)->toBe('admin');
 });
 
 it('prefetches many relations and uses cache', function () {
@@ -181,8 +181,8 @@ it('prefetches many relations and uses cache', function () {
     $john = User::where('email', 'john@test.com')->first();
     $jane = User::where('email', 'jane@test.com')->first();
 
-    expect($john->roles)->toHaveCount(2);
-    expect($jane->roles)->toHaveCount(1);
+    expect($john->roles)->toHaveCount(2)
+        ->and($jane->roles)->toHaveCount(1);
 });
 
 it('handles empty many relation cache gracefully', function () {
@@ -250,8 +250,8 @@ it('skips prefetching many relations when all values are empty after splitting',
     $john = User::where('email', 'john@test.com')->first();
     $jane = User::where('email', 'jane@test.com')->first();
 
-    expect($john)->not->toBeNull();
-    expect($jane)->not->toBeNull();
-    expect($john->roles)->toHaveCount(0);
-    expect($jane->roles)->toHaveCount(0);
+    expect($john)->not->toBeNull()
+        ->and($jane)->not->toBeNull()
+        ->and($john->roles)->toHaveCount(0)
+        ->and($jane->roles)->toHaveCount(0);
 });

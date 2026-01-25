@@ -15,8 +15,8 @@ use LaravelIngest\Tests\Fixtures\Models\User;
 
 it('can be instantiated for a valid model', function () {
     $config = IngestConfig::for(User::class);
-    expect($config)->toBeInstanceOf(IngestConfig::class);
-    expect($config->model)->toBe(User::class);
+    expect($config)->toBeInstanceOf(IngestConfig::class)
+        ->and($config->model)->toBe(User::class);
 });
 
 it('throws an exception for a non-model class', function () {
@@ -35,16 +35,16 @@ it('can fluently build a full configuration', function () {
         ->setChunkSize(250)
         ->setDisk('s3');
 
-    expect($config->sourceType)->toBe(SourceType::FTP);
-    expect($config->sourceOptions)->toBe(['host' => 'ftp.example.com']);
-    expect($config->keyedBy)->toBe('sku');
-    expect($config->duplicateStrategy)->toBe(DuplicateStrategy::UPDATE);
-    expect($config->mappings)->toHaveKey('product_name');
-    expect($config->mappings['stock_level']['transformer'])->toBeInstanceOf(SerializableClosure::class);
-    expect($config->validationRules)->toBe(['product_name' => 'required']);
-    expect($config->useModelRules)->toBeTrue();
-    expect($config->chunkSize)->toBe(250);
-    expect($config->disk)->toBe('s3');
+    expect($config->sourceType)->toBe(SourceType::FTP)
+        ->and($config->sourceOptions)->toBe(['host' => 'ftp.example.com'])
+        ->and($config->keyedBy)->toBe('sku')
+        ->and($config->duplicateStrategy)->toBe(DuplicateStrategy::UPDATE)
+        ->and($config->mappings)->toHaveKey('product_name')
+        ->and($config->mappings['stock_level']['transformer'])->toBeInstanceOf(SerializableClosure::class)
+        ->and($config->validationRules)->toBe(['product_name' => 'required'])
+        ->and($config->useModelRules)->toBeTrue()
+        ->and($config->chunkSize)->toBe(250)
+        ->and($config->disk)->toBe('s3');
 });
 
 it('correctly transforms values using closure', function () {
@@ -85,8 +85,8 @@ it('can set before and after row callbacks', function () {
         ->beforeRow(fn(array &$data) => $data['name'] = 'Modified')
         ->afterRow(fn($model, $data) => $model->touch());
 
-    expect($config->beforeRowCallback)->toBeInstanceOf(SerializableClosure::class);
-    expect($config->afterRowCallback)->toBeInstanceOf(SerializableClosure::class);
+    expect($config->beforeRowCallback)->toBeInstanceOf(SerializableClosure::class)
+        ->and($config->afterRowCallback)->toBeInstanceOf(SerializableClosure::class);
 });
 
 it('can handle header aliases for mapping', function () {

@@ -35,15 +35,13 @@ it('triggers garbage collection when memory usage exceeds 80%', function () {
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
 
-    // Create a partial mock directly – not from an instance
     $jobMock = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [['test' => 'data']], false])
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
 
-    // Mock the memory limit to a small value for testing (1000 bytes)
+    $jobMock->shouldAllowMockingProtectedMethods();
     $jobMock->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(1000);
 
-    // Mock current memory usage to return 900 bytes (90%)
     $jobMock->shouldReceive('getCurrentMemoryUsage')->once()->andReturn(900);
 
     $batchMock = Mockery::mock(Illuminate\Bus\Batch::class);
@@ -59,7 +57,6 @@ it('returns PHP_INT_MAX for unlimited memory limit', function () {
     $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
-    // Mock the getMemoryLimitInBytes method
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(PHP_INT_MAX);
 
     $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
@@ -78,7 +75,6 @@ it('converts memory limit with G unit to bytes', function () {
     $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
-    // Mock the getMemoryLimitInBytes method
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(2 * 1024 * 1024 * 1024);
 
     $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
@@ -97,7 +93,6 @@ it('converts memory limit with K unit to bytes', function () {
     $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
-    // Mock the getMemoryLimitInBytes method
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(512 * 1024);
 
     $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
@@ -120,9 +115,7 @@ it('getMemoryLimitInBytes returns PHP_INT_MAX when memory_limit is -1', function
         $config = IngestConfig::for(User::class);
         $job = new ProcessIngestChunkJob($run, $config, [], false);
 
-        // Use reflection to call the protected method
         $reflection = new ReflectionMethod($job, 'getMemoryLimitInBytes');
-        $reflection->setAccessible(true);
 
         expect($reflection->invoke($job))->toBe(PHP_INT_MAX);
     } finally {

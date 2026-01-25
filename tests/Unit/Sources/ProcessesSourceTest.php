@@ -41,8 +41,8 @@ it('validates alias headers and finds match via alias', function () {
     $handler = new FilesystemHandler();
     $rows = iterator_to_array($handler->read($config));
 
-    expect($rows)->toHaveCount(1);
-    expect($rows[0]['user_email'])->toBe('john@example.com');
+    expect($rows)->toHaveCount(1)
+        ->and($rows[0]['user_email'])->toBe('john@example.com');
 });
 
 it('throws exception when mapping column not found with strict headers', function () {
@@ -81,9 +81,6 @@ it('throws exception when relation column not found with strict headers', functi
 
 it('passes strict header validation when alias is found in translation map values', function () {
     Storage::fake('local');
-    //
-    //
-    //
     Storage::disk('local')->put('test.csv', "full_name,email_backup\nJohn Doe,john@example.com");
 
     $config = IngestConfig::for('\LaravelIngest\Tests\Fixtures\Models\User')
@@ -96,6 +93,6 @@ it('passes strict header validation when alias is found in translation map value
     $handler = new FilesystemHandler();
     $rows = iterator_to_array($handler->read($config));
 
-    expect($rows)->toHaveCount(1);
-    expect($rows[0]['email_backup'])->toBe('john@example.com');
+    expect($rows)->toHaveCount(1)
+        ->and($rows[0]['email_backup'])->toBe('john@example.com');
 });

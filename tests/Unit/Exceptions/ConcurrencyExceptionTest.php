@@ -9,9 +9,9 @@ it('can create a duplicate retry attempt exception', function () {
 
     expect($exception)
         ->toBeInstanceOf(ConcurrencyException::class)
-        ->getMessage()->toBe('A retry attempt for run 123 is already in progress or completed.');
+        ->getMessage()->toBe('A retry attempt for run 123 is already in progress or completed.')
+        ->and($exception->getCode())->toBe(0);
 
-    expect($exception->getCode())->toBe(0);
 });
 
 it('can create a lock timeout exception', function () {
@@ -19,9 +19,9 @@ it('can create a lock timeout exception', function () {
 
     expect($exception)
         ->toBeInstanceOf(ConcurrencyException::class)
-        ->getMessage()->toBe('Could not acquire lock for run 456 within 30 seconds.');
+        ->getMessage()->toBe('Could not acquire lock for run 456 within 30 seconds.')
+        ->and($exception->getCode())->toBe(0);
 
-    expect($exception->getCode())->toBe(0);
 });
 
 it('can create a conflicting update exception', function () {
@@ -30,10 +30,10 @@ it('can create a conflicting update exception', function () {
 
     expect($exception)
         ->toBeInstanceOf(ConcurrencyException::class)
-        ->getMessage()->toBe('Conflicting update detected for run 789');
+        ->getMessage()->toBe('Conflicting update detected for run 789')
+        ->and($exception->getPrevious())->toBe($previous)
+        ->and($exception->getCode())->toBe(0);
 
-    expect($exception->getPrevious())->toBe($previous);
-    expect($exception->getCode())->toBe(0);
 });
 
 it('can create a conflicting update exception without previous', function () {
@@ -41,7 +41,7 @@ it('can create a conflicting update exception without previous', function () {
 
     expect($exception)
         ->toBeInstanceOf(ConcurrencyException::class)
-        ->getMessage()->toBe('Conflicting update detected for run 789');
+        ->getMessage()->toBe('Conflicting update detected for run 789')
+        ->and($exception->getPrevious())->toBeNull();
 
-    expect($exception->getPrevious())->toBeNull();
 });

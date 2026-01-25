@@ -191,8 +191,8 @@ it('completes a retry run immediately if cursor returns empty', function () {
 
     $newRun = $manager->retry($originalRun);
 
-    expect($newRun->status)->toBe(IngestStatus::COMPLETED);
-    expect($newRun->refresh()->total_rows)->toBe(0);
+    expect($newRun->status)->toBe(IngestStatus::COMPLETED)
+        ->and($newRun->refresh()->total_rows)->toBe(0);
     Bus::assertBatchCount(0);
     Event::assertDispatched(IngestRunCompleted::class, fn($event) => $event->ingestRun->id === $newRun->id);
 });
@@ -259,9 +259,9 @@ it('handles an exception during retry setup', function () {
     }
 
     $newRun = IngestRun::where('retried_from_run_id', $originalRun->id)->first();
-    expect($newRun)->not->toBeNull();
-    expect($newRun->status)->toBe(IngestStatus::FAILED);
-    expect($newRun->summary['errors'][0]['message'])->toContain("No importer found with the slug 'unknown-importer'");
+    expect($newRun)->not->toBeNull()
+        ->and($newRun->status)->toBe(IngestStatus::FAILED)
+        ->and($newRun->summary['errors'][0]['message'])->toContain("No importer found with the slug 'unknown-importer'");
 
     Event::assertDispatched(IngestRunFailed::class, fn($event) => $event->ingestRun->id === $newRun->id);
 });
@@ -348,8 +348,8 @@ it('updates total_rows from source handler when totalRows is provided', function
     $run = $manager->start('metadatatest', 'payload');
 
     $run->refresh();
-    expect($run->total_rows)->toBe(3); // corrected by dispatchBatch
-    expect($run->processed_filepath)->toBe('path/to/file.csv');
+    expect($run->total_rows)->toBe(3)
+        ->and($run->processed_filepath)->toBe('path/to/file.csv');
 });
 
 it('throws concurrency exception when retry is already in progress', function () {
@@ -362,7 +362,6 @@ it('throws concurrency exception when retry is already in progress', function ()
     $definition = $this->createTestDefinition(IngestConfig::for(User::class));
     $manager = new IngestManager(['userimporter' => $definition], app(SourceHandlerFactory::class));
 
-    // Acquire the lock manually to simulate an in-progress retry
     $lock = Cache::lock('retry-ingest-run-' . $originalRun->id, 10);
     $lock->get();
 

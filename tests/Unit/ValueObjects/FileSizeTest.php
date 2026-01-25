@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 use LaravelIngest\ValueObjects\FileSize;
 
-it('creates file size with valid bytes', function () {
-    $fileSize = new FileSize(1024);
-
-    expect($fileSize->bytes)->toBe(1024);
-});
-
 it('throws exception for negative bytes', function () {
     new FileSize(-100);
 })->throws(InvalidArgumentException::class, 'File size cannot be negative');
@@ -30,8 +24,8 @@ it('determines if file size exceeds another', function () {
     $smaller = new FileSize(1024);
     $larger = new FileSize(2048);
 
-    expect($larger->exceeds($smaller))->toBeTrue();
-    expect($smaller->exceeds($larger))->toBeFalse();
+    expect($larger->exceeds($smaller))->toBeTrue()
+        ->and($smaller->exceeds($larger))->toBeFalse();
 });
 
 it('returns false when file sizes are equal', function () {

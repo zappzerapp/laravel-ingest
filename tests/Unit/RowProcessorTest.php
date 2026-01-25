@@ -37,8 +37,8 @@ it('executes afterRow callback after successful row processing', function () {
         false
     );
 
-    expect($callbackExecuted)->toBeTrue();
-    expect($callbackModel)->toBeInstanceOf(User::class);
+    expect($callbackExecuted)->toBeTrue()
+        ->and($callbackModel)->toBeInstanceOf(User::class);
 });
 
 it('uses ROW transaction mode', function () {
@@ -88,8 +88,8 @@ it('handles errors and continues processing other rows', function () {
         false
     );
 
-    expect($result['failed'])->toBe(1);
-    expect($result['successful'])->toBe(1);
+    expect($result['failed'])->toBe(1)
+        ->and($result['successful'])->toBe(1);
 
     Event::assertDispatched(RowProcessed::class, fn($event) => $event->status === 'failed');
 });

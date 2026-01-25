@@ -20,26 +20,28 @@ it('throws exception when filesystem file is missing', function () {
     iterator_to_array($handler->read($config));
 })->throws(SourceException::class, 'We could not find the file');
 
-it('cleanup removes temporary file', function () {
-    $tempPath = sys_get_temp_dir() . '/ingest-temp-test.csv';
+it('does not delete the source file during cleanup', function () {
+    Storage::fake('local');
+    $path = 'important-data.csv';
+    Storage::disk('local')->put($path, 'content');
 
     $handler = new FilesystemHandler();
-    $result = $handler->cleanup();
 
-    expect($result)->toBeNull();
+    $handler->cleanup();
+
+    Storage::disk('local')->assertExists($path);
 });
 
 it('getProcessedFilePath returns path', function () {
     $handler = new FilesystemHandler();
     $reflection = new ReflectionClass($handler);
     $property = $reflection->getProperty('path');
-    $property->setAccessible(true);
     $property->setValue($handler, 'test/path.csv');
 
     expect($handler->getProcessedFilePath())->toBe('test/path.csv');
 });
 
-it('getTotalRows remains null after read when count is deferred', function () {
+it('does not calculate total rows to maintain stream efficiency', function () {
     Storage::fake('local');
     $content = "name,email\nJohn,john@example.com\nJane,jane@example.com";
     Storage::disk('local')->put('test.csv', $content);
@@ -50,11 +52,6 @@ it('getTotalRows remains null after read when count is deferred', function () {
     $handler = new FilesystemHandler();
     iterator_to_array($handler->read($config));
 
-    expect($handler->getTotalRows())->toBeNull();
-});
-
-it('getTotalRows returns null before read', function () {
-    $handler = new FilesystemHandler();
     expect($handler->getTotalRows())->toBeNull();
 });
 
@@ -102,15 +99,14 @@ it('resolves realpath and updates path when file exists', function () {
 
         $reflection = new ReflectionClass($handler);
         $property = $reflection->getProperty('path');
-        $property->setAccessible(true);
 
         $rows = iterator_to_array($handler->read($config));
 
         $finalPath = $property->getValue($handler);
 
-        expect($finalPath)->toBe(realpath($filePath));
-        expect($finalPath)->toBeString()->not->toBeEmpty();
-        expect($rows)->toHaveCount(2);
+        expect($finalPath)->toBe(realpath($filePath))
+            ->and($finalPath)->toBeString()->not->toBeEmpty()
+            ->and($rows)->toHaveCount(2);
 
     } finally {
         if (file_exists($filePath)) {

@@ -108,7 +108,6 @@ it('throws exception when unable to open local stream', function () {
 
     $diskMock = Mockery::mock(Illuminate\Contracts\Filesystem\Filesystem::class);
     $diskMock->shouldReceive('makeDirectory')->andReturn(true);
-    // Force path to return a location that will cause fopen to fail (simulate IO error)
     $diskMock->shouldReceive('path')->andReturn('/non/existent/path/for/ingest/test.csv');
 
     Storage::shouldReceive('disk')->with('local')->andReturn($diskMock);
@@ -118,7 +117,6 @@ it('throws exception when unable to open local stream', function () {
 
     $handler = new UrlHandler();
 
-    // The handler wraps any exception in SourceException with the message "Failed to stream file from URL..."
     try {
         iterator_to_array($handler->read($config));
     } catch (SourceException $e) {
@@ -134,7 +132,6 @@ it('throws exception when fopen fails to open local stream', function () {
     Http::fake(['*' => Http::response('test,data')]);
     Storage::fake('local');
 
-    // Mock the filesystem to return a path that cannot be opened
     $diskMock = Mockery::mock(Illuminate\Contracts\Filesystem\Filesystem::class);
     $diskMock->shouldReceive('makeDirectory')->andReturn(true);
     $diskMock->shouldReceive('path')->andReturn('/this/path/does/not/exist/and/cannot/be/created.csv');

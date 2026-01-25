@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use LaravelIngest\Concerns\DiscoversIngestDefinitions;
 use LaravelIngest\Console\CancelIngestCommand;
 use LaravelIngest\Console\ListIngestsCommand;
+use LaravelIngest\Console\PruneIngestFilesCommand;
 use LaravelIngest\Console\RetryIngestCommand;
 use LaravelIngest\Console\RunIngestCommand;
 use LaravelIngest\Console\StatusIngestCommand;
@@ -63,6 +64,7 @@ class IngestServiceProvider extends ServiceProvider
                 StatusIngestCommand::class,
                 CancelIngestCommand::class,
                 RetryIngestCommand::class,
+                PruneIngestFilesCommand::class,
             ]);
         }
 

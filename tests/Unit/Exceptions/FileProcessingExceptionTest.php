@@ -34,9 +34,9 @@ it('can create an unreadable file exception', function () {
 
     expect($exception)
         ->toBeInstanceOf(FileProcessingException::class)
-        ->getMessage()->toContain('Unable to read file');
+        ->getMessage()->toContain('Unable to read file')
+        ->and($exception->getCode())->toBe(0);
 
-    expect($exception->getCode())->toBe(0);
 });
 
 it('can create an unreadable file exception with previous', function () {
@@ -44,9 +44,9 @@ it('can create an unreadable file exception with previous', function () {
     $exception = FileProcessingException::unreadableFile('/path/to/file.csv', $previous);
 
     expect($exception)
-        ->toBeInstanceOf(FileProcessingException::class);
+        ->toBeInstanceOf(FileProcessingException::class)
+        ->and($exception->getPrevious())->toBe($previous);
 
-    expect($exception->getPrevious())->toBe($previous);
 });
 
 it('can create a corrupted file exception', function () {
@@ -62,7 +62,7 @@ it('can create a corrupted file exception with previous', function () {
     $exception = FileProcessingException::corruptedFile('/path/to/file.csv', $previous);
 
     expect($exception)
-        ->toBeInstanceOf(FileProcessingException::class);
+        ->toBeInstanceOf(FileProcessingException::class)
+        ->and($exception->getPrevious())->toBe($previous);
 
-    expect($exception->getPrevious())->toBe($previous);
 });

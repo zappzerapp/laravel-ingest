@@ -20,8 +20,8 @@ it('sanitizes messages in production environment', function () {
     $original = 'Error at /var/www/html/app/User.php';
     $sanitized = ErrorMessageService::sanitize($original);
 
-    expect($sanitized)->toContain('[REDACTED_PATH]');
-    expect($sanitized)->not->toContain('/var/www/html/app/User.php');
+    expect($sanitized)->toContain('[REDACTED_PATH]')
+        ->and($sanitized)->not->toContain('/var/www/html/app/User.php');
 });
 
 it('sanitizes db connection strings in production', function () {
@@ -30,8 +30,8 @@ it('sanitizes db connection strings in production', function () {
     $original = 'Connection failed: mysql://user:password@localhost/db';
     $sanitized = ErrorMessageService::sanitize($original);
 
-    expect($sanitized)->toContain('[REDACTED_DB]');
-    expect($sanitized)->not->toContain('mysql://');
+    expect($sanitized)->toContain('[REDACTED_DB]')
+        ->and($sanitized)->not->toContain('mysql://');
 });
 
 it('sanitizes tokens in production', function () {
@@ -40,8 +40,8 @@ it('sanitizes tokens in production', function () {
     $original = 'Invalid token: abcdefghijklmnopqrstuvwxyz1234567890123456';
     $sanitized = ErrorMessageService::sanitize($original);
 
-    expect($sanitized)->toContain('[REDACTED_TOKEN]');
-    expect($sanitized)->not->toContain('abcdefghijklmnopqrstuvwxyz1234567890123456');
+    expect($sanitized)->toContain('[REDACTED_TOKEN]')
+        ->and($sanitized)->not->toContain('abcdefghijklmnopqrstuvwxyz1234567890123456');
 });
 
 it('sanitizes stack traces in production', function () {
@@ -59,8 +59,8 @@ it('truncates long messages in production', function () {
     $longMessage = str_repeat('word ', 50);
     $sanitized = ErrorMessageService::sanitize($longMessage);
 
-    expect(strlen($sanitized))->toBeLessThan(205);
-    expect($sanitized)->toEndWith('...');
+    expect(strlen($sanitized))->toBeLessThan(205)
+        ->and($sanitized)->toEndWith('...');
 });
 
 it('can create user-friendly error messages', function () {
@@ -77,16 +77,16 @@ it('returns default message for unknown error type', function () {
 it('can create log messages with context', function () {
     $message = ErrorMessageService::createLogMessage('Error occurred', ['user_id' => 1]);
 
-    expect($message)->toContain('Error occurred');
-    expect($message)->toContain('"user_id":1');
+    expect($message)->toContain('Error occurred')
+        ->and($message)->toContain('"user_id":1');
 });
 
 it('truncates long context values in log messages', function () {
     $longValue = str_repeat('b', 150);
     $message = ErrorMessageService::createLogMessage('Error', ['data' => $longValue]);
 
-    expect($message)->toContain(str_repeat('b', 100));
-    expect($message)->toContain('...');
+    expect($message)->toContain(str_repeat('b', 100))
+        ->and($message)->toContain('...');
 
     $truncated = substr($longValue, 0, 100) . '...';
     expect($message)->toContain(json_encode(['data' => $truncated]));

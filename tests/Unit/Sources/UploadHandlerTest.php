@@ -40,7 +40,6 @@ it('throws exception when file size exceeds limit', function () {
     $config = IngestConfig::for(Product::class)
         ->fromSource(SourceType::UPLOAD, ['max_size_mb' => 50 * 1024 * 1024]);
 
-    $config = IngestConfig::for(Product::class);
     $handler = new UploadHandler();
 
     expect(fn() => iterator_to_array($handler->read($config, $payload)))

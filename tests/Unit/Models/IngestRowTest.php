@@ -20,6 +20,6 @@ it('belongs to an ingest run', function () {
     $run = IngestRun::factory()->create();
     $row = IngestRow::factory()->create(['ingest_run_id' => $run->id]);
 
-    expect($row->ingestRun)->toBeInstanceOf(IngestRun::class);
-    expect($row->ingestRun->id)->toBe($run->id);
+    expect($row->ingestRun)->toBeInstanceOf(IngestRun::class)
+        ->and($row->ingestRun->id)->toBe($run->id);
 });

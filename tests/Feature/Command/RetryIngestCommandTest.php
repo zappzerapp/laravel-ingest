@@ -35,8 +35,8 @@ it('can retry a failed ingest run', function () {
 
     $this->assertDatabaseCount('ingest_runs', 2);
     $newRun = IngestRun::where('retried_from_run_id', $originalRun->id)->first();
-    expect($newRun)->not()->toBeNull();
-    expect($newRun->total_rows)->toBe(2);
+    expect($newRun)->not()->toBeNull()
+        ->and($newRun->total_rows)->toBe(2);
 
     Bus::assertBatched(fn($batch) => $batch->jobs->count() === 1);
 });

@@ -219,13 +219,13 @@ it('can download failed rows as csv', function () {
 
     $lines = explode("\n", $csvContent);
 
-    expect($lines[0])->toContain('full_name');
-    expect($csvContent)->toContain('John Doe');
-    expect($csvContent)->toContain('john@example.com');
-    expect($csvContent)->toContain('Duplicate entry found.');
-    expect($csvContent)->toContain('Jane Doe');
-    expect($csvContent)->toContain('jane@example.com');
-    expect($csvContent)->toContain('Invalid email format.');
+    expect($lines[0])->toContain('full_name')
+        ->and($csvContent)->toContain('John Doe')
+        ->and($csvContent)->toContain('john@example.com')
+        ->and($csvContent)->toContain('Duplicate entry found.')
+        ->and($csvContent)->toContain('Jane Doe')
+        ->and($csvContent)->toContain('jane@example.com')
+        ->and($csvContent)->toContain('Invalid email format.');
 });
 
 it('returns 404 when downloading failed rows for a run with no failed rows', function () {

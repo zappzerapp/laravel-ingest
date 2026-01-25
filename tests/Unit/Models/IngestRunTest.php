@@ -15,8 +15,8 @@ it('can retrieve its batch object', function () {
 
     $retrievedBatch = $run->batch();
 
-    expect($retrievedBatch)->not()->toBeNull();
-    expect($retrievedBatch->id)->toBe($batch->id);
+    expect($retrievedBatch)->not()->toBeNull()
+        ->and($retrievedBatch->id)->toBe($batch->id);
 });
 
 it('returns null if batch id is not set', function () {
@@ -31,8 +31,8 @@ it('can retrieve its parent run via relationship', function () {
 
     $retrievedParent = $retryRun->parent;
 
-    expect($retrievedParent)->toBeInstanceOf(IngestRun::class);
-    expect($retrievedParent->id)->toBe($parentRun->id);
+    expect($retrievedParent)->toBeInstanceOf(IngestRun::class)
+        ->and($retrievedParent->id)->toBe($parentRun->id);
 });
 
 it('sets status to completed with errors when failures exist on finalization', function () {
@@ -47,10 +47,10 @@ it('sets status to completed with errors when failures exist on finalization', f
 
     $run->refresh();
 
-    expect($run->status)->toBe(IngestStatus::COMPLETED_WITH_ERRORS);
-    expect($run->completed_at)->toBeInstanceOf(Carbon::class);
-    expect($run->failed_rows)->toBe(5);
-    expect($run->successful_rows)->toBe(95);
+    expect($run->status)->toBe(IngestStatus::COMPLETED_WITH_ERRORS)
+        ->and($run->completed_at)->toBeInstanceOf(Carbon::class)
+        ->and($run->failed_rows)->toBe(5)
+        ->and($run->successful_rows)->toBe(95);
 });
 
 it('sets status to completed when no failures exist on finalization', function () {
@@ -65,9 +65,9 @@ it('sets status to completed when no failures exist on finalization', function (
 
     $run->refresh();
 
-    expect($run->status)->toBe(IngestStatus::COMPLETED);
-    expect($run->completed_at)->toBeInstanceOf(Carbon::class);
-    expect($run->failed_rows)->toBe(0);
+    expect($run->status)->toBe(IngestStatus::COMPLETED)
+        ->and($run->completed_at)->toBeInstanceOf(Carbon::class)
+        ->and($run->failed_rows)->toBe(0);
 });
 
 it('sets standardized summary structure on finalization when no summary exists', function () {
@@ -84,13 +84,13 @@ it('sets standardized summary structure on finalization when no summary exists',
 
     $run->refresh();
 
-    expect($run->summary)->toBeArray();
-    expect($run->summary)->toHaveKeys(['errors', 'warnings', 'meta']);
-    expect($run->summary['errors'])->toBe([]);
-    expect($run->summary['warnings'])->toBe([]);
-    expect($run->summary['meta']['successful_rows'])->toBe(95);
-    expect($run->summary['meta']['failed_rows'])->toBe(5);
-    expect($run->summary['meta']['total_rows'])->toBe(100);
+    expect($run->summary)->toBeArray()
+        ->and($run->summary)->toHaveKeys(['errors', 'warnings', 'meta'])
+        ->and($run->summary['errors'])->toBe([])
+        ->and($run->summary['warnings'])->toBe([])
+        ->and($run->summary['meta']['successful_rows'])->toBe(95)
+        ->and($run->summary['meta']['failed_rows'])->toBe(5)
+        ->and($run->summary['meta']['total_rows'])->toBe(100);
 });
 
 it('preserves existing summary on finalization if already set', function () {

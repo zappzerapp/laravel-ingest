@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\SourceType;
+use LaravelIngest\Exceptions\SourceException;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Tests\Fixtures\Models\User;
 
@@ -25,9 +26,9 @@ it('reads json file and yields rows', function () {
     $handler = new LaravelIngest\Sources\JsonHandler();
     $rows = iterator_to_array($handler->read($config, $filePath));
 
-    expect($rows)->toHaveCount(2);
-    expect($rows[0])->toBe(['name' => 'John Doe', 'email' => 'john@example.com']);
-    expect($rows[1])->toBe(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
+    expect($rows)->toHaveCount(2)
+        ->and($rows[0])->toBe(['name' => 'John Doe', 'email' => 'john@example.com'])
+        ->and($rows[1])->toBe(['name' => 'Jane Doe', 'email' => 'jane@example.com']);
 });
 
 it('skips non-array rows in json file', function () {
@@ -53,14 +54,17 @@ it('returns null for totalRows', function () {
     expect($handler->getTotalRows())->toBeNull();
 });
 
-it('returns processed file path', function () {
-    $handler = new LaravelIngest\Sources\JsonHandler();
-    $reflection = new ReflectionClass($handler);
-    $property = $reflection->getProperty('processedFilePath');
-    $property->setAccessible(true);
-    $property->setValue($handler, '/path/to/test.json');
+it('sets processed file path after reading', function () {
+    Storage::fake('local');
+    $path = Storage::disk('local')->path('test.json');
+    file_put_contents($path, json_encode([['a' => 1]]));
 
-    expect($handler->getProcessedFilePath())->toBe('/path/to/test.json');
+    $config = IngestConfig::for(User::class)->fromSource(SourceType::JSON);
+    $handler = new LaravelIngest\Sources\JsonHandler();
+
+    iterator_to_array($handler->read($config, $path));
+
+    expect($handler->getProcessedFilePath())->toBe($path);
 });
 
 it('cleanup removes temp file', function () {
@@ -70,7 +74,6 @@ it('cleanup removes temp file', function () {
     $handler = new LaravelIngest\Sources\JsonHandler();
     $reflection = new ReflectionClass($handler);
     $property = $reflection->getProperty('tempFilePath');
-    $property->setAccessible(true);
     $property->setValue($handler, $tempPath);
 
     expect(file_exists($tempPath))->toBeTrue();
@@ -86,7 +89,6 @@ it('cleanup does nothing when no temp file', function () {
     $handler = new LaravelIngest\Sources\JsonHandler();
     $reflection = new ReflectionClass($handler);
     $property = $reflection->getProperty('tempFilePath');
-    $property->setAccessible(true);
     $property->setValue($handler, null);
 
     expect(
@@ -102,7 +104,7 @@ it('throws exception when file cannot be read', function () {
 
     expect(
         fn() => iterator_to_array($handler->read($config, '/nonexistent/path/file.json'))
-    )->toThrow(LaravelIngest\Exceptions\SourceException::class, 'Unable to read JSON file from path');
+    )->toThrow(SourceException::class, 'Unable to read JSON file from path');
 });
 
 it('throws exception when json is invalid', function () {
@@ -117,7 +119,7 @@ it('throws exception when json is invalid', function () {
 
     expect(
         fn() => iterator_to_array($handler->read($config, $filePath))
-    )->toThrow(LaravelIngest\Exceptions\SourceException::class, 'Invalid JSON');
+    )->toThrow(SourceException::class, 'Invalid JSON');
 });
 
 it('throws exception when payload is not a string', function () {
@@ -128,5 +130,5 @@ it('throws exception when payload is not a string', function () {
 
     expect(
         fn() => iterator_to_array($handler->read($config, null))
-    )->toThrow(LaravelIngest\Exceptions\SourceException::class, 'JsonHandler expects a valid file path');
+    )->toThrow(SourceException::class, 'JsonHandler expects a valid file path');
 });

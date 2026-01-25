@@ -6,11 +6,11 @@
 </p>
 
 <p align="center">
-    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/v/zappzerapp/laravel-ingest.svg?style=flat-square" alt="Latest Version"></a>
-    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/dt/zappzerapp/laravel-ingest.svg?style=flat-square" alt="Total Downloads"></a>
-    <a href="https://github.com/zappzerapp/laravel-ingest/actions"><img src="https://img.shields.io/github/actions/workflow/status/zappzerapp/laravel-ingest/main-pipeline.yml?style=flat-square" alt="Build Status"></a>
-    <a href="https://zappzerapp.github.io/laravel-ingest/"><img src="https://img.shields.io/badge/docs-online-blue.svg?style=flat-square" alt="Documentation"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/packagist/l/zappzerapp/laravel-ingest.svg?style=flat-square" alt="License"></a>
+    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/v/zappzerapp/laravel-ingest.svg?style=for-the-badge" alt="Latest Version"></a>
+    <a href="https://packagist.org/packages/zappzerapp/laravel-ingest"><img src="https://img.shields.io/packagist/dt/zappzerapp/laravel-ingest.svg?style=for-the-badge" alt="Total Downloads"></a>
+    <a href="https://github.com/zappzerapp/laravel-ingest/actions"><img src="https://img.shields.io/github/actions/workflow/status/zappzerapp/laravel-ingest/main-pipeline.yml?style=for-the-badge" alt="Build Status"></a>
+    <a href="https://zappzerapp.github.io/laravel-ingest/"><img src="https://img.shields.io/badge/docs-online-blue.svg?style=for-the-badge" alt="Documentation"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/packagist/l/zappzerapp/laravel-ingest.svg?style=for-the-badge" alt="License"></a>
 </p>
 
 ---
@@ -43,8 +43,7 @@ Laravel Ingest solves this by treating imports as a first-class citizen:
 
 ## 📚 Documentation
 
-Full documentation is available at **[zappzerapp.github.io/laravel-ingest](https://zappzerapp.github.io/laravel-ingest/)
-**.
+Full documentation is available at **[zappzerapp.github.io/laravel-ingest](https://zappzerapp.github.io/laravel-ingest/)**.
 
 ---
 

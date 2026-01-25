@@ -39,9 +39,9 @@ it('can read a file from an ftp source', function () {
 
     $rows = iterator_to_array($generator);
 
-    expect($handler->getTotalRows())->toBeNull();
-    expect($rows)->toHaveCount(1);
-    expect($rows[0]['sku'])->toBe('FTP001');
+    expect($handler->getTotalRows())->toBeNull()
+        ->and($rows)->toHaveCount(1)
+        ->and($rows[0]['sku'])->toBe('FTP001');
 
     $handler->cleanup();
 

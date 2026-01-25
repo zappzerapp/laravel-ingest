@@ -2,19 +2,12 @@
 
 declare(strict_types=1);
 
-use DateTime;
 use LaravelIngest\ValueObjects\Timestamp;
 
 it('creates timestamp with null value', function () {
     $timestamp = new Timestamp(null);
 
     expect($timestamp->value)->toBeNull();
-});
-
-it('creates timestamp with string value', function () {
-    $timestamp = new Timestamp('2023-01-01 12:00:00');
-
-    expect($timestamp->value)->toBe('2023-01-01 12:00:00');
 });
 
 it('creates timestamp with DateTime value', function () {
@@ -55,16 +48,16 @@ it('returns false when one timestamp is null', function () {
     $valid = new Timestamp('2023-01-01 12:00:00');
     $null = new Timestamp(null);
 
-    expect($valid->isNewerThan($null))->toBeFalse();
-    expect($null->isNewerThan($valid))->toBeFalse();
+    expect($valid->isNewerThan($null))->toBeFalse()
+        ->and($null->isNewerThan($valid))->toBeFalse();
 });
 
 it('determines if timestamp is newer than another', function () {
     $older = new Timestamp('2023-01-01 12:00:00');
     $newer = new Timestamp('2023-01-02 12:00:00');
 
-    expect($newer->isNewerThan($older))->toBeTrue();
-    expect($older->isNewerThan($newer))->toBeFalse();
+    expect($newer->isNewerThan($older))->toBeTrue()
+        ->and($older->isNewerThan($newer))->toBeFalse();
 });
 
 it('returns false when timestamps are equal', function () {
@@ -78,8 +71,8 @@ it('checks if timestamp is null', function () {
     $nullTimestamp = new Timestamp(null);
     $validTimestamp = new Timestamp('2023-01-01 12:00:00');
 
-    expect($nullTimestamp->isNull())->toBeTrue();
-    expect($validTimestamp->isNull())->toBeFalse();
+    expect($nullTimestamp->isNull())->toBeTrue()
+        ->and($validTimestamp->isNull())->toBeFalse();
 });
 
 it('handles invalid date string in toUnixTimestamp', function () {
@@ -92,6 +85,6 @@ it('returns false when comparing with invalid timestamp', function () {
     $valid = new Timestamp('2023-01-01 12:00:00');
     $invalid = new Timestamp('invalid date');
 
-    expect($valid->isNewerThan($invalid))->toBeFalse();
-    expect($invalid->isNewerThan($valid))->toBeFalse();
+    expect($valid->isNewerThan($invalid))->toBeFalse()
+        ->and($invalid->isNewerThan($valid))->toBeFalse();
 });

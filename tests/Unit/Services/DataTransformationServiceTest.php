@@ -22,8 +22,8 @@ it('processes mapping with nonexistent source field', function () {
 
     $result = $service->processMappings($data, $mappings);
 
-    expect($result)->toBeArray();
-    expect($result)->toBeEmpty();
+    expect($result)->toBeArray()
+        ->and($result)->toBeEmpty();
 });
 
 it('processes mapping with nested key', function () {
@@ -85,8 +85,8 @@ it('processes relations found in cache', function () {
         IngestRow::class
     );
 
-    expect($result)->toHaveKey('ingest_run_id');
-    expect($result['ingest_run_id'])->toBe($run->id);
+    expect($result)->toHaveKey('ingest_run_id')
+        ->and($result['ingest_run_id'])->toBe($run->id);
 });
 
 it('processes relations creating missing', function () {
@@ -117,8 +117,8 @@ it('processes relations creating missing', function () {
 
     $newRun = IngestRun::where('importer', 'new_importer')->first();
 
-    expect($newRun)->not->toBeNull();
-    expect($result['ingest_run_id'])->toBe($newRun->id);
+    expect($newRun)->not->toBeNull()
+        ->and($result['ingest_run_id'])->toBe($newRun->id);
 });
 
 it('processes unmapped data', function () {
@@ -145,12 +145,12 @@ it('processes unmapped data', function () {
         IngestRow::class
     );
 
-    expect($result)->toHaveKey('status');
-    expect($result['status'])->toBe('pending');
-    expect($result)->toHaveKey('row_number');
-    expect($result['row_number'])->toBe(123);
+    expect($result)->toHaveKey('status')
+        ->and($result['status'])->toBe('pending')
+        ->and($result)->toHaveKey('row_number')
+        ->and($result['row_number'])->toBe(123)
+        ->and($result)->toHaveKey('unknown_field');
 
-    expect($result)->toHaveKey('unknown_field');
 });
 
 it('processes relations with missing source field', function () {
