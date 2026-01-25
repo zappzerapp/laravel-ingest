@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822686548543">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822693476908">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822686548543" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822693476908" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822686548543" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822693476908" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822686548543" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822686548543" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822693476908" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822693476908" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -202,33 +202,47 @@
     </h1>
 </doc-anchor-target>
 <p>Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.</p>
-<doc-anchor-target id="1-via-artisan-command">
+<doc-anchor-target id="artisan-commands">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#artisan-commands">#</doc-anchor-trigger>
+        <span>Artisan Commands</span>
+    </h2>
+</doc-anchor-target>
+<p>Laravel Ingest provides several Artisan commands for managing imports.</p>
+<doc-anchor-target id="ingestrun">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-via-artisan-command">#</doc-anchor-trigger>
-        <span>1. Via Artisan Command</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestrun">#</doc-anchor-trigger>
+        <span>ingest:run</span>
     </h3>
 </doc-anchor-target>
 <p>The <code v-pre>ingest:run</code> command is perfect for manual or scheduled imports where the source file is accessible on a local or configured filesystem disk.</p>
-<doc-anchor-target id="command-signature">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#command-signature">#</doc-anchor-trigger>
-        <span>Command Signature</span>
-    </h4>
-</doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:run {slug} {--file=} {--dry-run}</code></pre>
 </doc-codeblock></div>
-<ul>
-<li><code v-pre>slug</code>: The slug of the importer you want to run (e.g., <code v-pre>user-importer</code>).</li>
-<li><code v-pre>--file</code>: (Optional) The path to the source file. This is required for <code v-pre>FILESYSTEM</code> sources and will be passed as the payload.</li>
-<li><code v-pre>--dry-run</code>: (Optional) Simulates the entire import process—including validation and transformation—without saving any data to the database. This is extremely useful for testing a new file.</li>
-</ul>
-<doc-anchor-target id="example">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#example">#</doc-anchor-trigger>
-        <span>Example</span>
-    </h4>
-</doc-anchor-target>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Argument/Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>slug</code></td>
+<td>The slug of the importer to run (e.g., <code v-pre>user-importer</code>)</td>
+</tr>
+<tr>
+<td><code v-pre>--file</code></td>
+<td>Path to the source file (required for <code v-pre>FILESYSTEM</code> sources)</td>
+</tr>
+<tr>
+<td><code v-pre>--dry-run</code></td>
+<td>Simulate the import without saving data</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash"># Run a product import from a file on the default disk
 php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot;
@@ -236,6 +250,153 @@ php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot;
 # Perform a dry run to check for errors
 php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot; --dry-run</code></pre>
 </doc-codeblock></div>
+<doc-anchor-target id="ingestlist">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestlist">#</doc-anchor-trigger>
+        <span>ingest:list</span>
+    </h3>
+</doc-anchor-target>
+<p>List all registered importers and their configurations.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:list</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="ingeststatus">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingeststatus">#</doc-anchor-trigger>
+        <span>ingest:status</span>
+    </h3>
+</doc-anchor-target>
+<p>Check the status of a specific import run.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:status {id}</code></pre>
+</doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>id</code></td>
+<td>The ID of the IngestRun to check</td>
+</tr>
+</tbody>
+</table>
+</div>
+<doc-anchor-target id="ingestcancel">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestcancel">#</doc-anchor-trigger>
+        <span>ingest:cancel</span>
+    </h3>
+</doc-anchor-target>
+<p>Cancel a running import. This will stop processing new chunks but won&#x27;t roll back already processed rows.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:cancel {id}</code></pre>
+</doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Argument</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>id</code></td>
+<td>The ID of the IngestRun to cancel</td>
+</tr>
+</tbody>
+</table>
+</div>
+<doc-anchor-target id="ingestretry">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestretry">#</doc-anchor-trigger>
+        <span>ingest:retry</span>
+    </h3>
+</doc-anchor-target>
+<p>Retry failed rows from a previous import run.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:retry {id} {--dry-run}</code></pre>
+</doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Argument/Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>id</code></td>
+<td>The ID of the IngestRun to retry</td>
+</tr>
+<tr>
+<td><code v-pre>--dry-run</code></td>
+<td>Simulate the retry without saving data</td>
+</tr>
+</tbody>
+</table>
+</div>
+<doc-anchor-target id="ingestprune-files">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestprune-files">#</doc-anchor-trigger>
+        <span>ingest:prune-files</span>
+    </h3>
+</doc-anchor-target>
+<p>Clean up old temporary and uploaded files to free disk space.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:prune-files {--hours=24}</code></pre>
+</doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>--hours</code></td>
+<td><code v-pre>24</code></td>
+<td>Delete files older than this many hours</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This command removes files from the <code v-pre>ingest-temp</code> and <code v-pre>ingest-uploads</code> directories that are older than the specified number of hours.</p>
+<doc-anchor-target id="scheduling-file-cleanup">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#scheduling-file-cleanup">#</doc-anchor-trigger>
+        <span>Scheduling File Cleanup</span>
+    </h4>
+</doc-anchor-target>
+<p>Add to your <code v-pre>routes/console.php</code> or scheduler:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Clean up files older than 24 hours, daily
+Schedule::command('ingest:prune-files')-&gt;daily();
+
+// Clean up files older than 6 hours, every hour
+Schedule::command('ingest:prune-files --hours=6')-&gt;hourly();</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="row-log-pruning">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#row-log-pruning">#</doc-anchor-trigger>
+        <span>Row Log Pruning</span>
+    </h4>
+</doc-anchor-target>
+<p>To automatically prune old row logs (stored in <code v-pre>ingest_rows</code> table), add Laravel&#x27;s model pruning command to your scheduler:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In routes/console.php or App\Console\Kernel
+Schedule::command('model:prune')-&gt;daily();</code></pre>
+</doc-codeblock></div>
+<p>The retention period is configured via <code v-pre>prune_days</code> in <code v-pre>config/ingest.php</code> (default: 30 days).</p>
 <hr>
 <doc-anchor-target id="2-via-api">
     <h3>

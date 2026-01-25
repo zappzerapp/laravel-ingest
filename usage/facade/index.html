@@ -10,24 +10,24 @@
     <meta name="generator" content="Retype 3.11.0">
 
     <!-- Primary Meta Tags -->
-    <title>Working with Events</title>
-    <meta name="title" content="Working with Events">
-    <meta name="description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <title>Facade Reference</title>
+    <meta name="title" content="Facade Reference">
+    <meta name="description" content="The Ingest Facade provides a convenient interface to interact with the IngestManager.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/usage/facade/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="og:title" content="Working with Events">
-    <meta property="og:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/usage/facade/">
+    <meta property="og:title" content="Facade Reference">
+    <meta property="og:description" content="The Ingest Facade provides a convenient interface to interact with the IngestManager.">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="twitter:title" content="Working with Events">
-    <meta property="twitter:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/usage/facade/">
+    <meta property="twitter:title" content="Facade Reference">
+    <meta property="twitter:description" content="The Ingest Facade provides a convenient interface to interact with the IngestManager.">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -195,137 +195,418 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="retype-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="working-with-events" class="break-words">
+<doc-anchor-target id="facade-reference" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#working-with-events">#</doc-anchor-trigger>
-        <span>Working with Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#facade-reference">#</doc-anchor-trigger>
+        <span>Facade Reference</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest dispatches events at every stage of the import lifecycle. This allows you to decouple your logic: the importer handles the data, and your listeners handle notifications, logging, or cleanup.</p>
-<doc-anchor-target id="available-events">
+<p>The <code v-pre>Ingest</code> Facade provides a convenient interface to interact with the IngestManager. Use it to programmatically start imports, retry failed runs, and access importer definitions.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="methods">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#available-events">#</doc-anchor-trigger>
-        <span>Available Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#methods">#</doc-anchor-trigger>
+        <span>Methods</span>
     </h2>
 </doc-anchor-target>
+<doc-anchor-target id="start">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#start">#</doc-anchor-trigger>
+        <span>start()</span>
+    </h3>
+</doc-anchor-target>
+<p>Start a new import run.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">public static function start(
+    string $importer,
+    mixed $payload = null,
+    ?Authenticatable $user = null,
+    bool $isDryRun = false
+): IngestRun</code></pre>
+</doc-codeblock></div>
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="comfortable">
 <thead>
 <tr>
-<th style="text-align: left;">Event Class</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Payload</th>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunStarted</code></td>
-<td style="text-align: left;">The import record is created.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
+<td><code v-pre>$importer</code></td>
+<td><code v-pre>string</code></td>
+<td>The registered slug of the importer</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>ChunkProcessed</code></td>
-<td style="text-align: left;">A batch of rows finished.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$results</code></td>
+<td><code v-pre>$payload</code></td>
+<td><code v-pre>mixed</code></td>
+<td>Source data: file path, <code v-pre>UploadedFile</code>, URL, or <code v-pre>null</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>RowProcessed</code></td>
-<td style="text-align: left;">A single row was handled.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$status</code>, <code v-pre>$data</code>, <code v-pre>$model</code>, <code v-pre>$errors</code></td>
+<td><code v-pre>$user</code></td>
+<td><code v-pre>?Authenticatable</code></td>
+<td>User to associate with the run (for auditing)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunCompleted</code></td>
-<td style="text-align: left;">All jobs finished successfully.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>IngestRunFailed</code></td>
-<td style="text-align: left;">The process crashed or stopped.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$exception</code></td>
+<td><code v-pre>$isDryRun</code></td>
+<td><code v-pre>bool</code></td>
+<td>If <code v-pre>true</code>, validate and transform without persisting</td>
 </tr>
 </tbody>
 </table>
 </div>
-<doc-anchor-target id="tutorial-sending-a-slack-notification">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#tutorial-sending-a-slack-notification">#</doc-anchor-trigger>
-        <span>Tutorial: Sending a Slack Notification</span>
-    </h2>
+<p><strong>Returns:</strong> <code v-pre>IngestRun</code> - The Eloquent model for the newly created run.</p>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code v-pre>DefinitionNotFoundException</code> - If importer slug is not registered</li>
+<li><code v-pre>InvalidConfigurationException</code> - If importer config is invalid</li>
+<li><code v-pre>SourceException</code> - If source cannot be read</li>
+<li><code v-pre>FileProcessingException</code> - If file validation fails</li>
+</ul>
+<doc-anchor-target id="examples">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#examples">#</doc-anchor-trigger>
+        <span>Examples</span>
+    </h4>
 </doc-anchor-target>
-<p>Let&#x27;s implement a listener that sends a summary to Slack when an import completes.</p>
-<doc-anchor-target id="1-create-the-notification">
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
+use Illuminate\Support\Facades\Auth;
+
+// Basic usage with file path
+$run = Ingest::start('product-importer', 'imports/products.csv');
+
+// With authenticated user
+$run = Ingest::start('product-importer', 'imports/products.csv', Auth::user());
+
+// With uploaded file
+$run = Ingest::start('product-importer', $request-&gt;file('import'));
+
+// Dry run (no data saved)
+$run = Ingest::start('product-importer', 'imports/products.csv', null, isDryRun: true);
+
+// For importers with predefined sources (FTP, scheduled URL)
+$run = Ingest::start('daily-stock-sync');
+
+// Check the result
+echo &quot;Import started with ID: {$run-&gt;id}&quot;;
+echo &quot;Status: {$run-&gt;status-&gt;value}&quot;;</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="retry">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-create-the-notification">#</doc-anchor-trigger>
-        <span>1. Create the Notification</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#retry">#</doc-anchor-trigger>
+        <span>retry()</span>
     </h3>
 </doc-anchor-target>
+<p>Retry failed rows from a previous import run.</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:notification ImportCompletedNotification</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">public static function retry(
+    IngestRun $originalRun,
+    ?Authenticatable $user = null,
+    bool $isDryRun = false
+): IngestRun</code></pre>
 </doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>$originalRun</code></td>
+<td><code v-pre>IngestRun</code></td>
+<td>The original run with failed rows</td>
+</tr>
+<tr>
+<td><code v-pre>$user</code></td>
+<td><code v-pre>?Authenticatable</code></td>
+<td>User to associate with the retry run</td>
+</tr>
+<tr>
+<td><code v-pre>$isDryRun</code></td>
+<td><code v-pre>bool</code></td>
+<td>If <code v-pre>true</code>, validate without persisting</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Returns:</strong> <code v-pre>IngestRun</code> - A new IngestRun for the retry attempt.</p>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code v-pre>NoFailedRowsException</code> - If the original run has no failed rows</li>
+<li><code v-pre>ConcurrencyException</code> - If a retry is already in progress</li>
+<li><code v-pre>DefinitionNotFoundException</code> - If importer no longer exists</li>
+</ul>
+<doc-anchor-target id="examples-1">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#examples-1">#</doc-anchor-trigger>
+        <span>Examples</span>
+    </h4>
+</doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Notifications/ImportCompletedNotification.php
-public function toSlack($notifiable)
-{
-    $run = $this-&gt;ingestRun;
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
+use LaravelIngest\Models\IngestRun;
+use LaravelIngest\Exceptions\NoFailedRowsException;
+
+$originalRun = IngestRun::find(123);
+
+// Check if there are failed rows first
+if ($originalRun-&gt;failed_rows === 0) {
+    return response()-&gt;json(['message' =&gt; 'No failed rows to retry']);
+}
+
+try {
+    $retryRun = Ingest::retry($originalRun, Auth::user());
     
-    return (new SlackMessage)
-        -&gt;success()
-        -&gt;content(&quot;Import '{$run-&gt;importer_slug}' finished!&quot;)
-        -&gt;attachment(function ($attachment) use ($run) {
-            $attachment-&gt;fields([
-                'Total' =&gt; $run-&gt;total_rows,
-                'Success' =&gt; $run-&gt;successful_rows,
-                'Failed' =&gt; $run-&gt;failed_rows,
-            ]);
-        });
+    echo &quot;Retry started with ID: {$retryRun-&gt;id}&quot;;
+    echo &quot;Retrying {$originalRun-&gt;failed_rows} rows&quot;;
+} catch (NoFailedRowsException $e) {
+    // No failed rows to retry
+} catch (ConcurrencyException $e) {
+    // Another retry is already in progress
 }</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="2-create-the-listener">
+<p>The retry run maintains a reference to the original:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">$retryRun-&gt;retried_from_run_id; // Original run ID
+$retryRun-&gt;parent_id;           // Original run ID</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="getdefinition">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-create-the-listener">#</doc-anchor-trigger>
-        <span>2. Create the Listener</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#getdefinition">#</doc-anchor-trigger>
+        <span>getDefinition()</span>
+    </h3>
+</doc-anchor-target>
+<p>Get a specific importer definition by its slug.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">public static function getDefinition(string $slug): IngestDefinition</code></pre>
+</doc-codeblock></div>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>$slug</code></td>
+<td><code v-pre>string</code></td>
+<td>The registered slug of the importer</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Returns:</strong> <code v-pre>IngestDefinition</code> - The importer class instance.</p>
+<p><strong>Throws:</strong></p>
+<ul>
+<li><code v-pre>DefinitionNotFoundException</code> - If slug is not registered</li>
+</ul>
+<doc-anchor-target id="examples-2">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#examples-2">#</doc-anchor-trigger>
+        <span>Examples</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
+
+// Get the importer definition
+$definition = Ingest::getDefinition('product-importer');
+
+// Access the configuration
+$config = $definition-&gt;getConfig();
+
+echo &quot;Model: &quot; . $config-&gt;modelClass;
+echo &quot;Source: &quot; . $config-&gt;sourceType-&gt;value;
+echo &quot;Chunk size: &quot; . $config-&gt;chunkSize;
+
+// Check importer details
+$mappings = $config-&gt;getMappings();
+$validationRules = $config-&gt;getValidationRules();</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="getdefinitions">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#getdefinitions">#</doc-anchor-trigger>
+        <span>getDefinitions()</span>
+    </h3>
+</doc-anchor-target>
+<p>Get all registered importer definitions.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">public static function getDefinitions(): array</code></pre>
+</doc-codeblock></div>
+<p><strong>Returns:</strong> <code v-pre>array</code> - Associative array of slug =&gt; IngestDefinition instances.</p>
+<doc-anchor-target id="examples-3">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#examples-3">#</doc-anchor-trigger>
+        <span>Examples</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
+
+// List all importers
+$definitions = Ingest::getDefinitions();
+
+foreach ($definitions as $slug =&gt; $definition) {
+    $config = $definition-&gt;getConfig();
+    echo &quot;{$slug}: imports into {$config-&gt;modelClass}\n&quot;;
+}
+
+// Check if an importer exists
+$definitions = Ingest::getDefinitions();
+if (isset($definitions['product-importer'])) {
+    // Importer exists
+}
+
+// Build a dropdown of available importers
+$options = collect(Ingest::getDefinitions())
+    -&gt;map(fn($def, $slug) =&gt; [
+        'value' =&gt; $slug,
+        'label' =&gt; $def-&gt;getConfig()-&gt;modelClass,
+    ])
+    -&gt;values();</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="common-patterns">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#common-patterns">#</doc-anchor-trigger>
+        <span>Common Patterns</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="controller-integration">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#controller-integration">#</doc-anchor-trigger>
+        <span>Controller Integration</span>
     </h3>
 </doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:listener SendImportSummaryListener</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Listeners/SendImportSummaryListener.php
-namespace App\Listeners;
+<pre translate="no" class="language-php"><code v-pre class="language-php">namespace App\Http\Controllers;
 
-use LaravelIngest\Events\IngestRunCompleted;
-use App\Notifications\ImportCompletedNotification;
+use LaravelIngest\Facades\Ingest;
+use LaravelIngest\Exceptions\FileProcessingException;
+use LaravelIngest\Exceptions\DefinitionNotFoundException;
+use Illuminate\Http\Request;
 
-class SendImportSummaryListener
+class ImportController extends Controller
 {
-    public function handle(IngestRunCompleted $event): void
+    public function store(Request $request, string $importer)
     {
-        $user = $event-&gt;ingestRun-&gt;user;
+        $request-&gt;validate([
+            'file' =&gt; 'required|file',
+            'dry_run' =&gt; 'boolean',
+        ]);
 
-        if ($user) {
-            $user-&gt;notify(new ImportCompletedNotification($event-&gt;ingestRun));
+        try {
+            $run = Ingest::start(
+                importer: $importer,
+                payload: $request-&gt;file('file'),
+                user: $request-&gt;user(),
+                isDryRun: $request-&gt;boolean('dry_run')
+            );
+
+            return response()-&gt;json([
+                'message' =&gt; 'Import started',
+                'run_id' =&gt; $run-&gt;id,
+                'status' =&gt; $run-&gt;status-&gt;value,
+            ]);
+        } catch (DefinitionNotFoundException $e) {
+            return response()-&gt;json(['error' =&gt; 'Importer not found'], 404);
+        } catch (FileProcessingException $e) {
+            return response()-&gt;json(['error' =&gt; $e-&gt;getMessage()], 422);
         }
     }
 }</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="3-register-the-listener">
+<doc-anchor-target id="scheduled-imports">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-register-the-listener">#</doc-anchor-trigger>
-        <span>3. Register the Listener</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#scheduled-imports">#</doc-anchor-trigger>
+        <span>Scheduled Imports</span>
     </h3>
 </doc-anchor-target>
-<p>In your <code v-pre>EventServiceProvider</code>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Events\IngestRunCompleted;
-use App\Listeners\SendImportSummaryListener;
+<pre translate="no" class="language-php"><code v-pre class="language-php">// routes/console.php or App\Console\Kernel
 
-protected $listen = [
-    IngestRunCompleted::class =&gt; [
-        SendImportSummaryListener::class,
-    ],
-];</code></pre>
+use LaravelIngest\Facades\Ingest;
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::call(function () {
+    Ingest::start('daily-stock-sync');
+})-&gt;daily()-&gt;at('02:00');
+
+Schedule::call(function () {
+    Ingest::start('hourly-price-update');
+})-&gt;hourly();</code></pre>
 </doc-codeblock></div>
-<p>Now, every time an import finishes, the user who started it gets a notification!</p>
+<doc-anchor-target id="queued-job">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#queued-job">#</doc-anchor-trigger>
+        <span>Queued Job</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">namespace App\Jobs;
+
+use LaravelIngest\Facades\Ingest;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class ProcessImportJob implements ShouldQueue
+{
+    use Queueable;
+
+    public function __construct(
+        private string $importer,
+        private string $filePath,
+        private ?int $userId = null
+    ) {}
+
+    public function handle()
+    {
+        $user = $this-&gt;userId ? User::find($this-&gt;userId) : null;
+        
+        Ingest::start($this-&gt;importer, $this-&gt;filePath, $user);
+    }
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="event-driven-imports">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#event-driven-imports">#</doc-anchor-trigger>
+        <span>Event-Driven Imports</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">namespace App\Listeners;
+
+use LaravelIngest\Facades\Ingest;
+use App\Events\DataFileReceived;
+
+class ProcessReceivedDataFile
+{
+    public function handle(DataFileReceived $event)
+    {
+        Ingest::start(
+            importer: $event-&gt;importerSlug,
+            payload: $event-&gt;filePath,
+            user: $event-&gt;uploadedBy
+        );
+    }
+}</code></pre>
+</doc-codeblock></div>
 
                                 
                                 <!-- Required only on API pages -->
@@ -335,20 +616,20 @@ protected $listen = [
                             
                                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../usage/running-imports/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/source-types/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Running Imports</span>
+                                                <span class="block mt-1">Available Source Types</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/custom-source-handlers/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../usage/monitoring-and-retries/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                                <span class="block mt-1">Custom Source Handlers</span>
+                                                <span class="block mt-1">Monitoring, Cancellation, and Retries</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -392,6 +673,6 @@ protected $listen = [
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Working with Events", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Facade Reference", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>

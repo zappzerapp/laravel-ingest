@@ -10,24 +10,24 @@
     <meta name="generator" content="Retype 3.11.0">
 
     <!-- Primary Meta Tags -->
-    <title>Working with Events</title>
-    <meta name="title" content="Working with Events">
-    <meta name="description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <title>Configuration Files</title>
+    <meta name="title" content="Configuration Files">
+    <meta name="description" content="Laravel Ingest provides two configuration files that control the behavior of the package. After installation, publish them with:">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/configuration/config-files/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="og:title" content="Working with Events">
-    <meta property="og:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/config-files/">
+    <meta property="og:title" content="Configuration Files">
+    <meta property="og:description" content="Laravel Ingest provides two configuration files that control the behavior of the package. After installation, publish them with:">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="twitter:title" content="Working with Events">
-    <meta property="twitter:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/config-files/">
+    <meta property="twitter:title" content="Configuration Files">
+    <meta property="twitter:description" content="Laravel Ingest provides two configuration files that control the behavior of the package. After installation, publish them with:">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -195,137 +195,422 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="retype-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="working-with-events" class="break-words">
+<doc-anchor-target id="configuration-files" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#working-with-events">#</doc-anchor-trigger>
-        <span>Working with Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#configuration-files">#</doc-anchor-trigger>
+        <span>Configuration Files</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest dispatches events at every stage of the import lifecycle. This allows you to decouple your logic: the importer handles the data, and your listeners handle notifications, logging, or cleanup.</p>
-<doc-anchor-target id="available-events">
+<p>Laravel Ingest provides two configuration files that control the behavior of the package. After installation, publish them with:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan vendor:publish --tag=ingest-config</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="ingestphp">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#available-events">#</doc-anchor-trigger>
-        <span>Available Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestphp">#</doc-anchor-trigger>
+        <span>ingest.php</span>
     </h2>
+</doc-anchor-target>
+<p>The main configuration file for Laravel Ingest.</p>
+<doc-anchor-target id="full-reference">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#full-reference">#</doc-anchor-trigger>
+        <span>Full Reference</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">&lt;?php
+
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | API Path
+    |--------------------------------------------------------------------------
+    |
+    | The base path for the Ingest REST API endpoints.
+    | All API routes will be prefixed with this path.
+    |
+    | Example: 'api/v1/ingest' =&gt; /api/v1/ingest/runs, /api/v1/ingest/upload, etc.
+    |
+    */
+    'path' =&gt; 'api/v1/ingest',
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Domain
+    |--------------------------------------------------------------------------
+    |
+    | Optionally restrict the API routes to a specific domain.
+    | Set to null to allow all domains.
+    |
+    */
+    'domain' =&gt; null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Middleware
+    |--------------------------------------------------------------------------
+    |
+    | Middleware applied to all Ingest API routes.
+    | Add authentication middleware here to protect your endpoints.
+    |
+    | Example: ['api', 'auth:sanctum']
+    |
+    */
+    'middleware' =&gt; ['api'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Registered Importers
+    |--------------------------------------------------------------------------
+    |
+    | Register your importer classes here with a unique slug.
+    | The slug is used to trigger imports via CLI or API.
+    |
+    | Example:
+    | 'importers' =&gt; [
+    |     'user-importer' =&gt; App\Ingest\UserImporter::class,
+    |     'product-sync' =&gt; App\Ingest\ProductImporter::class,
+    | ],
+    |
+    */
+    'importers' =&gt; [
+        // 'user-importer' =&gt; App\Ingest\UserImporter::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Chunk Size
+    |--------------------------------------------------------------------------
+    |
+    | The number of rows processed per queue job. Can be overridden
+    | per-importer using IngestConfig::setChunkSize().
+    |
+    | - Higher values: Less queue overhead, more memory usage
+    | - Lower values: More queue jobs, less memory per job
+    |
+    */
+    'chunk_size' =&gt; 100,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum Rows to Display
+    |--------------------------------------------------------------------------
+    |
+    | Maximum number of row logs returned by the API when fetching
+    | run details. Prevents memory issues with large imports.
+    |
+    */
+    'max_show_rows' =&gt; env('INGEST_MAX_SHOW_ROWS', 100),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure which queue connection and queue name to use for
+    | processing import chunks.
+    |
+    | 'connection': The queue connection (redis, database, sync, etc.)
+    | 'name': The queue name for import jobs
+    |
+    */
+    'queue' =&gt; [
+        'connection' =&gt; env('INGEST_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'sync')),
+        'name' =&gt; env('INGEST_QUEUE_NAME', 'imports'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Storage Disk
+    |--------------------------------------------------------------------------
+    |
+    | The filesystem disk used for storing uploaded and temporary files.
+    | Can be overridden per-importer using IngestConfig::setDisk().
+    |
+    */
+    'disk' =&gt; env('INGEST_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Log Individual Rows
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, each processed row is logged to the ingest_rows table.
+    | This allows detailed error tracking and retry functionality.
+    |
+    | Disable for very large imports where row-level tracking isn't needed.
+    |
+    */
+    'log_rows' =&gt; true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Row Log Retention
+    |--------------------------------------------------------------------------
+    |
+    | Number of days to retain row logs before they are pruned.
+    | The IngestRow model uses Laravel's Prunable trait.
+    |
+    | To enable automatic pruning, add to your scheduler:
+    | $schedule-&gt;command('model:prune')-&gt;daily();
+    |
+    */
+    'prune_days' =&gt; 30,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Source Handlers
+    |--------------------------------------------------------------------------
+    |
+    | Maps source types to their handler classes. You can override
+    | default handlers or add custom ones here.
+    |
+    */
+    'handlers' =&gt; [
+        'upload' =&gt; LaravelIngest\Sources\UploadHandler::class,
+        'filesystem' =&gt; LaravelIngest\Sources\FilesystemHandler::class,
+        'ftp' =&gt; LaravelIngest\Sources\RemoteDiskHandler::class,
+        'sftp' =&gt; LaravelIngest\Sources\RemoteDiskHandler::class,
+        'url' =&gt; LaravelIngest\Sources\UrlHandler::class,
+        'json-stream' =&gt; LaravelIngest\Sources\JsonHandler::class,
+    ],
+];</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="environment-variables">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#environment-variables">#</doc-anchor-trigger>
+        <span>Environment Variables</span>
+    </h3>
 </doc-anchor-target>
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="comfortable">
 <thead>
 <tr>
-<th style="text-align: left;">Event Class</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Payload</th>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunStarted</code></td>
-<td style="text-align: left;">The import record is created.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
+<td><code v-pre>INGEST_MAX_SHOW_ROWS</code></td>
+<td><code v-pre>100</code></td>
+<td>Max rows returned in API responses</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>ChunkProcessed</code></td>
-<td style="text-align: left;">A batch of rows finished.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$results</code></td>
+<td><code v-pre>INGEST_QUEUE_CONNECTION</code></td>
+<td><code v-pre>QUEUE_CONNECTION</code></td>
+<td>Queue connection for import jobs</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>RowProcessed</code></td>
-<td style="text-align: left;">A single row was handled.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$status</code>, <code v-pre>$data</code>, <code v-pre>$model</code>, <code v-pre>$errors</code></td>
+<td><code v-pre>INGEST_QUEUE_NAME</code></td>
+<td><code v-pre>imports</code></td>
+<td>Queue name for import jobs</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunCompleted</code></td>
-<td style="text-align: left;">All jobs finished successfully.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
-</tr>
-<tr>
-<td style="text-align: left;"><code v-pre>IngestRunFailed</code></td>
-<td style="text-align: left;">The process crashed or stopped.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$exception</code></td>
+<td><code v-pre>INGEST_DISK</code></td>
+<td><code v-pre>local</code></td>
+<td>Default storage disk</td>
 </tr>
 </tbody>
 </table>
 </div>
-<doc-anchor-target id="tutorial-sending-a-slack-notification">
+<hr>
+<doc-anchor-target id="ingest_securityphp">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#tutorial-sending-a-slack-notification">#</doc-anchor-trigger>
-        <span>Tutorial: Sending a Slack Notification</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#ingest_securityphp">#</doc-anchor-trigger>
+        <span>ingest_security.php</span>
     </h2>
 </doc-anchor-target>
-<p>Let&#x27;s implement a listener that sends a summary to Slack when an import completes.</p>
-<doc-anchor-target id="1-create-the-notification">
+<p>Security-related configuration to protect against malicious uploads and requests.</p>
+<doc-anchor-target id="full-reference-1">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-create-the-notification">#</doc-anchor-trigger>
-        <span>1. Create the Notification</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#full-reference-1">#</doc-anchor-trigger>
+        <span>Full Reference</span>
     </h3>
 </doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:notification ImportCompletedNotification</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Notifications/ImportCompletedNotification.php
-public function toSlack($notifiable)
-{
-    $run = $this-&gt;ingestRun;
-    
-    return (new SlackMessage)
-        -&gt;success()
-        -&gt;content(&quot;Import '{$run-&gt;importer_slug}' finished!&quot;)
-        -&gt;attachment(function ($attachment) use ($run) {
-            $attachment-&gt;fields([
-                'Total' =&gt; $run-&gt;total_rows,
-                'Success' =&gt; $run-&gt;successful_rows,
-                'Failed' =&gt; $run-&gt;failed_rows,
-            ]);
-        });
-}</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="2-create-the-listener">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-create-the-listener">#</doc-anchor-trigger>
-        <span>2. Create the Listener</span>
-    </h3>
-</doc-anchor-target>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:listener SendImportSummaryListener</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Listeners/SendImportSummaryListener.php
-namespace App\Listeners;
+<pre translate="no" class="language-php"><code v-pre class="language-php">&lt;?php
 
-use LaravelIngest\Events\IngestRunCompleted;
-use App\Notifications\ImportCompletedNotification;
+return [
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum File Size
+    |--------------------------------------------------------------------------
+    |
+    | Maximum allowed file size for uploads in bytes.
+    | Default: 50MB (50 * 1024 * 1024)
+    |
+    | Note: Also check your PHP settings (upload_max_filesize, post_max_size)
+    | and web server configuration (client_max_body_size for nginx).
+    |
+    */
+    'max_file_size' =&gt; env('INGEST_MAX_FILE_SIZE', 50 * 1024 * 1024),
 
-class SendImportSummaryListener
-{
-    public function handle(IngestRunCompleted $event): void
-    {
-        $user = $event-&gt;ingestRun-&gt;user;
-
-        if ($user) {
-            $user-&gt;notify(new ImportCompletedNotification($event-&gt;ingestRun));
-        }
-    }
-}</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="3-register-the-listener">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-register-the-listener">#</doc-anchor-trigger>
-        <span>3. Register the Listener</span>
-    </h3>
-</doc-anchor-target>
-<p>In your <code v-pre>EventServiceProvider</code>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Events\IngestRunCompleted;
-use App\Listeners\SendImportSummaryListener;
-
-protected $listen = [
-    IngestRunCompleted::class =&gt; [
-        SendImportSummaryListener::class,
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed MIME Types
+    |--------------------------------------------------------------------------
+    |
+    | List of allowed MIME types for file uploads.
+    | Add or remove types based on your import needs.
+    |
+    */
+    'allowed_mime_types' =&gt; [
+        'text/csv',
+        'text/plain',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/json',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Directories
+    |--------------------------------------------------------------------------
+    |
+    | List of allowed root directories for filesystem source operations.
+    | This prevents path traversal attacks by restricting file access
+    | to specific directories only.
+    |
+    | Files must be located within one of these directories.
+    |
+    */
+    'allowed_directories' =&gt; [
+        'ingest-uploads',
+        'ingest-temp',
+        'data',
+        'imports',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL Host Allowlist
+    |--------------------------------------------------------------------------
+    |
+    | When set, only URLs from these hosts are allowed for URL source imports.
+    | Leave as null to allow all hosts (subject to blocklist).
+    |
+    | Example: 'example.com,api.example.com'
+    |
+    */
+    'allowed_url_hosts' =&gt; env('INGEST_ALLOWED_URL_HOSTS') 
+        ? explode(',', env('INGEST_ALLOWED_URL_HOSTS')) 
+        : null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL Host Blocklist
+    |--------------------------------------------------------------------------
+    |
+    | URLs from these hosts are always blocked, even if allowlist is not set.
+    | Use this to block internal networks, localhost, etc.
+    |
+    | Example: 'localhost,127.0.0.1,internal.company.com'
+    |
+    */
+    'blocked_url_hosts' =&gt; env('INGEST_BLOCKED_URL_HOSTS') 
+        ? explode(',', env('INGEST_BLOCKED_URL_HOSTS')) 
+        : [],
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL Request Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Maximum time in seconds to wait for URL source requests.
+    |
+    */
+    'url_timeout_seconds' =&gt; env('INGEST_URL_TIMEOUT', 15),
+
+    /*
+    |--------------------------------------------------------------------------
+    | URL Maximum Redirects
+    |--------------------------------------------------------------------------
+    |
+    | Maximum number of HTTP redirects to follow for URL source requests.
+    |
+    */
+    'url_max_redirects' =&gt; env('INGEST_URL_MAX_REDIRECTS', 5),
 ];</code></pre>
 </doc-codeblock></div>
-<p>Now, every time an import finishes, the user who started it gets a notification!</p>
+<doc-anchor-target id="environment-variables-1">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#environment-variables-1">#</doc-anchor-trigger>
+        <span>Environment Variables</span>
+    </h3>
+</doc-anchor-target>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code v-pre>INGEST_MAX_FILE_SIZE</code></td>
+<td><code v-pre>52428800</code> (50MB)</td>
+<td>Maximum upload file size in bytes</td>
+</tr>
+<tr>
+<td><code v-pre>INGEST_ALLOWED_URL_HOSTS</code></td>
+<td><code v-pre>null</code></td>
+<td>Comma-separated allowlist of URL hosts</td>
+</tr>
+<tr>
+<td><code v-pre>INGEST_BLOCKED_URL_HOSTS</code></td>
+<td><code v-pre>''</code></td>
+<td>Comma-separated blocklist of URL hosts</td>
+</tr>
+<tr>
+<td><code v-pre>INGEST_URL_TIMEOUT</code></td>
+<td><code v-pre>15</code></td>
+<td>URL request timeout in seconds</td>
+</tr>
+<tr>
+<td><code v-pre>INGEST_URL_MAX_REDIRECTS</code></td>
+<td><code v-pre>5</code></td>
+<td>Maximum HTTP redirects to follow</td>
+</tr>
+</tbody>
+</table>
+</div>
+<doc-anchor-target id="security-best-practices">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#security-best-practices">#</doc-anchor-trigger>
+        <span>Security Best Practices</span>
+    </h3>
+</doc-anchor-target>
+<ol>
+<li><p><strong>Always set middleware authentication</strong> in <code v-pre>ingest.php</code>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">'middleware' =&gt; ['api', 'auth:sanctum'],</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Use URL host restrictions</strong> in production:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">INGEST_ALLOWED_URL_HOSTS=trusted-api.com,data.example.com
+INGEST_BLOCKED_URL_HOSTS=localhost,127.0.0.1,10.0.0.0/8</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Restrict allowed directories</strong> to only what&#x27;s needed:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">'allowed_directories' =&gt; [
+    'imports',  // Only allow imports directory
+],</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Set appropriate file size limits</strong> based on your needs:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">INGEST_MAX_FILE_SIZE=10485760  # 10MB for smaller imports</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
 
                                 
                                 <!-- Required only on API pages -->
@@ -335,20 +620,20 @@ protected $listen = [
                             
                                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../usage/running-imports/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/ingest-config/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Running Imports</span>
+                                                <span class="block mt-1">The Ingest​Config Class</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/custom-source-handlers/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/source-types/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                                <span class="block mt-1">Custom Source Handlers</span>
+                                                <span class="block mt-1">Available Source Types</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -392,6 +677,6 @@ protected $listen = [
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Working with Events", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Configuration Files", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>

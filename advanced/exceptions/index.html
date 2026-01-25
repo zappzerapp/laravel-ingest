@@ -10,24 +10,24 @@
     <meta name="generator" content="Retype 3.11.0">
 
     <!-- Primary Meta Tags -->
-    <title>Working with Events</title>
-    <meta name="title" content="Working with Events">
-    <meta name="description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <title>Exceptions</title>
+    <meta name="title" content="Exceptions">
+    <meta name="description" content="Laravel Ingest provides specific exception classes for different error scenarios.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/exceptions/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="og:title" content="Working with Events">
-    <meta property="og:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/exceptions/">
+    <meta property="og:title" content="Exceptions">
+    <meta property="og:description" content="Laravel Ingest provides specific exception classes for different error scenarios.">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/events/">
-    <meta property="twitter:title" content="Working with Events">
-    <meta property="twitter:description" content="Laravel Ingest dispatches events at every stage of the import lifecycle.">
+    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/exceptions/">
+    <meta property="twitter:title" content="Exceptions">
+    <meta property="twitter:description" content="Laravel Ingest provides specific exception classes for different error scenarios.">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -195,137 +195,346 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="retype-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="working-with-events" class="break-words">
+<doc-anchor-target id="exceptions" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#working-with-events">#</doc-anchor-trigger>
-        <span>Working with Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#exceptions">#</doc-anchor-trigger>
+        <span>Exceptions</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest dispatches events at every stage of the import lifecycle. This allows you to decouple your logic: the importer handles the data, and your listeners handle notifications, logging, or cleanup.</p>
-<doc-anchor-target id="available-events">
+<p>Laravel Ingest provides specific exception classes for different error scenarios. Understanding these exceptions helps you implement proper error handling in your application.</p>
+<doc-anchor-target id="exception-overview">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#available-events">#</doc-anchor-trigger>
-        <span>Available Events</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#exception-overview">#</doc-anchor-trigger>
+        <span>Exception Overview</span>
     </h2>
 </doc-anchor-target>
 <div class="table-wrapper scrollbar overflow-hidden">
 <table class="comfortable">
 <thead>
 <tr>
-<th style="text-align: left;">Event Class</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Payload</th>
+<th>Exception</th>
+<th>When Thrown</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunStarted</code></td>
-<td style="text-align: left;">The import record is created.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
+<td><code v-pre>SourceException</code></td>
+<td>Problems reading from data source</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>ChunkProcessed</code></td>
-<td style="text-align: left;">A batch of rows finished.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$results</code></td>
+<td><code v-pre>DefinitionNotFoundException</code></td>
+<td>Importer slug not found</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>RowProcessed</code></td>
-<td style="text-align: left;">A single row was handled.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$status</code>, <code v-pre>$data</code>, <code v-pre>$model</code>, <code v-pre>$errors</code></td>
+<td><code v-pre>InvalidConfigurationException</code></td>
+<td>Invalid IngestConfig setup</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunCompleted</code></td>
-<td style="text-align: left;">All jobs finished successfully.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code></td>
+<td><code v-pre>ConcurrencyException</code></td>
+<td>Concurrent operation conflicts</td>
 </tr>
 <tr>
-<td style="text-align: left;"><code v-pre>IngestRunFailed</code></td>
-<td style="text-align: left;">The process crashed or stopped.</td>
-<td style="text-align: left;"><code v-pre>$ingestRun</code>, <code v-pre>$exception</code></td>
+<td><code v-pre>NoFailedRowsException</code></td>
+<td>Retry attempted with no failed rows</td>
+</tr>
+<tr>
+<td><code v-pre>FileProcessingException</code></td>
+<td>File validation or processing errors</td>
 </tr>
 </tbody>
 </table>
 </div>
-<doc-anchor-target id="tutorial-sending-a-slack-notification">
+<hr>
+<doc-anchor-target id="sourceexception">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#tutorial-sending-a-slack-notification">#</doc-anchor-trigger>
-        <span>Tutorial: Sending a Slack Notification</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#sourceexception">#</doc-anchor-trigger>
+        <span>SourceException</span>
     </h2>
 </doc-anchor-target>
-<p>Let&#x27;s implement a listener that sends a summary to Slack when an import completes.</p>
-<doc-anchor-target id="1-create-the-notification">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-create-the-notification">#</doc-anchor-trigger>
-        <span>1. Create the Notification</span>
-    </h3>
-</doc-anchor-target>
+<p>Thrown when there&#x27;s a problem reading data from a source (file not found, connection failed, etc.).</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:notification ImportCompletedNotification</code></pre>
-</doc-codeblock></div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Notifications/ImportCompletedNotification.php
-public function toSlack($notifiable)
-{
-    $run = $this-&gt;ingestRun;
-    
-    return (new SlackMessage)
-        -&gt;success()
-        -&gt;content(&quot;Import '{$run-&gt;importer_slug}' finished!&quot;)
-        -&gt;attachment(function ($attachment) use ($run) {
-            $attachment-&gt;fields([
-                'Total' =&gt; $run-&gt;total_rows,
-                'Success' =&gt; $run-&gt;successful_rows,
-                'Failed' =&gt; $run-&gt;failed_rows,
-            ]);
-        });
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\SourceException;
+
+try {
+    $run = Ingest::start('product-importer', 'missing-file.csv');
+} catch (SourceException $e) {
+    Log::error('Source error: ' . $e-&gt;getMessage());
+    // Handle: file not found, FTP connection failed, URL unreachable, etc.
 }</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="2-create-the-listener">
+<p><strong>Common causes:</strong></p>
+<ul>
+<li>File does not exist at specified path</li>
+<li>FTP/SFTP connection or authentication failed</li>
+<li>URL is unreachable or returned an error</li>
+<li>Insufficient permissions to read file</li>
+</ul>
+<hr>
+<doc-anchor-target id="definitionnotfoundexception">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#definitionnotfoundexception">#</doc-anchor-trigger>
+        <span>DefinitionNotFoundException</span>
+    </h2>
+</doc-anchor-target>
+<p>Thrown when attempting to use an importer that hasn&#x27;t been registered in <code v-pre>config/ingest.php</code>.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\DefinitionNotFoundException;
+
+try {
+    $run = Ingest::start('non-existent-importer');
+} catch (DefinitionNotFoundException $e) {
+    // &quot;No importer found with the slug 'non-existent-importer'. 
+    //  Please check your spelling or run 'php artisan ingest:list' 
+    //  to see available importers.&quot;
+}</code></pre>
+</doc-codeblock></div>
+<p><strong>Solution:</strong> Ensure the importer is registered:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
+'importers' =&gt; [
+    'product-importer' =&gt; App\Ingest\ProductImporter::class,
+],</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="invalidconfigurationexception">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#invalidconfigurationexception">#</doc-anchor-trigger>
+        <span>InvalidConfigurationException</span>
+    </h2>
+</doc-anchor-target>
+<p>Thrown when an <code v-pre>IngestConfig</code> is invalid or missing required settings.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\InvalidConfigurationException;
+
+try {
+    $run = Ingest::start('misconfigured-importer');
+} catch (InvalidConfigurationException $e) {
+    Log::error('Config error: ' . $e-&gt;getMessage());
+}</code></pre>
+</doc-codeblock></div>
+<p><strong>Common causes:</strong></p>
+<ul>
+<li>Missing <code v-pre>for()</code> model class</li>
+<li>Missing <code v-pre>fromSource()</code> definition</li>
+<li>Invalid source type options</li>
+<li>Incompatible configuration combinations</li>
+</ul>
+<hr>
+<doc-anchor-target id="concurrencyexception">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#concurrencyexception">#</doc-anchor-trigger>
+        <span>ConcurrencyException</span>
+    </h2>
+</doc-anchor-target>
+<p>Thrown when concurrent operations conflict with each other. Includes factory methods for specific scenarios.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\ConcurrencyException;
+
+try {
+    $run = Ingest::retry($originalRun);
+} catch (ConcurrencyException $e) {
+    // Another retry is already in progress
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="factory-methods">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-create-the-listener">#</doc-anchor-trigger>
-        <span>2. Create the Listener</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#factory-methods">#</doc-anchor-trigger>
+        <span>Factory Methods</span>
     </h3>
 </doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:listener SendImportSummaryListener</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Thrown when a retry is already in progress for the same run
+ConcurrencyException::duplicateRetryAttempt(int $originalRunId)
+// &quot;A retry attempt for run {id} is already in progress or completed.&quot;
+
+// Thrown when a lock cannot be acquired within the timeout
+ConcurrencyException::lockTimeout(int $runId, int $timeout)
+// &quot;Could not acquire lock for run {id} within {timeout} seconds.&quot;
+
+// Thrown on optimistic locking conflicts
+ConcurrencyException::conflictingUpdate(int $runId, ?Throwable $previous)
+// &quot;Conflicting update detected for run {id}&quot;</code></pre>
 </doc-codeblock></div>
+<p><strong>Handling:</strong></p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Listeners/SendImportSummaryListener.php
-namespace App\Listeners;
-
-use LaravelIngest\Events\IngestRunCompleted;
-use App\Notifications\ImportCompletedNotification;
-
-class SendImportSummaryListener
-{
-    public function handle(IngestRunCompleted $event): void
-    {
-        $user = $event-&gt;ingestRun-&gt;user;
-
-        if ($user) {
-            $user-&gt;notify(new ImportCompletedNotification($event-&gt;ingestRun));
-        }
+<pre translate="no" class="language-php"><code v-pre class="language-php">try {
+    $run = Ingest::retry($originalRun);
+} catch (ConcurrencyException $e) {
+    if (str_contains($e-&gt;getMessage(), 'already in progress')) {
+        return response()-&gt;json(['error' =&gt; 'A retry is already running'], 409);
     }
+    throw $e;
 }</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="3-register-the-listener">
+<hr>
+<doc-anchor-target id="nofailedrowsexception">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#nofailedrowsexception">#</doc-anchor-trigger>
+        <span>NoFailedRowsException</span>
+    </h2>
+</doc-anchor-target>
+<p>Thrown when attempting to retry an import run that has no failed rows.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\NoFailedRowsException;
+
+try {
+    $run = Ingest::retry($originalRun);
+} catch (NoFailedRowsException $e) {
+    // &quot;The original run has no failed rows to retry.&quot;
+}</code></pre>
+</doc-codeblock></div>
+<p><strong>Solution:</strong> Check for failed rows before retrying:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">if ($originalRun-&gt;failed_rows &gt; 0) {
+    $run = Ingest::retry($originalRun);
+} else {
+    return response()-&gt;json(['message' =&gt; 'No failed rows to retry']);
+}</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="fileprocessingexception">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fileprocessingexception">#</doc-anchor-trigger>
+        <span>FileProcessingException</span>
+    </h2>
+</doc-anchor-target>
+<p>Thrown during file validation and processing. Includes factory methods for specific file-related errors.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\FileProcessingException;
+
+try {
+    $run = Ingest::start('importer', $uploadedFile);
+} catch (FileProcessingException $e) {
+    return response()-&gt;json(['error' =&gt; $e-&gt;getMessage()], 422);
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="factory-methods-1">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-register-the-listener">#</doc-anchor-trigger>
-        <span>3. Register the Listener</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#factory-methods-1">#</doc-anchor-trigger>
+        <span>Factory Methods</span>
     </h3>
 </doc-anchor-target>
-<p>In your <code v-pre>EventServiceProvider</code>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Events\IngestRunCompleted;
-use App\Listeners\SendImportSummaryListener;
+<pre translate="no" class="language-php"><code v-pre class="language-php">// File exceeds maximum allowed size
+FileProcessingException::fileTooLarge(int $size, int $maxSize)
+// &quot;File size ({size} bytes) exceeds maximum allowed size ({maxSize} bytes).&quot;
 
-protected $listen = [
-    IngestRunCompleted::class =&gt; [
-        SendImportSummaryListener::class,
-    ],
-];</code></pre>
+// File MIME type not in allowed list
+FileProcessingException::invalidMimeType(string $mimeType, array $allowed)
+// &quot;File type '{mimeType}' is not allowed. Allowed types: text/csv, ...&quot;
+
+// Potentially malicious content detected
+FileProcessingException::maliciousContent()
+// &quot;File contains potentially malicious content.&quot;
+
+// File cannot be read
+FileProcessingException::unreadableFile(string $path, ?Throwable $previous)
+// &quot;Unable to read file at path: {path}&quot;
+
+// File is corrupted or invalid format
+FileProcessingException::corruptedFile(string $path, ?Throwable $previous)
+// User-friendly message about corrupted file</code></pre>
 </doc-codeblock></div>
-<p>Now, every time an import finishes, the user who started it gets a notification!</p>
+<p><strong>Handling upload errors:</strong></p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\FileProcessingException;
+
+try {
+    $run = Ingest::start('csv-importer', $request-&gt;file('import'));
+} catch (FileProcessingException $e) {
+    $message = $e-&gt;getMessage();
+    
+    if (str_contains($message, 'too large')) {
+        return back()-&gt;withErrors(['file' =&gt; 'File is too large. Maximum size is 50MB.']);
+    }
+    
+    if (str_contains($message, 'not allowed')) {
+        return back()-&gt;withErrors(['file' =&gt; 'Please upload a CSV or Excel file.']);
+    }
+    
+    return back()-&gt;withErrors(['file' =&gt; 'Could not process the file.']);
+}</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="global-exception-handling">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#global-exception-handling">#</doc-anchor-trigger>
+        <span>Global Exception Handling</span>
+    </h2>
+</doc-anchor-target>
+<p>You can handle Ingest exceptions globally in your exception handler:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Exceptions/Handler.php (Laravel 10 and earlier)
+// or bootstrap/app.php (Laravel 11+)
+
+use LaravelIngest\Exceptions\DefinitionNotFoundException;
+use LaravelIngest\Exceptions\FileProcessingException;
+use LaravelIngest\Exceptions\ConcurrencyException;
+
+// Laravel 11+
+-&gt;withExceptions(function (Exceptions $exceptions) {
+    $exceptions-&gt;render(function (DefinitionNotFoundException $e) {
+        return response()-&gt;json([
+            'error' =&gt; 'Importer not found',
+            'message' =&gt; $e-&gt;getMessage(),
+        ], 404);
+    });
+
+    $exceptions-&gt;render(function (FileProcessingException $e) {
+        return response()-&gt;json([
+            'error' =&gt; 'File processing failed',
+            'message' =&gt; $e-&gt;getMessage(),
+        ], 422);
+    });
+
+    $exceptions-&gt;render(function (ConcurrencyException $e) {
+        return response()-&gt;json([
+            'error' =&gt; 'Operation conflict',
+            'message' =&gt; $e-&gt;getMessage(),
+        ], 409);
+    });
+})</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="exception-inheritance">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#exception-inheritance">#</doc-anchor-trigger>
+        <span>Exception Inheritance</span>
+    </h2>
+</doc-anchor-target>
+<p>All Ingest exceptions extend PHP&#x27;s base <code v-pre>Exception</code> class:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">Exception
+├── SourceException
+├── DefinitionNotFoundException
+├── InvalidConfigurationException
+├── ConcurrencyException
+├── NoFailedRowsException
+└── FileProcessingException</code></pre>
+</doc-codeblock></div>
+<p>This allows you to catch all Ingest exceptions with a single catch block if needed:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Exceptions\{
+    SourceException,
+    DefinitionNotFoundException,
+    InvalidConfigurationException,
+    ConcurrencyException,
+    NoFailedRowsException,
+    FileProcessingException,
+};
+
+try {
+    $run = Ingest::start($slug, $payload);
+} catch (DefinitionNotFoundException $e) {
+    // Handle missing importer
+} catch (FileProcessingException $e) {
+    // Handle file issues
+} catch (SourceException $e) {
+    // Handle source reading issues  
+} catch (\Exception $e) {
+    // Handle any other exception
+}</code></pre>
+</doc-codeblock></div>
 
                                 
                                 <!-- Required only on API pages -->
@@ -335,20 +544,20 @@ protected $listen = [
                             
                                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../usage/running-imports/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/ui-integration/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Running Imports</span>
+                                                <span class="block mt-1">UI Integration</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/custom-source-handlers/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../api-reference/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                                <span class="block mt-1">Custom Source Handlers</span>
+                                                <span class="block mt-1">API Reference</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -392,6 +601,6 @@ protected $listen = [
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Working with Events", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Exceptions", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>
