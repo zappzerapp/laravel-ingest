@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822562446695">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822678985095">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -31,12 +31,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.822562446695" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.11.0.822678985095" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822562446695" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.822678985095" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822562446695" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822562446695" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.822678985095" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.822678985095" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -266,6 +266,59 @@
 -&gt;fromSource(SourceType::URL, ['url' =&gt; 'https://example.com/data/export.csv'])</code></pre>
 </doc-codeblock></div>
 <hr>
+<doc-anchor-target id="sourcetypejson">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#sourcetypejson">#</doc-anchor-trigger>
+        <span><code v-pre>SourceType::JSON</code></span>
+    </h3>
+</doc-anchor-target>
+<p>This handler processes a file containing a JSON array of objects. It&#x27;s useful for API-driven imports or when dealing with structured data feeds.</p>
+<ul>
+<li><strong>Payload:</strong> The full path to the JSON file.</li>
+<li><strong>Options:</strong> No options are required.</li>
+</ul>
+<doc-anchor-target id="example-ingestconfig">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#example-ingestconfig">#</doc-anchor-trigger>
+        <span>Example IngestConfig</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig
+-&gt;fromSource(SourceType::JSON)</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="example-usage">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#example-usage">#</doc-anchor-trigger>
+        <span>Example Usage</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Programmatic trigger
+Ingest::start('user-importer', storage_path('app/imports/users.json'));</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="example-usersjson-file">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#example-usersjson-file">#</doc-anchor-trigger>
+        <span>Example <code v-pre>users.json</code> File</span>
+    </h4>
+</doc-anchor-target>
+<p>The file must contain a single top-level array. Each element in the array is treated as a row.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-json"><code v-pre class="language-json">[
+  {
+    &quot;full_name&quot;: &quot;John Doe&quot;,
+    &quot;user_email&quot;: &quot;john@example.com&quot;,
+    &quot;is_admin&quot;: &quot;yes&quot;
+  },
+  {
+    &quot;full_name&quot;: &quot;Jane Smith&quot;,
+    &quot;user_email&quot;: &quot;jane@example.com&quot;,
+    &quot;is_admin&quot;: &quot;no&quot;
+  }
+]</code></pre>
+</doc-codeblock></div>
+<hr>
 <doc-anchor-target id="sourcetypeftp--sourcetypesftp">
     <h3>
         <doc-anchor-trigger class="header-anchor-trigger" to="#sourcetypeftp--sourcetypesftp">#</doc-anchor-trigger>
@@ -309,9 +362,9 @@
 composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
 </doc-codeblock></div>
 </blockquote>
-<doc-anchor-target id="example-ingestconfig">
+<doc-anchor-target id="example-ingestconfig-1">
     <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#example-ingestconfig">#</doc-anchor-trigger>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#example-ingestconfig-1">#</doc-anchor-trigger>
         <span>Example IngestConfig</span>
     </h4>
 </doc-anchor-target>
@@ -331,9 +384,6 @@ composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
     </h2>
 </doc-anchor-target>
 <p>You can create your own source handlers for custom data sources (APIs, XML, etc.). See the <a href="../../advanced/custom-source-handlers/">Custom Source Handlers</a> guide for details.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-none"><code v-pre class="language-none"> </code></pre>
-</doc-codeblock></div>
 
                                 
                                 <!-- Required only on API pages -->

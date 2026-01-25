@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822562446695">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.822678985095">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.11.0">
@@ -12,7 +12,7 @@
     <!-- Primary Meta Tags -->
     <title>Introduction to Laravel Ingest</title>
     <meta name="title" content="Introduction to Laravel Ingest">
-    <meta name="description" content="Laravel Ingest revolutionizes the way Laravel applications import data.">
+    <meta name="description" content="Stop writing spaghetti code for imports.">
 
     <!-- Canonical -->
     <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/">
@@ -21,21 +21,21 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/">
     <meta property="og:title" content="Introduction to Laravel Ingest">
-    <meta property="og:description" content="Laravel Ingest revolutionizes the way Laravel applications import data.">
+    <meta property="og:description" content="Stop writing spaghetti code for imports.">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/">
     <meta property="twitter:title" content="Introduction to Laravel Ingest">
-    <meta property="twitter:description" content="Laravel Ingest revolutionizes the way Laravel applications import data.">
+    <meta property="twitter:description" content="Stop writing spaghetti code for imports.">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="resources/css/retype.css?v=3.11.0.822562446695" rel="stylesheet">
+    <link href="resources/css/retype.css?v=3.11.0.822678985095" rel="stylesheet">
 
-    <script data-cfasync="false" src="resources/js/config.js?v=3.11.0.822562446695" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="resources/js/config.js?v=3.11.0.822678985095" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="resources/js/lunr.js?v=3.11.0.822562446695" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="resources/js/lunr.js?v=3.11.0.822678985095" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
@@ -200,7 +200,8 @@
         <span>Introduction to Laravel Ingest</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest revolutionizes the way Laravel applications import data. We end the chaos of custom, error-prone import scripts and provide an elegant, declarative, and robust framework for defining complex data import processes.</p>
+<p><strong>Stop writing spaghetti code for imports.</strong></p>
+<p>Laravel Ingest is a robust, configuration-driven ETL (Extract, Transform, Load) framework for Laravel. It replaces fragile, procedural import scripts with elegant, declarative configuration classes.</p>
 <p>The system handles the &quot;dirty&quot; work—file processing, streaming, validation, background jobs, error reporting, and API provision—so you can focus on the business logic.</p>
 <doc-anchor-target id="the-core-problem-we-solve">
     <h2>
@@ -216,17 +217,15 @@
     </h2>
 </doc-anchor-target>
 <ul>
-<li><strong>Limitless Scalability</strong>: By consistently utilizing <strong>streams and queues</strong>, there is no limit to file size. Whether 100 rows or 10 million, memory usage remains consistently low.</li>
-<li><strong>Fluent &amp; Expressive API</strong>: Define imports in a readable and self-explanatory way using the <code v-pre>IngestConfig</code> class.</li>
-<li><strong>Source Agnostic</strong>: Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (<code v-pre>s3</code>, <code v-pre>local</code>). Easily extensible for other sources.</li>
-<li><strong>Robust Background Processing</strong>: Uses the Laravel Queue by default for maximum reliability.</li>
-<li><strong>Comprehensive Mapping &amp; Validation</strong>: Transform data on-the-fly, resolve relationships, and use the validation rules of your Eloquent models.</li>
-<li><strong>Column Aliases</strong>: Support multiple header names for the same field (e.g., <code v-pre>['email', 'E-Mail', 'user_email']</code>).</li>
-<li><strong>Dynamic Model Resolution</strong>: Route rows to different Eloquent models based on row data.</li>
-<li><strong>Auto-Create Relations</strong>: Automatically create missing related records during import.</li>
-<li><strong>Auto-generated API &amp; CLI</strong>: Control and monitor imports via RESTful endpoints or the included Artisan commands.</li>
-<li><strong>&quot;Dry Runs&quot;</strong>: Simulate an import to detect validation errors without writing a single database entry.</li>
-<li><strong>Error Analysis</strong>: Aggregated error summaries via dedicated API endpoint.</li>
+<li><strong><span class="docs-emoji">&#x267E;&#xFE0F;</span> Infinite Scalability:</strong> Uses Generators and Queues to process files of <em>any</em> size with flat memory usage.</li>
+<li><strong><span class="docs-emoji">&#x1F4DD;</span> Declarative Syntax:</strong> Define <em>what</em> to import, not <em>how</em> to loop over it, using a fluent <code v-pre>IngestConfig</code> class.</li>
+<li><strong><span class="docs-emoji">&#x1F9EA;</span> Dry Runs:</strong> Simulate imports to find validation errors without touching the database.</li>
+<li><strong><span class="docs-emoji">&#x1F517;</span> Auto-Relations:</strong> Automatically resolves <code v-pre>BelongsTo</code> and <code v-pre>BelongsToMany</code> relationships (e.g., finding IDs by names).</li>
+<li><strong><span class="docs-emoji">&#x1F6E1;&#xFE0F;</span> Robust Error Handling:</strong> Tracks every failed row and allows you to download a CSV of <em>only</em> the failures to fix and retry.</li>
+<li><strong><span class="docs-emoji">&#x1F50C;</span> API &amp; CLI Ready:</strong> Comes with auto-generated API endpoints and Artisan commands for full control.</li>
+<li><strong><span class="docs-emoji">&#x1F5FA;&#xFE0F;</span> Source Agnostic:</strong> Import from file uploads, (S)FTP servers, URLs, or any Laravel filesystem disk (<code v-pre>s3</code>, <code v-pre>local</code>).</li>
+<li><strong><span class="docs-emoji">&#x1F3AD;</span> Column Aliases:</strong> Support multiple header names for the same field (e.g., <code v-pre>['email', 'E-Mail', 'user_email']</code>).</li>
+<li><strong><span class="docs-emoji">&#x1F680;</span> Dynamic Model Resolution:</strong> Route rows to different Eloquent models based on row data.</li>
 </ul>
 
                                 
