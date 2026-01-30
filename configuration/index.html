@@ -10,24 +10,24 @@
     <meta name="generator" content="Retype 3.11.0">
 
     <!-- Primary Meta Tags -->
-    <title>API Reference</title>
-    <meta name="title" content="API Reference">
-    <meta name="description" content="Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with ">
+    <title>Configuration</title>
+    <meta name="title" content="Configuration">
+    <meta name="description" content="This section covers all aspects of configuring Laravel Ingest, from basic setup to advanced security considerations.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/api-reference/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/configuration/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/api-reference/">
-    <meta property="og:title" content="API Reference">
-    <meta property="og:description" content="Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with ">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/">
+    <meta property="og:title" content="Configuration">
+    <meta property="og:description" content="This section covers all aspects of configuring Laravel Ingest, from basic setup to advanced security considerations.">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/api-reference/">
-    <meta property="twitter:title" content="API Reference">
-    <meta property="twitter:description" content="Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with ">
+    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/">
+    <meta property="twitter:title" content="Configuration">
+    <meta property="twitter:description" content="This section covers all aspects of configuring Laravel Ingest, from basic setup to advanced security considerations.">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -198,255 +198,444 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="retype-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="api-reference" class="break-words">
+<doc-anchor-target id="configuration" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#api-reference">#</doc-anchor-trigger>
-        <span>API Reference</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#configuration">#</doc-anchor-trigger>
+        <span>Configuration</span>
     </h1>
 </doc-anchor-target>
-<p>Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with <code v-pre>/api/v1/ingest</code> (configurable via <code v-pre>config/ingest.php</code>).</p>
-<doc-anchor-target id="authentication">
+<p>This section covers all aspects of configuring Laravel Ingest, from basic setup to advanced security considerations.</p>
+<doc-anchor-target id="security-best-practices">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#security-best-practices">#</doc-anchor-trigger>
+        <span>Security Best Practices</span>
+    </h2>
+</doc-anchor-target>
+<p>When dealing with file uploads and data imports, security should be a top priority. Here are the recommended security configurations for production environments.</p>
+<doc-anchor-target id="file-upload-security">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#authentication">#</doc-anchor-trigger>
-        <span>Authentication</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#file-upload-security">#</doc-anchor-trigger>
+        <span>File Upload Security</span>
     </h3>
 </doc-anchor-target>
-<p>The API routes are wrapped in the <code v-pre>api</code> middleware group by default. You will typically need to provide an authentication token (e.g., Sanctum or Passport) in the <code v-pre>Authorization</code> header.</p>
-<hr>
-<doc-anchor-target id="list-ingest-runs">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#list-ingest-runs">#</doc-anchor-trigger>
-        <span>List Ingest Runs</span>
-    </h3>
+<doc-anchor-target id="1-restrict-file-types">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-restrict-file-types">#</doc-anchor-trigger>
+        <span>1. Restrict File Types</span>
+    </h4>
 </doc-anchor-target>
-<p>Retrieves a paginated list of all ingest runs, sorted by the most recent.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>GET /</code></li>
-<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with a paginated JSON object of <doc-anchor-trigger to="#ingestrunresource-object">IngestRunResource</doc-anchor-trigger> objects.</li>
-</ul>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X GET -H &quot;Authorization: Bearer &lt;token&gt;&quot; https://myapp.com/api/v1/ingest</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
+'allowed_file_types' =&gt; [
+    'csv',
+    'xlsx',
+    'xls',
+    'txt',
+],</code></pre>
 </doc-codeblock></div>
-<hr>
-<doc-anchor-target id="show-ingest-run-details">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#show-ingest-run-details">#</doc-anchor-trigger>
-        <span>Show Ingest Run Details</span>
-    </h3>
+<doc-anchor-target id="2-file-size-limits">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-file-size-limits">#</doc-anchor-trigger>
+        <span>2. File Size Limits</span>
+    </h4>
 </doc-anchor-target>
-<p>Retrieves the details of a single ingest run, including its rows.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>GET /{ingestRun}</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>ingestRun</code> (integer, required): The ID of the ingest run.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with a single <doc-anchor-trigger to="#ingestrunresource-object">IngestRunResource</doc-anchor-trigger> object.</li>
-</ul>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X GET -H &quot;Authorization: Bearer &lt;token&gt;&quot; https://myapp.com/api/v1/ingest/123</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
+'max_file_size' =&gt; 10 * 1024 * 1024, // 10MB in production</code></pre>
 </doc-codeblock></div>
-<hr>
-<doc-anchor-target id="upload-file-and-start-run">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#upload-file-and-start-run">#</doc-anchor-trigger>
-        <span>Upload File and Start Run</span>
-    </h3>
+<doc-anchor-target id="3-virus-scanning-optional-but-recommended">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-virus-scanning-optional-but-recommended">#</doc-anchor-trigger>
+        <span>3. Virus Scanning (Optional but Recommended)</span>
+    </h4>
 </doc-anchor-target>
-<p>Starts a new ingest run from a file upload.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /upload/{importerSlug}</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>importerSlug</code> (string, required): The slug of the importer definition (e.g., <code v-pre>user-importer</code>).</li>
-</ul>
-</li>
-<li><strong>Body (<code v-pre>multipart/form-data</code>):</strong>
-<ul>
-<li><code v-pre>file</code> (file, required): The data file to import (e.g., CSV, XLSX).</li>
-<li><code v-pre>dry_run</code> (boolean, optional): If <code v-pre>1</code> or <code v-pre>true</code>, performs a simulation without saving data.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>202 Accepted</code> with the newly created <doc-anchor-trigger to="#ingestrunresource-object">IngestRunResource</doc-anchor-trigger>.</li>
-</ul>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  -F &quot;file=@/path/to/data.csv&quot; \
-  https://myapp.com/api/v1/ingest/upload/user-importer</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="trigger-non-upload-run">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#trigger-non-upload-run">#</doc-anchor-trigger>
-        <span>Trigger Non-Upload Run</span>
-    </h3>
-</doc-anchor-target>
-<p>Starts a new ingest run for a source that does not require a file upload (e.g., <code v-pre>FTP</code>, <code v-pre>URL</code>).</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /trigger/{importerSlug}</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>importerSlug</code> (string, required): The slug of the importer definition.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>202 Accepted</code> with the newly created <doc-anchor-trigger to="#ingestrunresource-object">IngestRunResource</doc-anchor-trigger>.</li>
-</ul>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  https://myapp.com/api/v1/ingest/trigger/daily-stock-importer</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="cancel-ingest-run">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#cancel-ingest-run">#</doc-anchor-trigger>
-        <span>Cancel Ingest Run</span>
-    </h3>
-</doc-anchor-target>
-<p>Sends a cancellation request to a running ingest batch.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /{ingestRun}/cancel</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>ingestRun</code> (integer, required): The ID of the ingest run to cancel.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with <code v-pre>{&quot;message&quot;: &quot;Cancellation request sent.&quot;}</code>.</li>
-</ul>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  https://myapp.com/api/v1/ingest/123/cancel</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="retry-failed-ingest-run">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#retry-failed-ingest-run">#</doc-anchor-trigger>
-        <span>Retry Failed Ingest Run</span>
-    </h3>
-</doc-anchor-target>
-<p>Creates a new ingest run containing only the failed rows from a previous run.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /{ingestRun}/retry</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>ingestRun</code> (integer, required): The ID of the original run with failed rows.</li>
-</ul>
-</li>
-<li><strong>Body (<code v-pre>application/json</code>, optional):</strong>
-<ul>
-<li><code v-pre>{&quot;dry_run&quot;: true}</code></li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>202 Accepted</code> with the newly created retry <doc-anchor-trigger to="#ingestrunresource-object">IngestRunResource</doc-anchor-trigger>.</li>
-<li><strong>Error Response:</strong> <code v-pre>400 Bad Request</code> if the original run has no failed rows.</li>
-</ul>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  -H &quot;Content-Type: application/json&quot; \
-  https://myapp.com/api/v1/ingest/123/retry</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="get-error-summary">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#get-error-summary">#</doc-anchor-trigger>
-        <span>Get Error Summary</span>
-    </h3>
-</doc-anchor-target>
-<p>Retrieves an aggregated summary of errors for a specific ingest run. Useful for quickly understanding the most common issues without fetching all failed rows.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>GET /{ingestRun}/errors/summary</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>ingestRun</code> (integer, required): The ID of the ingest run.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with an <doc-anchor-trigger to="#ingesterrorsummaryresource-object">IngestErrorSummaryResource</doc-anchor-trigger> object.</li>
-</ul>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X GET \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  https://myapp.com/api/v1/ingest/123/errors/summary</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="download-failed-rows-as-csv">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#download-failed-rows-as-csv">#</doc-anchor-trigger>
-        <span>Download Failed Rows as CSV</span>
-    </h3>
-</doc-anchor-target>
-<p>Downloads a CSV file containing only the failed rows from an ingest run. The CSV includes all original data columns plus <code v-pre>_error_message</code> and <code v-pre>_row_number</code> columns. This enables a &quot;Fix &amp; Re-Upload&quot; workflow.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>GET /{ingestRun}/failed-rows/download</code></li>
-<li><strong>URL Parameters:</strong>
-<ul>
-<li><code v-pre>ingestRun</code> (integer, required): The ID of the ingest run.</li>
-</ul>
-</li>
-<li><strong>Success Response:</strong> <code v-pre>200 OK</code> with a streamed CSV file download.</li>
-<li><strong>Error Response:</strong> <code v-pre>404 Not Found</code> if the run has no failed rows.</li>
-</ul>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X GET \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  -o failed-rows.csv \
-  https://myapp.com/api/v1/ingest/123/failed-rows/download</code></pre>
-</doc-codeblock></div>
-<hr>
-<doc-anchor-target id="ingesterrorsummaryresource-object">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingesterrorsummaryresource-object">#</doc-anchor-trigger>
-        <span>IngestErrorSummaryResource Object</span>
-    </h3>
-</doc-anchor-target>
-<p>The JSON representation for an error analysis summary.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-json"><code v-pre class="language-json">{
-  &quot;data&quot;: {
-    &quot;total_failed_rows&quot;: 15,
-    &quot;error_summary&quot;: [
-      { &quot;message&quot;: &quot;Duplicate entry found for key 'email'.&quot;, &quot;count&quot;: 8 },
-      { &quot;message&quot;: &quot;The given data was invalid.&quot;, &quot;count&quot;: 7 }
-    ],
-    &quot;validation_summary&quot;: [
-      { &quot;message&quot;: &quot;email: The email field is required.&quot;, &quot;count&quot;: 5 },
-      { &quot;message&quot;: &quot;name: The name must be at least 2 characters.&quot;, &quot;count&quot;: 2 }
-    ]
-  }
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your Importer class
+use Illuminate\Http\UploadedFile;
+
+public function getConfig(): IngestConfig
+{
+    return IngestConfig::for(Product::class)
+        -&gt;beforeImport(function(UploadedFile $file) {
+            // Integrate with virus scanning service
+            if (app()-&gt;environment('production')) {
+                $this-&gt;scanForMalware($file);
+            }
+        });
+}
+
+private function scanForMalware(UploadedFile $file): void
+{
+    // Example: ClamAV integration
+    $clamav = new \Xenolope\Quahog\Client(
+        new \Xenolope\Quahog\Socket('127.0.0.1', 3310)
+    );
+    
+    $result = $clamav-&gt;scanFile($file-&gt;getPathname());
+    
+    if ($result-&gt;isInfected()) {
+        throw new SecurityException('File contains malware');
+    }
 }</code></pre>
 </doc-codeblock></div>
-<hr>
-<doc-anchor-target id="ingestrunresource-object">
+<doc-anchor-target id="data-validation-security">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestrunresource-object">#</doc-anchor-trigger>
-        <span>IngestRunResource Object</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#data-validation-security">#</doc-anchor-trigger>
+        <span>Data Validation Security</span>
     </h3>
 </doc-anchor-target>
-<p>The standard JSON representation for an ingest run.</p>
+<doc-anchor-target id="1-input-sanitization">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-input-sanitization">#</doc-anchor-trigger>
+        <span>1. Input Sanitization</span>
+    </h4>
+</doc-anchor-target>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-json"><code v-pre class="language-json">{
-  &quot;data&quot;: {
-    &quot;id&quot;: 123,
-    &quot;importer&quot;: &quot;user-importer&quot;,
-    &quot;status&quot;: &quot;processing&quot;,
-    &quot;user_id&quot;: 1,
-    &quot;original_filename&quot;: &quot;users.csv&quot;,
-    &quot;progress&quot;: {
-      &quot;total&quot;: 1000,
-      &quot;processed&quot;: 500,
-      &quot;successful&quot;: 498,
-      &quot;failed&quot;: 2
-    },
-    &quot;summary&quot;: null,
-    &quot;started_at&quot;: &quot;2023-10-27T10:00:00.000000Z&quot;,
-    &quot;completed_at&quot;: null,
-    &quot;rows&quot;: [ /* collection of IngestRowResource objects */ ]
-  }
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Remove potentially dangerous content
+    foreach ($row as $key =&gt; $value) {
+        if (is_string($value)) {
+            $row[$key] = strip_tags($value);
+            $row[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
+    }
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="2-sql-injection-prevention">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-sql-injection-prevention">#</doc-anchor-trigger>
+        <span>2. SQL Injection Prevention</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Always use parameter binding in custom queries
+-&gt;afterRow(function($model, array $row) {
+    // ❌ BAD: Direct string interpolation
+    // DB::statement(&quot;UPDATE products SET notes = '{$row['notes']}' WHERE id = {$model-&gt;id}&quot;);
+    
+    // ✅ GOOD: Parameter binding
+    DB::statement(
+        &quot;UPDATE products SET notes = ? WHERE id = ?&quot;,
+        [$row['notes'], $model-&gt;id]
+    );
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="3-data-type-validation">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-data-type-validation">#</doc-anchor-trigger>
+        <span>3. Data Type Validation</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;validate([
+    'email' =&gt; 'required|email|max:255',
+    'phone' =&gt; 'nullable|string|max:20|regex:/^\+?[1-9]\d{1,14}$/',
+    'price' =&gt; 'required|numeric|min:0|max:999999.99',
+    'quantity' =&gt; 'required|integer|min:0|max:999999',
+    'website' =&gt; 'nullable|url|max:2048',
+    'ip_address' =&gt; 'nullable|ip',
+])</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="access-control">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#access-control">#</doc-anchor-trigger>
+        <span>Access Control</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="1-permission-based-import-access">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-permission-based-import-access">#</doc-anchor-trigger>
+        <span>1. Permission-Based Import Access</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your ImportController
+public function store(Request $request)
+{
+    $this-&gt;authorize('import', Product::class);
+    
+    // Additional role-based checks
+    if (!auth()-&gt;user()-&gt;hasRole('data_manager')) {
+        abort(403, 'Insufficient permissions for data import');
+    }
+    
+    // Proceed with import
 }</code></pre>
 </doc-codeblock></div>
+<doc-anchor-target id="2-rate-limiting">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-rate-limiting">#</doc-anchor-trigger>
+        <span>2. Rate Limiting</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// routes/web.php or routes/api.php
+Route::middleware([
+    'auth',
+    'throttle:5,1', // 5 imports per minute
+])-&gt;group(function () {
+    Route::post('/import/products', [ProductImportController::class, 'store']);
+});</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="3-audit-logging">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-audit-logging">#</doc-anchor-trigger>
+        <span>3. Audit Logging</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeImport(function(UploadedFile $file) {
+    // Log import attempt
+    activity()
+        -&gt;causedBy(auth()-&gt;user())
+        -&gt;performedOn(new Product())
+        -&gt;withProperties([
+            'file_name' =&gt; $file-&gt;getClientOriginalName(),
+            'file_size' =&gt; $file-&gt;getSize(),
+            'mime_type' =&gt; $file-&gt;getMimeType(),
+            'ip_address' =&gt; request()-&gt;ip(),
+        ])
+        -&gt;log('product_import_started');
+})
+
+-&gt;afterImport(function(ImportResult $result) {
+    // Log import completion
+    activity()
+        -&gt;causedBy(auth()-&gt;user())
+        -&gt;performedOn(new Product())
+        -&gt;withProperties([
+            'total_rows' =&gt; $result-&gt;totalRows,
+            'successful_rows' =&gt; $result-&gt;successfulRows,
+            'failed_rows' =&gt; $result-&gt;failedRows,
+            'duration' =&gt; $result-&gt;duration,
+        ])
+        -&gt;log('product_import_completed');
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="environment-specific-security">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#environment-specific-security">#</doc-anchor-trigger>
+        <span>Environment-Specific Security</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="1-production-configuration">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-production-configuration">#</doc-anchor-trigger>
+        <span>1. Production Configuration</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Production
+'allowed_file_types' =&gt; ['csv', 'xlsx'],
+'max_file_size' =&gt; 10 * 1024 * 1024, // 10MB
+'log_rows' =&gt; true, // Enable for audit trail
+'queue_connection' =&gt; 'redis', // Use reliable queue
+'transaction_mode' =&gt; 'chunk', // Safer imports
+'chunk_size' =&gt; 100, // Smaller chunks for reliability</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="2-development-configuration">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-development-configuration">#</doc-anchor-trigger>
+        <span>2. Development Configuration</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Local Development
+'allowed_file_types' =&gt; ['csv', 'xlsx', 'txt', 'json'],
+'max_file_size' =&gt; 50 * 1024 * 1024, // 50MB for testing
+'log_rows' =&gt; true, // Enable for debugging
+'queue_connection' =&gt; 'database', // Simple queue for dev
+'transaction_mode' =&gt; 'row', // Maximum safety
+'chunk_size' =&gt; 10, // Small chunks for debugging</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="3-staging-configuration">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-staging-configuration">#</doc-anchor-trigger>
+        <span>3. Staging Configuration</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Staging
+'allowed_file_types' =&gt; ['csv', 'xlsx'],
+'max_file_size' =&gt; 20 * 1024 * 1024, // 20MB
+'log_rows' =&gt; true,
+'queue_connection' =&gt; 'redis',
+'transaction_mode' =&gt; 'chunk',
+'chunk_size' =&gt; 50,</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="data-privacy-and-compliance">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#data-privacy-and-compliance">#</doc-anchor-trigger>
+        <span>Data Privacy and Compliance</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="1-gdpr-considerations">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-gdpr-considerations">#</doc-anchor-trigger>
+        <span>1. GDPR Considerations</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Remove or anonymize sensitive data if not needed
+    $sensitiveFields = ['ssn', 'credit_card', 'bank_account'];
+    
+    foreach ($sensitiveFields as $field) {
+        if (isset($row[$field])) {
+            unset($row[$field]);
+        }
+    }
+    
+    // Log data processing for compliance
+    if (isset($row['email'])) {
+        Log::info('Processing user data', [
+            'email_hash' =&gt; hash('sha256', $row['email']),
+            'purpose' =&gt; 'product_import',
+            'legal_basis' =&gt; 'legitimate_interest',
+        ]);
+    }
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="2-data-retention-policies">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-data-retention-policies">#</doc-anchor-trigger>
+        <span>2. Data Retention Policies</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your Importer class
+public function getConfig(): IngestConfig
+{
+    return IngestConfig::for(Product::class)
+        -&gt;afterImport(function(ImportResult $result) {
+            // Clean up temporary files after processing
+            $this-&gt;cleanupTempFiles();
+            
+            // Archive import logs after 30 days
+            $this-&gt;archiveImportLogs($result-&gt;importId);
+        });
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="security-headers-and-cors">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#security-headers-and-cors">#</doc-anchor-trigger>
+        <span>Security Headers and CORS</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your ImportController
+public function store(Request $request)
+{
+    // Set security headers
+    return response()-&gt;json([
+        'message' =&gt; 'Import started',
+        'import_id' =&gt; $importId,
+    ], 202)-&gt;withHeaders([
+        'X-Content-Type-Options' =&gt; 'nosniff',
+        'X-Frame-Options' =&gt; 'DENY',
+        'X-XSS-Protection' =&gt; '1; mode=block',
+        'Strict-Transport-Security' =&gt; 'max-age=31536000; includeSubDomains',
+    ]);
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="monitoring-and-alerting">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#monitoring-and-alerting">#</doc-anchor-trigger>
+        <span>Monitoring and Alerting</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="1-security-event-monitoring">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-security-event-monitoring">#</doc-anchor-trigger>
+        <span>1. Security Event Monitoring</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Monitor for suspicious patterns
+    $suspiciousPatterns = [
+        '/&lt;script\b[^&lt;]*(?:(?!&lt;\/script&gt;)&lt;[^&lt;]*)*&lt;\/script&gt;/mi',
+        '/javascript:/i',
+        '/vbscript:/i',
+        '/onload\s*=/i',
+        '/onerror\s*=/i',
+    ];
+    
+    foreach ($row as $key =&gt; $value) {
+        if (is_string($value)) {
+            foreach ($suspiciousPatterns as $pattern) {
+                if (preg_match($pattern, $value)) {
+                    // Log security event
+                    Log::alert('Suspicious content detected', [
+                        'field' =&gt; $key,
+                        'pattern' =&gt; $pattern,
+                        'user_id' =&gt; auth()-&gt;id(),
+                        'ip_address' =&gt; request()-&gt;ip(),
+                    ]);
+                    
+                    // Optionally block the import
+                    throw new SecurityException('Suspicious content detected');
+                }
+            }
+        }
+    }
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="2-performance-monitoring">
+    <h4>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-performance-monitoring">#</doc-anchor-trigger>
+        <span>2. Performance Monitoring</span>
+    </h4>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;afterImport(function(ImportResult $result) {
+    // Alert on unusual import patterns
+    if ($result-&gt;failedRows &gt; $result-&gt;totalRows * 0.1) {
+        // More than 10% failure rate - alert administrators
+        Notification::route('mail', ['admin@company.com'])
+            -&gt;notify(new HighFailureRateAlert($result));
+    }
+    
+    if ($result-&gt;duration &gt; 300) { // 5 minutes
+        // Unusually long import time
+        Notification::route('slack', config('services.slack.webhook'))
+            -&gt;notify(new SlowImportAlert($result));
+    }
+})</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="security-checklist">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#security-checklist">#</doc-anchor-trigger>
+        <span>Security Checklist</span>
+    </h3>
+</doc-anchor-target>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> File type restrictions configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> File size limits enforced</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Input validation and sanitization implemented</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> SQL injection prevention measures in place</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Access control and permissions configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Rate limiting applied to import endpoints</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Comprehensive audit logging enabled</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Environment-specific security configurations</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Data privacy and compliance measures implemented</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Security headers and CORS properly configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Monitoring and alerting systems active</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Regular security reviews and penetration testing</li>
+</ul>
+<doc-anchor-target id="recommended-security-packages">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#recommended-security-packages">#</doc-anchor-trigger>
+        <span>Recommended Security Packages</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># Additional security packages for Laravel
+composer require spatie/laravel-security
+composer require laravel/fortify
+composer require spatie/laravel-activitylog</code></pre>
+</doc-codeblock></div>
+<p>Remember: Security is an ongoing process, not a one-time configuration. Regularly review and update your security measures to protect against new threats.</p>
 
                                 
                                 <!-- Required only on API pages -->
@@ -456,16 +645,23 @@
                             
                                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../advanced/exceptions/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../getting-started/first-importer/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Exceptions</span>
+                                                <span class="block mt-1">Your First Importer</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../configuration/ingest-config/">
+                                            <span>
+                                                <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
+                                                <span class="block mt-1">The Ingest​Config Class</span>
+                                            </span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+                                        </a>
                                     </div>
                                 </nav>
                             </footer>
@@ -506,6 +702,6 @@
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "API Reference", level: 1, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Configuration", level: 1, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>

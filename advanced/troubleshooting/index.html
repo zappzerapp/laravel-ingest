@@ -10,24 +10,24 @@
     <meta name="generator" content="Retype 3.11.0">
 
     <!-- Primary Meta Tags -->
-    <title>Running Imports</title>
-    <meta name="title" content="Running Imports">
-    <meta name="description" content="Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.">
+    <title>Troubleshooting</title>
+    <meta name="title" content="Troubleshooting">
+    <meta name="description" content="Fehlermeldung:">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/usage/running-imports/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/usage/running-imports/">
-    <meta property="og:title" content="Running Imports">
-    <meta property="og:description" content="Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
+    <meta property="og:title" content="Troubleshooting">
+    <meta property="og:description" content="Fehlermeldung:">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/usage/running-imports/">
-    <meta property="twitter:title" content="Running Imports">
-    <meta property="twitter:description" content="Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.">
+    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
+    <meta property="twitter:title" content="Troubleshooting">
+    <meta property="twitter:description" content="Fehlermeldung:">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -198,276 +198,499 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="retype-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="running-imports" class="break-words">
+<doc-anchor-target id="troubleshooting" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#running-imports">#</doc-anchor-trigger>
-        <span>Running Imports</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#troubleshooting">#</doc-anchor-trigger>
+        <span>Troubleshooting</span>
     </h1>
 </doc-anchor-target>
-<p>Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.</p>
-<doc-anchor-target id="artisan-commands">
+<doc-anchor-target id="1-file-not-found-bei-filesystem-quellen">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#artisan-commands">#</doc-anchor-trigger>
-        <span>Artisan Commands</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-file-not-found-bei-filesystem-quellen">#</doc-anchor-trigger>
+        <span>1. &quot;File not found&quot; bei Filesystem-Quellen</span>
     </h2>
 </doc-anchor-target>
-<p>Laravel Ingest provides several Artisan commands for managing imports.</p>
-<doc-anchor-target id="ingestrun">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestrun">#</doc-anchor-trigger>
-        <span>ingest:run</span>
-    </h3>
-</doc-anchor-target>
-<p>The <code v-pre>ingest:run</code> command is perfect for manual or scheduled imports where the source file is accessible on a local or configured filesystem disk.</p>
+<p><strong>Fehlermeldung</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:run {slug} {--file=} {--dry-run}</code></pre>
+<pre translate="no" class="language-none"><code v-pre class="language-none">We could not find the file at '/path/to/file.csv' using the disk 'local'.</code></pre>
 </doc-codeblock></div>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="comfortable">
-<thead>
-<tr>
-<th>Argument/Option</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code v-pre>slug</code></td>
-<td>The slug of the importer to run (e.g., <code v-pre>user-importer</code>)</td>
-</tr>
-<tr>
-<td><code v-pre>--file</code></td>
-<td>Path to the source file (required for <code v-pre>FILESYSTEM</code> sources)</td>
-</tr>
-<tr>
-<td><code v-pre>--dry-run</code></td>
-<td>Simulate the import without saving data</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash"># Run a product import from a file on the default disk
-php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot;
-
-# Perform a dry run to check for errors
-php artisan ingest:run product-importer --file=&quot;imports/products.csv&quot; --dry-run</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="ingestlist">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestlist">#</doc-anchor-trigger>
-        <span>ingest:list</span>
-    </h3>
-</doc-anchor-target>
-<p>List all registered importers and their configurations.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:list</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="ingeststatus">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingeststatus">#</doc-anchor-trigger>
-        <span>ingest:status</span>
-    </h3>
-</doc-anchor-target>
-<p>Check the status of a specific import run.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:status {id}</code></pre>
-</doc-codeblock></div>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="comfortable">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code v-pre>id</code></td>
-<td>The ID of the IngestRun to check</td>
-</tr>
-</tbody>
-</table>
-</div>
-<doc-anchor-target id="ingestcancel">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestcancel">#</doc-anchor-trigger>
-        <span>ingest:cancel</span>
-    </h3>
-</doc-anchor-target>
-<p>Cancel a running import. This will stop processing new chunks but won&#x27;t roll back already processed rows.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:cancel {id}</code></pre>
-</doc-codeblock></div>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="comfortable">
-<thead>
-<tr>
-<th>Argument</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code v-pre>id</code></td>
-<td>The ID of the IngestRun to cancel</td>
-</tr>
-</tbody>
-</table>
-</div>
-<doc-anchor-target id="ingestretry">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestretry">#</doc-anchor-trigger>
-        <span>ingest:retry</span>
-    </h3>
-</doc-anchor-target>
-<p>Retry failed rows from a previous import run.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:retry {id} {--dry-run}</code></pre>
-</doc-codeblock></div>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="comfortable">
-<thead>
-<tr>
-<th>Argument/Option</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code v-pre>id</code></td>
-<td>The ID of the IngestRun to retry</td>
-</tr>
-<tr>
-<td><code v-pre>--dry-run</code></td>
-<td>Simulate the retry without saving data</td>
-</tr>
-</tbody>
-</table>
-</div>
-<doc-anchor-target id="ingestprune-files">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#ingestprune-files">#</doc-anchor-trigger>
-        <span>ingest:prune-files</span>
-    </h3>
-</doc-anchor-target>
-<p>Clean up old temporary and uploaded files to free disk space.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:prune-files {--hours=24}</code></pre>
-</doc-codeblock></div>
-<div class="table-wrapper scrollbar overflow-hidden">
-<table class="comfortable">
-<thead>
-<tr>
-<th>Option</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code v-pre>--hours</code></td>
-<td><code v-pre>24</code></td>
-<td>Delete files older than this many hours</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>This command removes files from the <code v-pre>ingest-temp</code> and <code v-pre>ingest-uploads</code> directories that are older than the specified number of hours.</p>
-<doc-anchor-target id="scheduling-file-cleanup">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#scheduling-file-cleanup">#</doc-anchor-trigger>
-        <span>Scheduling File Cleanup</span>
-    </h4>
-</doc-anchor-target>
-<p>Add to your <code v-pre>routes/console.php</code> or scheduler:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// Clean up files older than 24 hours, daily
-Schedule::command('ingest:prune-files')-&gt;daily();
-
-// Clean up files older than 6 hours, every hour
-Schedule::command('ingest:prune-files --hours=6')-&gt;hourly();</code></pre>
-</doc-codeblock></div>
-<doc-anchor-target id="row-log-pruning">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#row-log-pruning">#</doc-anchor-trigger>
-        <span>Row Log Pruning</span>
-    </h4>
-</doc-anchor-target>
-<p>To automatically prune old row logs (stored in <code v-pre>ingest_rows</code> table), add Laravel&#x27;s model pruning command to your scheduler:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// In routes/console.php or App\Console\Kernel
-Schedule::command('model:prune')-&gt;daily();</code></pre>
-</doc-codeblock></div>
-<p>The retention period is configured via <code v-pre>prune_days</code> in <code v-pre>config/ingest.php</code> (default: 30 days).</p>
-<hr>
-<doc-anchor-target id="2-via-api">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-via-api">#</doc-anchor-trigger>
-        <span>2. Via API</span>
-    </h3>
-</doc-anchor-target>
-<p>Laravel Ingest automatically registers API endpoints to trigger and manage imports. These are ideal for integrations or when providing a user interface for uploads.</p>
-<doc-anchor-target id="file-uploads-upload-source">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#file-uploads-upload-source">#</doc-anchor-trigger>
-        <span>File Uploads (<code v-pre>UPLOAD</code> source)</span>
-    </h4>
-</doc-anchor-target>
-<p>To start an import that uses <code v-pre>SourceType::UPLOAD</code>, send a <code v-pre>multipart/form-data</code> POST request.</p>
+<p><strong>Ursachen</strong>:</p>
 <ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /api/v1/ingest/upload/{importerSlug}</code></li>
-<li><strong>Body:</strong> Must contain a <code v-pre>file</code> field with the uploaded file. You can also include an optional <code v-pre>dry_run</code> field set to <code v-pre>1</code> or <code v-pre>true</code>.</li>
+<li>Der Pfad ist relativ (z.B. <code v-pre>imports/file.csv</code> statt <code v-pre>/absolute/path/file.csv</code>).</li>
+<li>Die Datei existiert nicht auf dem konfigurierten Disk.</li>
+<li>Der Disk ist nicht korrekt in <code v-pre>config/filesystems.php</code> konfiguriert.</li>
 </ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Absolute Pfade verwenden</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  -F &quot;file=@/path/to/users.csv&quot; \
-  -F &quot;dry_run=1&quot; \
-  https://myapp.com/api/v1/ingest/upload/user-importer</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; base_path('storage/app/imports/file.csv')])</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="triggering-other-sources-ftp-url-etc">
-    <h4>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#triggering-other-sources-ftp-url-etc">#</doc-anchor-trigger>
-        <span>Triggering Other Sources (<code v-pre>FTP</code>, <code v-pre>URL</code>, etc.)</span>
-    </h4>
-</doc-anchor-target>
-<p>For importers that don&#x27;t require a file upload (like FTP or URL sources), you can trigger them with a simple POST request.</p>
-<ul>
-<li><strong>Endpoint:</strong> <code v-pre>POST /api/v1/ingest/trigger/{importerSlug}</code></li>
-</ul>
+</li>
+<li><p><strong>Existenz prüfen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">curl -X POST \
-  -H &quot;Authorization: Bearer &lt;token&gt;&quot; \
-  https://myapp.com/api/v1/ingest/trigger/daily-stock-importer</code></pre>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use Illuminate\Support\Facades\Storage;
+Storage::disk('local')-&gt;exists('imports/file.csv'); // true/false</code></pre>
 </doc-codeblock></div>
+</li>
+<li><p><strong>Disk-Konfiguration prüfen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/filesystems.php
+'disks' =&gt; [
+    'local' =&gt; [
+        'driver' =&gt; 'local',
+        'root' =&gt; storage_path('app'),
+    ],
+],</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
 <hr>
-<doc-anchor-target id="3-programmatically-facade">
+<doc-anchor-target id="2-memory-limit-fehler">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-memory-limit-fehler">#</doc-anchor-trigger>
+        <span>2. Memory-Limit Fehler</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">Allowed memory size of 134217728 bytes exhausted</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Die CSV/Excel-Datei ist zu groß für das aktuelle <code v-pre>memory_limit</code> in PHP.</li>
+<li>Zu viele Zeilen werden gleichzeitig verarbeitet (z.B. <code v-pre>chunkSize</code> zu groß).</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong><code v-pre>memory_limit</code> erhöhen</strong> (in <code v-pre>php.ini</code>):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-ini"><code v-pre class="language-ini">memory_limit = 512M</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Kleinere Chunks verwenden</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setChunkSize(500) // Standard: 100</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Transaktionen deaktivieren</strong> (für maximale Performance):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;transactionMode(TransactionMode::NONE)</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Queue-Worker optimieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan queue:work --memory=512</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="3-column-not-found-bei-strictheaderstrue">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-column-not-found-bei-strictheaderstrue">#</doc-anchor-trigger>
+        <span>3. &quot;Column not found&quot; bei <code v-pre>strictHeaders(true)</code></span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">The column 'user_email' was not found in the source file headers.</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Die Spaltenüberschrift im CSV stimmt nicht mit der Definition in <code v-pre>map()</code> oder <code v-pre>relate()</code> überein.</li>
+<li>Groß-/Kleinschreibung oder Leerzeichen unterscheiden sich (z.B. &quot;E-Mail&quot; vs. &quot;email&quot;).</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Aliase verwenden</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;map(['E-Mail', 'Email', 'user_email'], 'email')</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong><code v-pre>strictHeaders(false)</code> setzen</strong> (wenn die Spalte optional ist):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;strictHeaders(false)</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>CSV-Datei anpassen</strong> (z.B. mit Excel oder <code v-pre>sed</code>):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># Ersetze Leerzeichen in Headern (Linux/Mac)
+sed -i '1s/ /_/g' input.csv</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="4-connection-timeout-bei-großen-uploads">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#4-connection-timeout-bei-großen-uploads">#</doc-anchor-trigger>
+        <span>4. &quot;Connection timeout&quot; bei großen Uploads</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">Connection timeout or Request timeout exceeded</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Die Upload-Zeit überschreitet die PHP <code v-pre>max_execution_time</code>.</li>
+<li>Der Webserver hat eine geringere Timeout-Einstellung.</li>
+<li>Die Datei ist zu groß für den Upload.</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>PHP-Konfiguration anpassen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-ini"><code v-pre class="language-ini">; php.ini
+max_execution_time = 300
+upload_max_filesize = 100M
+post_max_size = 100M
+max_input_time = 300</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Webserver-Timeout erhöhen</strong> (nginx Beispiel):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-nginx"><code v-pre class="language-nginx">client_max_body_size 100M;
+proxy_connect_timeout 300;
+proxy_send_timeout 300;
+proxy_read_timeout 300;</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Chunked Uploads im Frontend implementieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-javascript"><code v-pre class="language-javascript">// Für sehr große Dateien
+const chunkSize = 1024 * 1024; // 1MB chunks
+// Implementieren Sie chunk-by-chunk Upload</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="5-queue-worker-is-not-running">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#5-queue-worker-is-not-running">#</doc-anchor-trigger>
+        <span>5. &quot;Queue worker is not running&quot;</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">Job failed after maximum attempts</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Der Queue-Worker läuft nicht.</li>
+<li>Der Worker ist abgestürzt oder hat das Zeitlimit überschritten.</li>
+<li>Queue-Konfiguration ist fehlerhaft.</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Worker starten und überwachen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># Starten
+php artisan queue:work
+
+# Mit Supervisord überwachen
+php artisan queue:work --daemon --sleep=1 --tries=3</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Supervisor-Konfiguration</strong> (<code v-pre>/etc/supervisor/conf.d/laravel-worker.conf</code>):</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-ini"><code v-pre class="language-ini">[program:laravel-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /path/to/your/project/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+user=www-data
+numprocs=4
+redirect_stderr=true
+stdout_logfile=/path/to/your/project/storage/logs/worker.log
+stopwaitsecs=3600</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Queue-Status prüfen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan queue:failed
+php artisan queue:retry all</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="6-foreign-key-constraint-violation">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#6-foreign-key-constraint-violation">#</doc-anchor-trigger>
+        <span>6. &quot;Foreign key constraint violation&quot;</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li><code v-pre>relate()</code> oder <code v-pre>relateMany()</code> kann den referenzierten Datensatz nicht finden.</li>
+<li>Die referenzierte ID existiert nicht in der Zieltabelle.</li>
+<li>Die Beziehung ist falsch konfiguriert.</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Debug-Modus für Beziehungen aktivieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;relate('category_name', 'category', Category::class, 'name', createIfMissing: true)</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Datenvalidierung vor dem Import</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Prüfen ob Kategorie existiert
+    if (!empty($row['category_name'])) {
+        $exists = Category::where('name', $row['category_name'])-&gt;exists();
+        if (!$exists) {
+            $row['category_name'] = 'Default Category'; // oder werfen Sie Exception
+        }
+    }
+})</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Fehlende Datensätze erstellen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;relate('category_name', 'category', Category::class, 'name', createIfMissing: true)</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="7-invalid-datetime-format">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#7-invalid-datetime-format">#</doc-anchor-trigger>
+        <span>7. &quot;Invalid datetime format&quot;</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Fehlermeldung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-none"><code v-pre class="language-none">DateTime::__construct(): Failed to parse time string</code></pre>
+</doc-codeblock></div>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Das Datumsformat im CSV entspricht nicht dem erwarteten Format.</li>
+<li>Leere oder ungültige Datumswerte.</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Datumstransformation implementieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;mapAndTransform('import_date', 'created_at', function($value, $row) {
+    if (empty($value)) return null;
+
+    // Verschiedene Formate versuchen
+    $formats = ['d.m.Y', 'Y-m-d', 'm/d/Y', 'd/m/Y'];
+    foreach ($formats as $format) {
+        $date = DateTime::createFromFormat($format, $value);
+        if ($date !== false) {
+            return $date-&gt;format('Y-m-d H:i:s');
+        }
+    }
+
+    throw new \InvalidArgumentException(&quot;Invalid date format: {$value}&quot;);
+})</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Flexible Validierung</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;validate([
+    'import_date' =&gt; 'nullable|date_format:d.m.Y|date_format:Y-m-d'
+])</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="8-performance-ist-sehr-langsam">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#8-performance-ist-sehr-langsam">#</doc-anchor-trigger>
+        <span>8. Performance ist sehr langsam</span>
+    </h2>
+</doc-anchor-target>
+<p><strong>Symptome</strong>:</p>
+<ul>
+<li>Import von 10.000 Zeilen dauert mehrere Minuten.</li>
+<li>Hohe CPU- und Speicher-Auslastung.</li>
+</ul>
+<p><strong>Ursachen</strong>:</p>
+<ul>
+<li>Ineffiziente Datenbankabfragen in Hooks.</li>
+<li>Zu kleine Chunk-Size.</li>
+<li>Fehlende Indizes in der Datenbank.</li>
+</ul>
+<p><strong>Lösungen</strong>:</p>
+<ol>
+<li><p><strong>Chunk-Size optimieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setChunkSize(1000) // Erhöhen für bessere Performance</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Datenbank-Indizes prüfen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-sql"><code v-pre class="language-sql">-- Index für keyedBy Spalte
+CREATE INDEX idx_products_email ON products(email);
+
+-- Fremdschlüssel-Indizes
+CREATE INDEX idx_products_category_id ON products(category_id);</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Haken optimieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// ❌ Schlecht: N+1 Queries
+-&gt;afterRow(function($model, $row) {
+    $model-&gt;category; // Lädt Kategorie für jede Zeile einzeln
+})
+
+// ✅ Gut: Eager Loading
+-&gt;afterRow(function($model, $row) {
+    $model-&gt;load('category');
+})</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Transaktionen optimieren</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;transactionMode(TransactionMode::CHUNK)
+-&gt;setChunkSize(500) // Größere Chunks mit Transaktionen</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="9-debugging-techniken">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#9-debugging-techniken">#</doc-anchor-trigger>
+        <span>9. Debugging-Techniken</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="log-dateien-überprüfen">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-programmatically-facade">#</doc-anchor-trigger>
-        <span>3. Programmatically (Facade)</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#log-dateien-überprüfen">#</doc-anchor-trigger>
+        <span>Log-Dateien überprüfen</span>
     </h3>
 </doc-anchor-target>
-<p>You can start an import directly from your application code using the <code v-pre>Ingest</code> Facade. This is useful for complex workflows, scheduled jobs, or custom controllers.</p>
+<ol>
+<li><p><strong>Laravel Logs</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Facades\Ingest;
-use Illuminate\Support\Facades\Auth;
-
-$slug = 'product-importer';
-$filePath = 'imports/products.csv'; // Path on a configured disk
-$user = Auth::user();
-
-// Start the import
-$ingestRun = Ingest::start(
-    importer: $slug, 
-    payload: $filePath, 
-    user: $user,
-    isDryRun: false
-);
-
-// $ingestRun is the Eloquent model for the newly created run.
-echo &quot;Started ingest run with ID: &quot; . $ingestRun-&gt;id;</code></pre>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">tail -f storage/logs/laravel.log</code></pre>
 </doc-codeblock></div>
+</li>
+<li><p><strong>Queue Worker Logs</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">tail -f storage/logs/worker.log</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Datenbank-Queries loggen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In AppServiceProvider::boot()
+if (app()-&gt;environment('local')) {
+    DB::listen(function($query) {
+        Log::info($query-&gt;sql, $query-&gt;bindings);
+    });
+}</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<doc-anchor-target id="test-import-mit-kleinen-datenmengen">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#test-import-mit-kleinen-datenmengen">#</doc-anchor-trigger>
+        <span>Test-Import mit kleinen Datenmengen</span>
+    </h3>
+</doc-anchor-target>
+<ol>
+<li><p><strong>Test-CSV erstellen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-csv"><code v-pre class="language-csv">name,email,price
+Test Product,test@example.com,19.99
+Another Product,another@example.com,29.99</code></pre>
+</doc-codeblock></div>
+</li>
+<li><p><strong>Dry-Run durchführen</strong>:</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:run product-importer --file=test.csv --dry-run</code></pre>
+</doc-codeblock></div>
+</li>
+</ol>
+<doc-anchor-target id="schritt-für-schritt-debugging">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#schritt-für-schritt-debugging">#</doc-anchor-trigger>
+        <span>Schritt-für-Schritt-Debugging</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    Log::debug('Processing row', ['row' =&gt; $row]);
+})
+-&gt;map('name', 'name')
+-&gt;map('price', 'price')
+-&gt;afterRow(function($model, $row) {
+    Log::debug('Row processed', ['model_id' =&gt; $model-&gt;id]);
+})</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="10-häufige-konfigurationsfehler">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#10-häufige-konfigurationsfehler">#</doc-anchor-trigger>
+        <span>10. Häufige Konfigurationsfehler</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="falsche-source-type-konfiguration">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#falsche-source-type-konfiguration">#</doc-anchor-trigger>
+        <span>Falsche Source-Type-Konfiguration</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// ❌ Falsch
+-&gt;fromSource(SourceType::UPLOAD, ['path' =&gt; 'file.csv'])
+
+// ✅ Richtig
+-&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; 'file.csv'])
+-&gt;fromSource(SourceType::UPLOAD) // Keine Parameter für Upload</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="fehlende-berechtigungen">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#fehlende-berechtigungen">#</doc-anchor-trigger>
+        <span>Fehlende Berechtigungen</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In Ihrer Policy
+public function import(User $user)
+{
+    return $user-&gt;hasPermissionTo('import-products');
+}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="queue-konfiguration">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#queue-konfiguration">#</doc-anchor-trigger>
+        <span>Queue-Konfiguration</span>
+    </h3>
+</doc-anchor-target>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/queue.php
+'connections' =&gt; [
+    'database' =&gt; [
+        'driver' =&gt; 'database',
+        'table' =&gt; 'jobs',
+        'queue' =&gt; 'default',
+        'retry_after' =&gt; 90, // Wichtig für langlaufende Jobs
+        'after_commit' =&gt; false,
+    ],
+],</code></pre>
+</doc-codeblock></div>
+<hr>
+<doc-anchor-target id="nächste-schritte-bei-problemen">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#nächste-schritte-bei-problemen">#</doc-anchor-trigger>
+        <span>Nächste Schritte bei Problemen</span>
+    </h2>
+</doc-anchor-target>
+<ol>
+<li><strong>Logs prüfen</strong>: Überprüfen Sie Laravel- und Worker-Logs</li>
+<li><strong>Konfiguration validieren</strong>: Stellen Sie sicher, dass alle Pfade und Berechtigungen korrekt sind</li>
+<li><strong>Mit kleinen Datenmengen testen</strong>: Isolieren Sie das Problem</li>
+<li><strong>Datenbank-Performance prüfen</strong>: Indizes und Query-Optimierung</li>
+<li><strong>Community-Support</strong>: Eröffnen Sie ein Issue auf GitHub mit detaillierten Informationen</li>
+</ol>
+<p>Für weitere Hilfe besuchen Sie die <a href="../../">Dokumentation</a> oder erstellen Sie ein Issue im <a href="https://github.com/zappzerapp/laravel-ingest">GitHub Repository</a>.</p>
 
                                 
                                 <!-- Required only on API pages -->
@@ -477,20 +700,20 @@ echo &quot;Started ingest run with ID: &quot; . $ingestRun-&gt;id;</code></pre>
                             
                                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../usage/monitoring-and-retries/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Monitoring, Cancellation, and Retries</span>
+                                                <span class="block mt-1">Advanced Topics</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/events/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                                <span class="block mt-1">Advanced Topics</span>
+                                                <span class="block mt-1">Working with Events</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -534,6 +757,6 @@ echo &quot;Started ingest run with ID: &quot; . $ingestRun-&gt;id;</code></pre>
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Running Imports", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "Troubleshooting", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>
