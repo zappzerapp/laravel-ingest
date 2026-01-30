@@ -16,10 +16,9 @@ class {{ className }} implements IngestDefinition
     {
         return IngestConfig::for({{ modelClass }}::class)
             ->fromSource({{ sourceEnum }})
-            ->keyedBy('id') // The source column to identify unique records
+            ->keyedBy('id')
             ->onDuplicate(DuplicateStrategy::SKIP)
-            ->map([
-                // 'source_column' => 'model_attribute',
-            ]);
+            ->map('source_column_1', 'model_attribute_1')
+            ->map('source_column_2', 'model_attribute_2');
     }
 }
