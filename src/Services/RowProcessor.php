@@ -337,6 +337,10 @@ class RowProcessor
 
     private function persist(array $modelData, IngestConfig $config, string $modelClass): ?Model
     {
+        if ($config->duplicateStrategy === DuplicateStrategy::UPSERT) {
+            return $this->upsertModel($modelData, $config, $modelClass);
+        }
+
         $existingModel = $this->findExistingModel($modelData, $config, $modelClass);
 
         if ($existingModel) {
@@ -349,7 +353,7 @@ class RowProcessor
     private function handleDuplicateStrategy(Model $existingModel, array $modelData, IngestConfig $config): Model
     {
         return match ($config->duplicateStrategy) {
-            DuplicateStrategy::UPDATE => $this->updateModel($existingModel, $modelData),
+            DuplicateStrategy::UPDATE, DuplicateStrategy::UPSERT => $this->updateModel($existingModel, $modelData),
             DuplicateStrategy::SKIP => $existingModel,
             DuplicateStrategy::UPDATE_IF_NEWER => $this->updateIfNewer($existingModel, $modelData, $config),
             DuplicateStrategy::FAIL => $this->handleFailStrategy($config),
@@ -374,9 +378,55 @@ class RowProcessor
         return $model;
     }
 
+    private function upsertModel(array $modelData, IngestConfig $config, string $modelClass): Model
+    {
+        $uniqueKeys = $config->getAttributesForKeyedBy();
+
+        if (empty($uniqueKeys)) {
+            return $modelClass::create($modelData);
+        }
+
+        /** @var Model $model */
+        $model = new $modelClass();
+        $table = $model->getTable();
+
+        if ($model->usesTimestamps()) {
+            $now = now();
+            $createdAtColumn = $model->getCreatedAtColumn();
+            $updatedAtColumn = $model->getUpdatedAtColumn();
+
+            $modelData[$createdAtColumn] = $now;
+            $modelData[$updatedAtColumn] = $now;
+        }
+
+        $excludeFromUpdate = array_flip($uniqueKeys);
+        if ($model->usesTimestamps()) {
+            $excludeFromUpdate[$model->getCreatedAtColumn()] = true;
+        }
+
+        $updateColumns = array_keys(array_diff_key($modelData, $excludeFromUpdate));
+
+        if (empty($updateColumns)) {
+            return $modelClass::create($modelData);
+        }
+
+        DB::table($table)->upsert([$modelData], $uniqueKeys, $updateColumns);
+
+        $query = $modelClass::query();
+        foreach ($uniqueKeys as $key) {
+            $query->where($key, $modelData[$key]);
+        }
+
+        return $query->first();
+    }
+
     private function handleFailStrategy(IngestConfig $config): never
     {
-        throw new RuntimeException("Duplicate entry found for key '{$config->keyedBy}'.");
+        $keys = is_array($config->keyedBy)
+            ? implode(', ', $config->keyedBy)
+            : $config->keyedBy;
+
+        throw new RuntimeException("Duplicate entry found for key '{$keys}'.");
     }
 
     private function shouldUpdate(Model $existingModel, array $newData, IngestConfig $config): bool
@@ -407,13 +457,22 @@ class RowProcessor
 
     private function findExistingModel(array $modelData, IngestConfig $config, string $modelClass): ?Model
     {
-        $modelKey = $config->getAttributeForKeyedBy();
+        $modelKeys = $config->getAttributesForKeyedBy();
 
-        if (is_null($modelKey) || !isset($modelData[$modelKey])) {
+        if (empty($modelKeys)) {
             return null;
         }
 
-        return $modelClass::where($modelKey, $modelData[$modelKey])->first();
+        $query = $modelClass::query();
+
+        foreach ($modelKeys as $key) {
+            if (!isset($modelData[$key])) {
+                return null;
+            }
+            $query->where($key, $modelData[$key]);
+        }
+
+        return $query->first();
     }
 
     private function formatErrors(Throwable $e): array

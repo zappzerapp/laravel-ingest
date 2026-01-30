@@ -6,6 +6,7 @@ namespace LaravelIngest\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use LaravelIngest\Exceptions\ConcurrencyException;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
@@ -64,6 +65,11 @@ class IngestOperationController extends Controller
         return response()->json(['message' => 'Cancellation request sent.']);
     }
 
+    /**
+     * @throws Throwable
+     * @throws ConcurrencyException
+     * @throws DefinitionNotFoundException
+     */
     public function retry(Request $request, IngestRun $ingestRun): JsonResponse
     {
         $this->authorizeAccess();

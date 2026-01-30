@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use LaravelIngest\Concerns\DiscoversIngestDefinitions;
 use LaravelIngest\Console\CancelIngestCommand;
 use LaravelIngest\Console\ListIngestsCommand;
+use LaravelIngest\Console\MakeImporterCommand;
 use LaravelIngest\Console\PruneIngestFilesCommand;
 use LaravelIngest\Console\RetryIngestCommand;
 use LaravelIngest\Console\RunIngestCommand;
@@ -59,12 +60,13 @@ class IngestServiceProvider extends ServiceProvider
             ], 'ingest-migrations');
 
             $this->commands([
+                CancelIngestCommand::class,
                 ListIngestsCommand::class,
+                MakeImporterCommand::class,
+                PruneIngestFilesCommand::class,
+                RetryIngestCommand::class,
                 RunIngestCommand::class,
                 StatusIngestCommand::class,
-                CancelIngestCommand::class,
-                RetryIngestCommand::class,
-                PruneIngestFilesCommand::class,
             ]);
         }
 

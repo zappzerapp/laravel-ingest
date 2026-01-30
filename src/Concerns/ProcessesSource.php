@@ -58,8 +58,14 @@ trait ProcessesSource
      */
     private function validateKeyedByHeader(IngestConfig $config, array $translationMap): void
     {
-        if ($config->keyedBy && !in_array($config->keyedBy, $translationMap, true)) {
-            throw new SourceException("The key column '{$config->keyedBy}' or one of its aliases was not found in the source file headers.");
+        if ($config->keyedBy) {
+            $keyedByFields = is_array($config->keyedBy) ? $config->keyedBy : [$config->keyedBy];
+
+            foreach ($keyedByFields as $keyField) {
+                if (!in_array($keyField, $translationMap, true)) {
+                    throw new SourceException("The key column '{$keyField}' or one of its aliases was not found in the source file headers.");
+                }
+            }
         }
 
         if ($config->strictHeaders) {

@@ -1,0 +1,25 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ modelNamespace }}\{{ modelClass }};
+use LaravelIngest\Contracts\IngestDefinition;
+use LaravelIngest\Enums\DuplicateStrategy;
+use LaravelIngest\Enums\SourceType;
+use LaravelIngest\IngestConfig;
+
+class {{ className }} implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for({{ modelClass }}::class)
+            ->fromSource({{ sourceEnum }})
+            ->keyedBy('id') // The source column to identify unique records
+            ->onDuplicate(DuplicateStrategy::SKIP)
+            ->map([
+                // 'source_column' => 'model_attribute',
+            ]);
+    }
+}

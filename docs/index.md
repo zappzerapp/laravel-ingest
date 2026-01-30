@@ -1,6 +1,7 @@
 ---
-order: 200
 label: Introduction
+icon: home
+order: 100
 ---
 
 # Introduction to Laravel Ingest

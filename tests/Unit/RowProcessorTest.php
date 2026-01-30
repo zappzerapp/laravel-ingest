@@ -15,6 +15,7 @@ use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\Models\UserWithRules;
+use ReflectionClass;
 
 it('executes afterRow callback after successful row processing', function () {
     $callbackExecuted = false;
@@ -265,6 +266,7 @@ it('uses UPDATE duplicate strategy', function () {
 });
 
 it('uses FAIL duplicate strategy', function () {
+    Event::fake([RowProcessed::class]);
     User::create(['name' => 'Original', 'email' => 'john@test.com']);
 
     $config = IngestConfig::for(User::class)
@@ -283,6 +285,40 @@ it('uses FAIL duplicate strategy', function () {
     );
 
     expect($result['failed'])->toBe(1);
+
+    Event::assertDispatched(RowProcessed::class, fn($event) => $event->status === 'failed' &&
+               $event->errors['message'] === "Duplicate entry found for key 'email'.");
+});
+
+it('uses FAIL duplicate strategy with composite keys', function () {
+    Event::fake([RowProcessed::class]);
+    Product::create(['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 10]);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::FAIL);
+
+    $reflection = new ReflectionClass($config);
+    $property = $reflection->getProperty('keyedBy');
+    $property->setAccessible(true);
+    $property->setValue($config, ['sku', 'name']);
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 20]]];
+
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    expect($result['failed'])->toBe(1);
+
+    Event::assertDispatched(RowProcessed::class, fn($event) => $event->status === 'failed' &&
+               $event->errors['message'] === "Duplicate entry found for key 'sku, name'.");
 });
 
 it('uses UPDATE_IF_NEWER duplicate strategy and updates when newer', function () {
@@ -569,4 +605,136 @@ it('returns false from shouldUpdate when timestamp parsing fails', function () {
     );
 
     $this->assertDatabaseHas('products', ['sku' => 'TEST-INVALID-DATE', 'name' => 'Original', 'stock' => 10]);
+});
+
+it('uses UPSERT duplicate strategy to insert when record does not exist', function () {
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'New Product', 'stock' => 10]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'New Product', 'stock' => 10]);
+    expect(Product::count())->toBe(1);
+});
+
+it('uses UPSERT duplicate strategy to update when record exists', function () {
+    Product::create(['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 5]);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'Updated', 'stock' => 20]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'Updated', 'stock' => 20]);
+    expect(Product::count())->toBe(1);
+});
+
+it('uses UPSERT strategy without keyedBy and creates normally', function () {
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'New Product', 'stock' => 10]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'New Product', 'stock' => 10]);
+    expect(Product::count())->toBe(1);
+});
+
+it('uses UPSERT strategy and returns fresh model after upsert', function () {
+    Product::create(['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 5]);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 100]]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $product = Product::first();
+    expect($product->stock)->toBe(100);
+    expect($product->name)->toBe('Original');
+    expect(Product::count())->toBe(1);
+});
+
+it('uses UPSERT strategy with model without timestamps and only unique key creates normally', function () {
+    $config = IngestConfig::for(LaravelIngest\Tests\Fixtures\Models\SimpleItem::class)
+        ->map('code', 'code')
+        ->keyedBy('code')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $chunk = [['number' => 1, 'data' => ['code' => 'ITEM-001']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('simple_items', ['code' => 'ITEM-001']);
+    expect(LaravelIngest\Tests\Fixtures\Models\SimpleItem::count())->toBe(1);
+});
+
+it('does not find existing model when keyed attribute is missing from data and fails to create', function () {
+    Product::create(['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 5]);
+
+    $config = IngestConfig::for(Product::class)
+        ->map('name', 'name')
+        ->map('sku', 'sku')
+        ->map('stock', 'stock')
+        ->keyedBy('sku')
+        ->onDuplicate(DuplicateStrategy::UPDATE);
+
+    $chunk = [['number' => 1, 'data' => ['name' => 'New Product', 'stock' => 10]]];
+
+    $result = (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    expect($result['failed'])->toBe(1);
+    $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 5]);
+    expect(Product::count())->toBe(1);
 });

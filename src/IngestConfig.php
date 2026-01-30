@@ -18,7 +18,7 @@ class IngestConfig
     public string $model;
     public SourceType $sourceType;
     public array $sourceOptions = [];
-    public ?string $keyedBy = null;
+    public string|array|null $keyedBy = null;
     public DuplicateStrategy $duplicateStrategy = DuplicateStrategy::SKIP;
     public ?array $timestampComparison = null;
     public array $mappings = [];
@@ -289,13 +289,43 @@ class IngestConfig
             return null;
         }
 
+        $firstKey = is_array($this->keyedBy) ? ($this->keyedBy[0] ?? null) : $this->keyedBy;
+        if ($firstKey === null) {
+            return null;
+        }
+
         foreach ($this->mappings as $sourceField => $map) {
             $allSourceFields = array_merge([$sourceField], $map['aliases']);
-            if (in_array($this->keyedBy, $allSourceFields, true)) {
+            if (in_array($firstKey, $allSourceFields, true)) {
                 return $map['attribute'];
             }
         }
 
         return null;
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getAttributesForKeyedBy(): array
+    {
+        if ($this->keyedBy === null) {
+            return [];
+        }
+
+        $keyedBy = is_array($this->keyedBy) ? $this->keyedBy : [$this->keyedBy];
+        $attributes = [];
+
+        foreach ($keyedBy as $key) {
+            foreach ($this->mappings as $sourceField => $map) {
+                $allSourceFields = array_merge([$sourceField], $map['aliases']);
+                if (in_array($key, $allSourceFields, true)) {
+                    $attributes[] = $map['attribute'];
+                    break;
+                }
+            }
+        }
+
+        return $attributes;
     }
 }

@@ -141,3 +141,30 @@ it('returns null from getAttributeForKeyedBy when keyedBy does not match any map
 
     expect($config->getAttributeForKeyedBy())->toBeNull();
 });
+
+it('returns null from getAttributeForKeyedBy when keyedBy is null', function () {
+    $config = IngestConfig::for(User::class);
+    expect($config->getAttributeForKeyedBy())->toBeNull();
+});
+
+it('returns null from getAttributeForKeyedBy when keyedBy is an empty array', function () {
+    $config = IngestConfig::for(User::class);
+
+    $reflection = new ReflectionClass($config);
+    $property = $reflection->getProperty('keyedBy');
+    $property->setAccessible(true);
+    $property->setValue($config, []);
+
+    expect($config->getAttributeForKeyedBy())->toBeNull();
+});
+
+it('returns correct attribute from getAttributeForKeyedBy when keyedBy matches a mapping or alias', function () {
+    $config = IngestConfig::for(User::class)
+        ->map(['email_address', 'email'], 'email')
+        ->keyedBy('email_address');
+
+    expect($config->getAttributeForKeyedBy())->toBe('email');
+
+    $config->keyedBy('email');
+    expect($config->getAttributeForKeyedBy())->toBe('email');
+});

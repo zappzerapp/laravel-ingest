@@ -97,6 +97,11 @@ class TestCase extends Orchestra
             $table->foreignId('role_id');
             $table->timestamps();
         });
+
+        Schema::create('simple_items', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+        });
     }
 
     protected function getPackageProviders($app): array

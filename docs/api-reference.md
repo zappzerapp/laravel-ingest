@@ -1,5 +1,5 @@
 ---
-order: 10
+order: 50
 label: API Reference
 ---
 

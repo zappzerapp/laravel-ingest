@@ -2,7 +2,6 @@
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/.github/header.png" alt="Laravel Ingest Banner" width="100%">
-    <!-- TIPP: Erstelle ein Banner Bild und verlinke es hier! -->
 </p>
 
 <p align="center">

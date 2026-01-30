@@ -10,4 +10,5 @@ enum DuplicateStrategy: string
     case SKIP = 'skip';
     case FAIL = 'fail';
     case UPDATE_IF_NEWER = 'update_if_newer';
+    case UPSERT = 'upsert';
 }

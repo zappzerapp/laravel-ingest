@@ -111,12 +111,48 @@ Automatically resolves `BelongsTo` relationships.
 ```
 
 ### `relateMany(string $sourceField, string $relationName, string $relatedModel, string $relatedKey = 'id', string $separator = ',')`
-Automatically resolves `BelongsToMany` relationships. Parses a delimited string from the source and syncs the pivot table.
+Synchronizes Many-to-Many relationships from a delimited list in your source data. Perfect for tags, categories, or any pivot table relationship.
+
+**Parameters:**
+- **$sourceField**: Column name in your source file containing the delimited values
+- **$relationName**: Name of the BelongsToMany relationship in your model
+- **$relatedModel**: The related Eloquent model class
+- **$relatedKey**: Attribute to search for in the related model (default: 'id')
+- **$separator**: Character used to split values (default: ',')
 
 ```php
-// Source: "Tags: PHP, Laravel, Backend"
-// Splits by comma, looks up each tag, syncs the pivot table
-->relateMany('Tags', 'tags', \App\Models\Tag::class, 'name', ',')
+// Example 1: Tags from CSV column "Tags" containing "PHP, Laravel, Backend"
+->relateMany(
+    sourceField: 'tag_names',       // Spalte im CSV (z.B. "Laravel,PHP,API")
+    relation: 'tags',                // Name der Beziehung im Model
+    relatedModel: Tag::class,        // Klasse des verwandten Models
+    relatedKey: 'name',              // Attribut zum Suchen/Aufösen
+    separator: ','                   // Trennzeichen (Default: ",")
+)
+
+// Example 2: Categories with semicolon separator
+->relateMany(
+    sourceField: 'categories',
+    relation: 'categories',
+    relatedModel: Category::class,
+    relatedKey: 'slug',
+    separator: ';'
+)
+
+// Example 3: Multiple role assignments
+->relateMany(
+    sourceField: 'user_roles',
+    relation: 'roles',
+    relatedModel: Role::class,
+    relatedKey: 'name',
+    separator: '|'
+)
+```
+
+**Behavior:**
+- Duplicates in the source list are automatically handled
+- Non-existing related records will cause the row to fail (unless you handle them in `beforeRow()`)
+- The entire pivot table for the relationship is synced (existing relationships not in the list will be removed)
 ```
 
 ---
@@ -251,4 +287,67 @@ Fine-grained control over database transaction behavior.
 use LaravelIngest\Enums\TransactionMode;
 
 ->transactionMode(TransactionMode::ROW)
+```
+
+---
+
+## Composite Keys (geplant für v0.5)
+
+Aktuell unterstützt `keyedBy()` nur einfache Schlüssel. Für zusammengesetzte Schlüssel (z.B. `['store_id', 'sku']`) können Sie Workarounds verwenden:
+
+### Workaround 1: Künstliche Unique-Spalte erstellen
+Erstellen Sie eine kombinierte Spalte in Ihrer Quelldatei:
+
+```php
+// CSV enthält: store_id, sku, product_name
+// Erstellen Sie eine neue Spalte: unique_key = "store_id|sku"
+->keyedBy('unique_key')
+```
+
+Beispiel CSV-Transformation:
+```csv
+store_id,sku,product_name,unique_key
+1,PROD001,Product A,"1|PROD001"
+2,PROD001,Product B,"2|PROD001"
+```
+
+### Workaround 2: Transformation in beforeRow()
+Verwenden Sie die `beforeRow()` Methode, um einen kombinierten Schlüssel zur Laufzeit zu erstellen:
+
+```php
+->beforeRow(function(array &$row) {
+    // Kombiniere store_id und sku zu einem einzigartigen Schlüssel
+    $row['composite_key'] = ($row['store_id'] ?? '') . '|' . ($row['sku'] ?? '');
+})
+->keyedBy('composite_key')
+```
+
+### Workaround 3: Daten vor dem Import vorverarbeiten
+Für komplexe Szenarien können Sie die Daten vor dem Import in einem separaten Prozess vorbereiten:
+
+```php
+// In einem Service oder Controller:
+public function prepareImportData(string $inputPath, string $outputPath): void
+{
+    $csv = array_map('str_getcsv', file($inputPath));
+    $headers = array_shift($csv);
+    
+    $prepared = [];
+    foreach ($csv as $row) {
+        $row = array_combine($headers, $row);
+        $row['store_sku_key'] = $row['store_id'] . '_' . $row['sku'];
+        $prepared[] = $row;
+    }
+    
+    // Schreibe bereinigte CSV
+    $fp = fopen($outputPath, 'w');
+    fputcsv($fp, array_keys($prepared[0]));
+    foreach ($prepared as $row) {
+        fputcsv($fp, $row);
+    }
+    fclose($fp);
+}
+```
+
+> **Hinweis**: Echte Composite-Key-Unterstützung ist für Version 0.5 geplant und wird diese Workarounds überflüssig machen.
 ```

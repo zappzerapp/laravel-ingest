@@ -9,13 +9,13 @@ it('throws exception for negative bytes', function () {
 })->throws(InvalidArgumentException::class, 'File size cannot be negative');
 
 it('converts bytes to megabytes', function () {
-    $fileSize = new FileSize(1024 * 1024); // 1 MB
+    $fileSize = new FileSize(1024 * 1024);
 
     expect($fileSize->inMegabytes())->toBe(1.0);
 });
 
 it('converts bytes to megabytes with decimal precision', function () {
-    $fileSize = new FileSize(512 * 1024); // 0.5 MB
+    $fileSize = new FileSize(512 * 1024);
 
     expect($fileSize->inMegabytes())->toBe(0.5);
 });
@@ -36,13 +36,13 @@ it('returns false when file sizes are equal', function () {
 });
 
 it('converts to string representation', function () {
-    $fileSize = new FileSize(1024 * 1024); // 1 MB
+    $fileSize = new FileSize(1024 * 1024);
 
     expect($fileSize->toString())->toBe('1 MB');
 });
 
 it('converts to string with decimal megabytes', function () {
-    $fileSize = new FileSize(512 * 1024); // 0.5 MB
+    $fileSize = new FileSize(512 * 1024);
 
     expect($fileSize->toString())->toBe('0.5 MB');
 });

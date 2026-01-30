@@ -4,22 +4,17 @@ url: https://zappzerapp.github.io/laravel-ingest/
 
 branding:
   title: Laravel Ingest
-  label: Docs
-
-scripts:
-  - src: https://analytics.zebra-fruit.de/script.js
-    defer: true
-    data-website-id: "6f1b70fe-d321-4e14-987e-629870d98640"
+  label: v0.5.0
 
 links:
   - text: Getting Started
     link: /getting-started/installation/
   - text: Configuration
-    link: /configuration/ingest-config/
+    link: /configuration/
   - text: Usage
-    link: /usage/running-imports/
+    link: /usage/facade/
   - text: Advanced
-    link: /advanced/events/
+    link: /advanced
   - text: API Reference
     link: /api-reference/
   - text: GitHub
