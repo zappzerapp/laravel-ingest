@@ -6,7 +6,7 @@ use Illuminate\Filesystem\Filesystem;
 use LaravelIngest\Console\MakeImporterCommand;
 
 beforeEach(function () {
-    $stubPath = base_path('stubs/importer.stub');
+    $stubPath = base_path('src/Console/stubs/importer.stub');
     if (!file_exists(dirname($stubPath))) {
         mkdir(dirname($stubPath), 0755, true);
     }
@@ -244,8 +244,10 @@ describe('MakeImporterCommand', function () {
                 ->with(app_path('Importers/MissingStubImporter.php'))
                 ->andReturn(false);
             $files->shouldReceive('ensureDirectoryExists')->once();
+
+            $expectedStubPath = realpath(__DIR__ . '/../../../src/Console/stubs/importer.stub');
             $files->shouldReceive('exists')
-                ->with(base_path('stubs/importer.stub'))
+                ->with($expectedStubPath)
                 ->andReturn(false);
 
             $this->app->instance(Filesystem::class, $files);

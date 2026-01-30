@@ -118,7 +118,7 @@ class MakeImporterCommand extends Command
 
     protected function getStub(string $className, string $modelClass, string $sourceEnum): string
     {
-        $stubPath = base_path('stubs/importer.stub');
+        $stubPath = realpath(__DIR__ . '/stubs/importer.stub');
 
         if (!$this->files->exists($stubPath)) {
             throw new RuntimeException("Importer stub file not found at: {$stubPath}");
