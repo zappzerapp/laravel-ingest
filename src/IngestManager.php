@@ -10,6 +10,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use LaravelIngest\Contracts\IngestDefinition;
 use LaravelIngest\Enums\IngestStatus;
 use LaravelIngest\Events\IngestRunCompleted;
@@ -170,6 +171,16 @@ class IngestManager
 
     protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
     {
+        Log::error('Ingest run failed', [
+            'run_id' => $ingestRun->id,
+            'importer' => $ingestRun->importer,
+            'user_id' => $ingestRun->user_id,
+            'exception' => get_class($e),
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ]);
+
         ErrorMessageService::setEnvironment(app()->environment('production'));
         $sanitizedMessage = ErrorMessageService::sanitize($e->getMessage());
 

@@ -32,7 +32,13 @@ class IngestRow extends Model
     use Prunable;
 
     protected $table = 'ingest_rows';
-    protected $guarded = [];
+    protected $fillable = [
+        'ingest_run_id',
+        'row_number',
+        'status',
+        'data',
+        'errors',
+    ];
     protected $casts = [
         'data' => 'array',
         'errors' => 'array',

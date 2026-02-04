@@ -43,7 +43,22 @@ class IngestRun extends Model
     use HasFactory;
 
     protected $table = 'ingest_runs';
-    protected $guarded = [];
+    protected $fillable = [
+        'parent_id',
+        'retried_from_run_id',
+        'importer',
+        'user_id',
+        'status',
+        'batch_id',
+        'original_filename',
+        'processed_filepath',
+        'total_rows',
+        'processed_rows',
+        'successful_rows',
+        'failed_rows',
+        'summary',
+        'completed_at',
+    ];
     protected $casts = [
         'status' => IngestStatus::class,
         'summary' => 'array',

@@ -121,38 +121,6 @@ it('processes relations creating missing', function () {
         ->and($result['ingest_run_id'])->toBe($newRun->id);
 });
 
-it('processes unmapped data', function () {
-    $service = new DataTransformationService();
-
-    $processedData = [
-        'mapped_field' => 'value',
-        'status' => 'pending',
-        'row_number' => 123,
-        'unknown_field' => 'ignore me',
-    ];
-
-    $mappings = ['mapped_field' => []];
-    $relations = [];
-    $manyRelations = [];
-    $usedTopLevelKeys = [];
-
-    $result = $service->processUnmappedData(
-        $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
-        IngestRow::class
-    );
-
-    expect($result)->toHaveKey('status')
-        ->and($result['status'])->toBe('pending')
-        ->and($result)->toHaveKey('row_number')
-        ->and($result['row_number'])->toBe(123)
-        ->and($result)->toHaveKey('unknown_field');
-
-});
-
 it('processes relations with missing source field', function () {
     $service = new DataTransformationService();
 

@@ -132,6 +132,22 @@ curl -X POST \
 
 ---
 
+## 💡 Demo Project
+
+Want to see Laravel Ingest in action? Check out our **[Laravel Ingest Demo](https://github.com/zappzerapp/Laravel-Ingest-Demo)** repository for a complete working example.
+
+```bash
+# Clone the demo
+git clone https://github.com/zappzerapp/Laravel-Ingest-Demo.git
+cd Laravel-Ingest-Demo
+
+# Start and benchmark
+docker compose up -d
+docker compose exec app php artisan benchmark:ingest
+```
+
+---
+
 ## 🛠 Features in Depth
 
 ### Monitoring & Management

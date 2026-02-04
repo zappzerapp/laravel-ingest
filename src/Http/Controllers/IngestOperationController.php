@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace LaravelIngest\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use LaravelIngest\Exceptions\ConcurrencyException;
 use LaravelIngest\Exceptions\DefinitionNotFoundException;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
+use LaravelIngest\Http\Requests\RetryIngestRequest;
 use LaravelIngest\Http\Requests\UploadRequest;
 use LaravelIngest\Http\Resources\IngestRunResource;
 use LaravelIngest\IngestManager;
@@ -70,7 +70,7 @@ class IngestOperationController extends Controller
      * @throws ConcurrencyException
      * @throws DefinitionNotFoundException
      */
-    public function retry(Request $request, IngestRun $ingestRun): JsonResponse
+    public function retry(RetryIngestRequest $request, IngestRun $ingestRun): JsonResponse
     {
         $this->authorizeAccess();
 
