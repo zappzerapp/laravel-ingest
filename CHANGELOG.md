@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-02-05
+
+### Changed
+
+- Applied Laravel Best Practices to code structure and patterns
+- Updated `pestphp/pest` from `^3.0` to `^4.0`
+- Updated `pestphp/pest-plugin-laravel` from `^3.0` to `^4.0`
+- Updated `larastan/larastan` from `^2.0` to `^3.9`
+- Extended `orchestra/testbench` support to include `^10.0` for Laravel 12 compatibility
+- Consolidated PHPStan configuration through Larastan integration
+
 ## [0.5.1] - 2026-01-30
 
 ### Fixed
@@ -90,7 +101,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full documentation site
 - GitHub workflow integration
 
-[Unreleased]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.2...HEAD
+
+[0.5.2]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.1...v0.5.2
 
 [0.5.0]: https://github.com/zappzerapp/laravel-ingest/compare/v0.4.1...v0.5.0
 

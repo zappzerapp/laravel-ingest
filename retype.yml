@@ -4,7 +4,7 @@ url: https://zappzerapp.github.io/laravel-ingest/
 
 branding:
   title: Laravel Ingest
-  label: v0.5.0
+  label: v0.5.2
 
 links:
   - text: Getting Started
