@@ -21,6 +21,7 @@ use LaravelIngest\Exceptions\DefinitionNotFoundException;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Exceptions\NoFailedRowsException;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
+use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\ErrorMessageService;
 use LaravelIngest\Sources\SourceHandlerFactory;
@@ -119,7 +120,8 @@ class IngestManager
                 $definition = $this->getDefinition($originalRun->importer);
                 $config = $definition->getConfig();
 
-                $failedRowsData = $originalRun->rows()->where('status', 'failed')->cursor()->map(fn($row) => $row->data);
+                $failedRowsData = $originalRun->rows()->where('status', 'failed')->cursor()
+                    ->map(fn($row) => assert($row instanceof IngestRow) ? $row->data : []);
 
                 $this->dispatchBatch($newRun, $config, $failedRowsData, $isDryRun);
             } catch (Throwable $e) {

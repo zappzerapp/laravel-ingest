@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
+use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 
 class ErrorAnalysisService
@@ -16,6 +17,7 @@ class ErrorAnalysisService
         $failedRows = $ingestRun->rows()->where('status', 'failed')->cursor();
 
         foreach ($failedRows as $row) {
+            /** @var IngestRow $row */
             $errors = $row->errors;
             if (!is_array($errors)) {
                 continue;
