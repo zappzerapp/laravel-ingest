@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "95a80fac8dff0b31e225fa5658eb7b23",
+    "content-hash": "62b1b6c3df5ab9946b59e6b3305daf16",
     "packages": [
         {
             "name": "brick/math",
@@ -507,6 +507,433 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "flow-php/array-dot",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/array-dot.git",
+                "reference": "7c0b7f16b12b6e5239ecf487908bfe78673d1f22"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/array-dot/zipball/7c0b7f16b12b6e5239ecf487908bfe78673d1f22",
+                "reference": "7c0b7f16b12b6e5239ecf487908bfe78673d1f22",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/ArrayDot/array_dot.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP ETL - Array Dot functions",
+            "keywords": [
+                "array",
+                "dot",
+                "etl",
+                "extract",
+                "filter",
+                "load",
+                "transform"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/array-dot/issues",
+                "source": "https://github.com/flow-php/array-dot/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-01-19T09:55:20+00:00"
+        },
+        {
+            "name": "flow-php/etl",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/etl.git",
+                "reference": "6a5af4c4465facdf04167416f13a64c87ec105fa"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/etl/zipball/6a5af4c4465facdf04167416f13a64c87ec105fa",
+                "reference": "6a5af4c4465facdf04167416f13a64c87ec105fa",
+                "shasum": ""
+            },
+            "require": {
+                "brick/math": "^0.11 || ^0.12 || ^0.13 || ^0.14",
+                "composer-runtime-api": "^2.0",
+                "ext-json": "*",
+                "flow-php/array-dot": "self.version",
+                "flow-php/filesystem": "self.version",
+                "flow-php/telemetry": "self.version",
+                "flow-php/types": "self.version",
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+                "psr/clock": "^1.0",
+                "psr/simple-cache": "^1.0 || ^2.0 || ^3.0",
+                "symfony/string": "^6.4 || ^7.3 || ^8.0",
+                "webmozart/glob": "^3.0 || ^4.0"
+            },
+            "require-dev": {
+                "ramsey/uuid": "^4.5",
+                "symfony/uid": "^6.4 || ^7.3 || ^8.0"
+            },
+            "suggest": {
+                "ext-bcmath": "BCMath extension for PHP for more precise calculations"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/ETL/DSL/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP ETL - Extract Transform Load - Abstraction",
+            "keywords": [
+                "etl",
+                "extract",
+                "load",
+                "transform"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/etl/issues",
+                "source": "https://github.com/flow-php/etl/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T21:44:52+00:00"
+        },
+        {
+            "name": "flow-php/etl-adapter-csv",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/etl-adapter-csv.git",
+                "reference": "b79b292ff47702d65fed8f2e4bc11ff4fcd94b79"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/etl-adapter-csv/zipball/b79b292ff47702d65fed8f2e4bc11ff4fcd94b79",
+                "reference": "b79b292ff47702d65fed8f2e4bc11ff4fcd94b79",
+                "shasum": ""
+            },
+            "require": {
+                "flow-php/etl": "self.version",
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/ETL/Adapter/CSV/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP ETL - Adapter - CSV",
+            "keywords": [
+                "adapter",
+                "csv",
+                "etl",
+                "extract",
+                "load",
+                "transform"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/etl-adapter-csv/issues",
+                "source": "https://github.com/flow-php/etl-adapter-csv/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T21:45:31+00:00"
+        },
+        {
+            "name": "flow-php/etl-adapter-json",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/etl-adapter-json.git",
+                "reference": "a7df11af285e44a93a6dcae3e971bb681cb11449"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/etl-adapter-json/zipball/a7df11af285e44a93a6dcae3e971bb681cb11449",
+                "reference": "a7df11af285e44a93a6dcae3e971bb681cb11449",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "flow-php/etl": "self.version",
+                "halaxa/json-machine": "^1.1",
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/ETL/Adapter/JSON/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP ETL - Adapter - JSON",
+            "keywords": [
+                "adapter",
+                "etl",
+                "extract",
+                "json",
+                "load",
+                "transform"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/etl-adapter-json/issues",
+                "source": "https://github.com/flow-php/etl-adapter-json/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T21:44:45+00:00"
+        },
+        {
+            "name": "flow-php/filesystem",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/filesystem.git",
+                "reference": "54fe5373066335f3179d396fcad3b6c7d633331d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/filesystem/zipball/54fe5373066335f3179d396fcad3b6c7d633331d",
+                "reference": "54fe5373066335f3179d396fcad3b6c7d633331d",
+                "shasum": ""
+            },
+            "require": {
+                "flow-php/types": "self.version",
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+                "webmozart/glob": "^3.0 || ^4.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/Filesystem/DSL/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP ETL - Filesystem abstraction",
+            "keywords": [
+                "aws",
+                "azure",
+                "etl",
+                "extract",
+                "filesystem",
+                "gcp",
+                "load",
+                "remote",
+                "transform"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/filesystem/issues",
+                "source": "https://github.com/flow-php/filesystem/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T21:45:38+00:00"
+        },
+        {
+            "name": "flow-php/telemetry",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/telemetry.git",
+                "reference": "829e81acc7abad2213a6f8dfb488d16e36988d2f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/telemetry/zipball/829e81acc7abad2213a6f8dfb488d16e36988d2f",
+                "reference": "829e81acc7abad2213a6f8dfb488d16e36988d2f",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+                "psr/clock": "^1.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/Telemetry/DSL/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Flow PHP - Telemetry library for metrics and tracing",
+            "keywords": [
+                "Metrics",
+                "php",
+                "telemetry",
+                "tracing"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/telemetry/issues",
+                "source": "https://github.com/flow-php/telemetry/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-04T21:45:09+00:00"
+        },
+        {
+            "name": "flow-php/types",
+            "version": "1.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flow-php/types.git",
+                "reference": "38601745cb648a793d730b0a58775d320d0bb742"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flow-php/types/zipball/38601745cb648a793d730b0a58775d320d0bb742",
+                "reference": "38601745cb648a793d730b0a58775d320d0bb742",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Flow/Types/DSL/functions.php"
+                ],
+                "psr-4": {
+                    "Flow\\": [
+                        "src/Flow"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Extended types for PHP aligned with modern static analysis tools to provide better type safety.",
+            "keywords": [
+                "php",
+                "types"
+            ],
+            "support": {
+                "issues": "https://github.com/flow-php/types/issues",
+                "source": "https://github.com/flow-php/types/tree/1.x"
+            },
+            "funding": [
+                {
+                    "url": "https://flow-php.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/norberttech",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-03T17:28:26+00:00"
         },
         {
             "name": "fruitcake/php-cors",
@@ -6007,6 +6434,55 @@
                 }
             ],
             "time": "2024-11-21T01:49:47+00:00"
+        },
+        {
+            "name": "webmozart/glob",
+            "version": "4.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/webmozarts/glob.git",
+                "reference": "8a2842112d6916e61e0e15e316465b611f3abc17"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/webmozarts/glob/zipball/8a2842112d6916e61e0e15e316465b611f3abc17",
+                "reference": "8a2842112d6916e61e0e15e316465b611f3abc17",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.3 || ^8.0.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5",
+                "symfony/filesystem": "^5.3"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "4.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Webmozart\\Glob\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bernhard Schussek",
+                    "email": "bschussek@gmail.com"
+                }
+            ],
+            "description": "A PHP implementation of Ant's glob.",
+            "support": {
+                "issues": "https://github.com/webmozarts/glob/issues",
+                "source": "https://github.com/webmozarts/glob/tree/4.7.0"
+            },
+            "time": "2024-03-07T20:33:40+00:00"
         }
     ],
     "packages-dev": [
@@ -9037,12 +9513,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "258cd5fdcb59c29f421927b2cf77f48de9458a98"
+                "reference": "7ea2d110787f6807213e27a1255c6b858ad99d89"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/258cd5fdcb59c29f421927b2cf77f48de9458a98",
-                "reference": "258cd5fdcb59c29f421927b2cf77f48de9458a98",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/7ea2d110787f6807213e27a1255c6b858ad99d89",
+                "reference": "7ea2d110787f6807213e27a1255c6b858ad99d89",
                 "shasum": ""
             },
             "conflict": {
@@ -9522,7 +9998,7 @@
                 "microsoft/microsoft-graph": ">=1.16,<1.109.1|>=2,<2.0.1",
                 "microsoft/microsoft-graph-beta": "<2.0.1",
                 "microsoft/microsoft-graph-core": "<2.0.2",
-                "microweber/microweber": "<=2.0.19",
+                "microweber/microweber": "<2.0.20",
                 "mikehaertl/php-shellcommand": "<1.6.1",
                 "mineadmin/mineadmin": "<=3.0.9",
                 "miniorange/miniorange-saml": "<1.4.3",
@@ -10048,7 +10524,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-02-04T22:06:32+00:00"
+            "time": "2026-02-05T22:08:29+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -11260,5 +11736,8 @@
         "ext-json": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "platform-overrides": {
+        "php": "8.4.0"
+    },
+    "plugin-api-version": "2.6.0"
 }

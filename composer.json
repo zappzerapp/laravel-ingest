@@ -49,6 +49,9 @@
     "illuminate/queue": "^10.0 || ^11.0 || ^12.0",
     "illuminate/support": "^10.0 || ^11.0 || ^12.0",
     "illuminate/validation": "^10.0 || ^11.0 || ^12.0",
+    "flow-php/etl": "^1.0",
+    "flow-php/etl-adapter-csv": "^1.0",
+    "flow-php/etl-adapter-json": "^1.0",
     "laravel/serializable-closure": "^1.3|^2.0",
     "spatie/simple-excel": "^3.2"
   },
@@ -93,6 +96,9 @@
     "allow-plugins": {
       "pestphp/pest-analyzer": true,
       "pestphp/pest-plugin": true
+    },
+    "platform": {
+      "php": "8.4.0"
     }
   },
   "extra": {
