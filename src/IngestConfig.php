@@ -32,7 +32,11 @@ class IngestConfig
     public TransactionMode $transactionMode = TransactionMode::NONE;
     public ?SerializableClosure $beforeRowCallback = null;
     public ?SerializableClosure $afterRowCallback = null;
+    public ?SerializableClosure $beforeSaveCallback = null;
+    public ?SerializableClosure $afterChunkCallback = null;
+    public ?SerializableClosure $extraFieldsCallback = null;
     public ?SerializableClosure $modelResolver = null;
+    public array $extraFields = [];
 
     /**
      * @throws InvalidConfigurationException
@@ -62,13 +66,6 @@ class IngestConfig
     {
         $this->sourceType = $sourceType;
         $this->sourceOptions = $options;
-
-        return $this;
-    }
-
-    public function keyedBy(string $sourceField): self
-    {
-        $this->keyedBy = $sourceField;
 
         return $this;
     }
@@ -166,6 +163,14 @@ class IngestConfig
         return $this;
     }
 
+    /**
+     * Alias for compareTimestamp() with plural method name
+     */
+    public function compareTimestamps(string $sourceColumn, string $dbColumn = 'updated_at'): self
+    {
+        return $this->compareTimestamp($sourceColumn, $dbColumn);
+    }
+
     public function setChunkSize(int $size): self
     {
         $this->chunkSize = $size;
@@ -217,6 +222,36 @@ class IngestConfig
     /**
      * @throws PhpVersionNotSupportedException
      */
+    public function beforeSave(Closure $callback): self
+    {
+        $this->beforeSaveCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
+    public function afterChunk(Closure $callback): self
+    {
+        $this->afterChunkCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
+    public function extraFields(Closure $callback): self
+    {
+        $this->extraFieldsCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    /**
+     * @throws PhpVersionNotSupportedException
+     */
     public function resolveModelUsing(Closure $callback): self
     {
         $this->modelResolver = new SerializableClosure($callback);
@@ -244,6 +279,13 @@ class IngestConfig
             'key' => $relatedKey,
             'separator' => $separator,
         ];
+
+        return $this;
+    }
+
+    public function keyedBy(string|array $key): self
+    {
+        $this->keyedBy = $key;
 
         return $this;
     }

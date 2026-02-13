@@ -5,49 +5,42 @@ declare(strict_types=1);
 namespace LaravelIngest\Contracts;
 
 use Flow\ETL\DataFrame;
-use Flow\ETL\Flow;
-use LaravelIngest\Models\IngestRun;
+use LaravelIngest\IngestConfig;
 
+/**
+ * Interface for the Flow-ETL based engine.
+ *
+ * This interface abstracts Flow-ETL's Builder pattern (Flow→read()->withEntry()->write()->run())
+ * into two primary operations: building a DataFrame pipeline and executing it.
+ */
 interface FlowEngineInterface
 {
     /**
-     * Create a pipeline from an ingest definition.
+     * Build a DataFrame pipeline from the given configuration and data chunk.
      *
-     * @param  IngestDefinition  $definition  The ingest definition containing configuration
-     * @return Flow The Flow pipeline instance
+     * This method creates a Flow-ETL DataFrame that encapsulates the entire
+     * ETL pipeline: extraction, transformation, and loading configuration.
+     * The returned DataFrame can be further modified or executed.
+     *
+     * @param  IngestConfig  $config  The ingest configuration containing mappings, relations, and validation rules
+     * @param  array<int, array<string, mixed>>  $chunk  The data chunk to process (array of row arrays)
+     * @param  \LaravelIngest\Models\IngestRun|null  $ingestRun  The ingest run for tracking (optional)
+     * @param  bool  $isDryRun  Whether to run in dry-run mode (simulation only)
+     * @return DataFrame The configured DataFrame pipeline ready for execution
+     *
+     * @throws \Flow\ETL\Exception\RuntimeException If the pipeline cannot be built
      */
-    public function createPipeline(IngestDefinition $definition): Flow;
+    public function build(IngestConfig $config, array $chunk, ?\LaravelIngest\Models\IngestRun $ingestRun = null, bool $isDryRun = false): DataFrame;
 
     /**
-     * Extract data from a source.
+     * Execute a DataFrame pipeline.
      *
-     * @param  SourceHandler  $source  The source handler to extract from
-     * @return DataFrame The extracted data as a DataFrame
-     */
-    public function extract(SourceHandler $source): DataFrame;
-
-    /**
-     * Transform a DataFrame using the provided transformers.
+     * This method runs the Flow-ETL pipeline and processes all data through
+     * the configured extraction, transformation, and loading operations.
      *
-     * @param  DataFrame  $df  The DataFrame to transform
-     * @param  array  $transformers  Array of transformer callables or objects
-     * @return DataFrame The transformed DataFrame
-     */
-    public function transform(DataFrame $df, array $transformers): DataFrame;
-
-    /**
-     * Load a DataFrame into a destination using the provided loader.
+     * @param  DataFrame  $pipeline  The DataFrame pipeline to execute
      *
-     * @param  DataFrame  $df  The DataFrame to load
-     * @param  mixed  $loader  The loader instance or callable
+     * @throws \Flow\ETL\Exception\RuntimeException If execution fails
      */
-    public function load(DataFrame $df, mixed $loader): void;
-
-    /**
-     * Execute a complete Flow pipeline.
-     *
-     * @param  Flow  $flow  The Flow pipeline to execute
-     * @return IngestRun The result of the ingest run
-     */
-    public function execute(Flow $flow): IngestRun;
+    public function execute(DataFrame $pipeline): void;
 }

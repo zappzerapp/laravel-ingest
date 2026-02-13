@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Flow\Extractors;
 
-use Flow\ETL\Adapter\JSON\JsonExtractor;
+use Flow\ETL\Adapter\CSV\CSVExtractor;
+use Flow\ETL\Adapter\JSON\JSONMachine\JsonExtractor;
+use Flow\ETL\FlowContext;
+use Flow\Filesystem\Path;
 use Generator;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -12,7 +15,7 @@ use RuntimeException;
 class UrlExtractor extends FlowExtractor
 {
     private string $url;
-    private ?string $tempFile;
+    private ?string $tempFile = null;
 
     public function __construct(string $url)
     {
@@ -21,15 +24,13 @@ class UrlExtractor extends FlowExtractor
 
     public function __destruct()
     {
-        // Ensure temp file is cleaned up
         if ($this->tempFile !== null && file_exists($this->tempFile)) {
             unlink($this->tempFile);
         }
     }
 
-    public function extract(): Generator
+    public function extract(FlowContext $context): Generator
     {
-        // Download remote content to temp file
         $response = Http::get($this->url);
 
         if (!$response->successful()) {
@@ -40,22 +41,19 @@ class UrlExtractor extends FlowExtractor
         file_put_contents($this->tempFile, $response->body());
 
         try {
-            // Determine format from content-type or extension
             $contentType = $response->header('Content-Type');
             $extension = pathinfo(parse_url($this->url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
 
             if (str_contains($contentType, 'csv') || $extension === 'csv') {
-                $extractor = new \Flow\ETL\Adapter\CSV\CSVExtractor($this->tempFile);
+                $extractor = new CSVExtractor(Path::from($this->tempFile));
             } elseif (str_contains($contentType, 'json') || $extension === 'json') {
-                $extractor = new JsonExtractor($this->tempFile);
+                $extractor = new JsonExtractor(Path::from($this->tempFile));
             } else {
-                // Default to JSON
-                $extractor = new JsonExtractor($this->tempFile);
+                $extractor = new JsonExtractor(Path::from($this->tempFile));
             }
 
-            yield from $extractor->extract();
+            yield from $extractor->extract($context);
         } finally {
-            // Cleanup temp file
             if ($this->tempFile !== null && file_exists($this->tempFile)) {
                 unlink($this->tempFile);
             }
