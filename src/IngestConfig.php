@@ -375,9 +375,5 @@ class IngestConfig
 
             return new $transformer();
         }
-
-        throw new InvalidConfigurationException(
-            'Transformer must be a Closure, TransformerInterface instance, or class name.'
-        );
     }
 }
