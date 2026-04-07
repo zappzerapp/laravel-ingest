@@ -103,9 +103,9 @@ class IngestConfig
      * 2. TransformerInterface instance: Pre-built transformer object
      * 3. Class-string: Fully-qualified class name that implements TransformerInterface
      *
-     * @param string|array $sourceField The source field name or array with primary field and aliases
-     * @param string $modelAttribute The target model attribute
-     * @param Closure|TransformerInterface|string $transformer Closure, transformer instance, or class name
+     * @param  string|array  $sourceField  The source field name or array with primary field and aliases
+     * @param  string  $modelAttribute  The target model attribute
+     * @param  Closure|TransformerInterface|string  $transformer  Closure, transformer instance, or class name
      *
      * @throws InvalidConfigurationException|PhpVersionNotSupportedException
      */
@@ -124,44 +124,6 @@ class IngestConfig
         ];
 
         return $this;
-    }
-
-    /**
-     * Normalize a transformer to a storable format.
-     *
-     * @param Closure|TransformerInterface|string $transformer
-     *
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
-     */
-    private function normalizeTransformer(Closure|TransformerInterface|string $transformer): SerializableClosure|TransformerInterface
-    {
-        if ($transformer instanceof Closure) {
-            return new SerializableClosure($transformer);
-        }
-
-        if ($transformer instanceof TransformerInterface) {
-            return $transformer;
-        }
-
-        if (is_string($transformer)) {
-            if (!class_exists($transformer)) {
-                throw new InvalidConfigurationException(
-                    "Transformer class '{$transformer}' does not exist."
-                );
-            }
-
-            if (!is_subclass_of($transformer, TransformerInterface::class)) {
-                throw new InvalidConfigurationException(
-                    "Transformer class '{$transformer}' must implement " . TransformerInterface::class
-                );
-            }
-
-            return new $transformer();
-        }
-
-        throw new InvalidConfigurationException(
-            'Transformer must be a Closure, TransformerInterface instance, or class name.'
-        );
     }
 
     /**
@@ -380,5 +342,42 @@ class IngestConfig
         }
 
         return $attributes;
+    }
+
+    /**
+     * Normalize a transformer to a storable format.
+     *
+     *
+     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     */
+    private function normalizeTransformer(Closure|TransformerInterface|string $transformer): SerializableClosure|TransformerInterface
+    {
+        if ($transformer instanceof Closure) {
+            return new SerializableClosure($transformer);
+        }
+
+        if ($transformer instanceof TransformerInterface) {
+            return $transformer;
+        }
+
+        if (is_string($transformer)) {
+            if (!class_exists($transformer)) {
+                throw new InvalidConfigurationException(
+                    "Transformer class '{$transformer}' does not exist."
+                );
+            }
+
+            if (!is_subclass_of($transformer, TransformerInterface::class)) {
+                throw new InvalidConfigurationException(
+                    "Transformer class '{$transformer}' must implement " . TransformerInterface::class
+                );
+            }
+
+            return new $transformer();
+        }
+
+        throw new InvalidConfigurationException(
+            'Transformer must be a Closure, TransformerInterface instance, or class name.'
+        );
     }
 }

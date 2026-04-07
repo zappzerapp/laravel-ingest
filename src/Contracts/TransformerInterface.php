@@ -28,9 +28,8 @@ interface TransformerInterface
     /**
      * Transform a value from the source data to the target format.
      *
-     * @param mixed $value The raw value from the source data
-     * @param array $rowContext The complete row data for context-aware transformations
-     *
+     * @param  mixed  $value  The raw value from the source data
+     * @param  array  $rowContext  The complete row data for context-aware transformations
      * @return mixed The transformed value to be assigned to the model attribute
      */
     public function transform(mixed $value, array $rowContext): mixed;

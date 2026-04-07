@@ -11,16 +11,15 @@ use LaravelIngest\Contracts\TransformerInterface;
 class DateTransformer implements TransformerInterface
 {
     /**
-     * @param string $inputFormat Expected input format for DateTime::createFromFormat
-     * @param string $outputFormat Output format for database storage
-     * @param mixed $default Default value when parsing fails
+     * @param  string  $inputFormat  Expected input format for DateTime::createFromFormat
+     * @param  string  $outputFormat  Output format for database storage
+     * @param  mixed  $default  Default value when parsing fails
      */
     public function __construct(
         private string $inputFormat = 'Y-m-d',
         private string $outputFormat = 'Y-m-d',
         private mixed $default = null
-    ) {
-    }
+    ) {}
 
     public function transform(mixed $value, array $rowContext): mixed
     {

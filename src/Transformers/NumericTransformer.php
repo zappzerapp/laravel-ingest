@@ -9,12 +9,12 @@ use LaravelIngest\Contracts\TransformerInterface;
 class NumericTransformer implements TransformerInterface
 {
     /**
-     * @param int|null $decimals Number of decimal places, null for no rounding
-     * @param float|null $min Minimum allowed value, null for no minimum
-     * @param float|null $max Maximum allowed value, null for no maximum
-     * @param mixed $default Default value when conversion fails
-     * @param string $decimalSeparator Character used as decimal separator
-     * @param string $thousandsSeparator Character used as thousands separator to strip
+     * @param  int|null  $decimals  Number of decimal places, null for no rounding
+     * @param  float|null  $min  Minimum allowed value, null for no minimum
+     * @param  float|null  $max  Maximum allowed value, null for no maximum
+     * @param  mixed  $default  Default value when conversion fails
+     * @param  string  $decimalSeparator  Character used as decimal separator
+     * @param  string  $thousandsSeparator  Character used as thousands separator to strip
      */
     public function __construct(
         private ?int $decimals = null,
@@ -23,8 +23,7 @@ class NumericTransformer implements TransformerInterface
         private mixed $default = null,
         private string $decimalSeparator = '.',
         private string $thousandsSeparator = ','
-    ) {
-    }
+    ) {}
 
     public function transform(mixed $value, array $rowContext): mixed
     {

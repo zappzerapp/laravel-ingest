@@ -19,14 +19,13 @@ class BooleanTransformer implements TransformerInterface
     private array $falsyValues;
 
     private bool $caseSensitive;
-
     private mixed $default;
 
     /**
-     * @param array<string> $truthyValues Values considered as "true"
-     * @param array<string> $falsyValues Values considered as "false"
-     * @param bool $caseSensitive Whether value comparison is case-sensitive
-     * @param mixed $default Default value when value doesn't match any truthy/falsy value
+     * @param  array<string>  $truthyValues  Values considered as "true"
+     * @param  array<string>  $falsyValues  Values considered as "false"
+     * @param  bool  $caseSensitive  Whether value comparison is case-sensitive
+     * @param  mixed  $default  Default value when value doesn't match any truthy/falsy value
      */
     public function __construct(
         array $truthyValues = ['yes', 'true', '1', 'on', 'y'],
