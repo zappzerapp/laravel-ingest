@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\TransformerInterface;
 
 class DataTransformationService
 {
@@ -22,9 +22,12 @@ class DataTransformationService
             }
 
             $value = data_get($processedData, $sourceField);
+            $transformer = $mapping['transformer'] ?? null;
 
-            if (($transformer = $mapping['transformer'] ?? null) && $transformer instanceof SerializableClosure) {
+            if ($transformer instanceof SerializableClosure) {
                 $value = call_user_func($transformer->getClosure(), $value, $processedData);
+            } elseif ($transformer instanceof TransformerInterface) {
+                $value = $transformer->transform($value, $processedData);
             }
 
             $modelData[$mapping['attribute']] = $value;

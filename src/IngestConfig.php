@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\TransformerInterface;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Enums\TransactionMode;
@@ -95,20 +96,72 @@ class IngestConfig
     }
 
     /**
-     * @throws PhpVersionNotSupportedException
+     * Map a source field to a model attribute with transformation.
+     *
+     * Supports three types of transformers:
+     * 1. Closure: Inline transformation logic
+     * 2. TransformerInterface instance: Pre-built transformer object
+     * 3. Class-string: Fully-qualified class name that implements TransformerInterface
+     *
+     * @param string|array $sourceField The source field name or array with primary field and aliases
+     * @param string $modelAttribute The target model attribute
+     * @param Closure|TransformerInterface|string $transformer Closure, transformer instance, or class name
+     *
+     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
      */
-    public function mapAndTransform(string|array $sourceField, string $modelAttribute, Closure $transformer): self
-    {
+    public function mapAndTransform(
+        string|array $sourceField,
+        string $modelAttribute,
+        Closure|TransformerInterface|string $transformer
+    ): self {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
         $this->mappings[$primaryField] = [
             'attribute' => $modelAttribute,
-            'transformer' => new SerializableClosure($transformer),
+            'transformer' => $this->normalizeTransformer($transformer),
             'aliases' => $aliases,
         ];
 
         return $this;
+    }
+
+    /**
+     * Normalize a transformer to a storable format.
+     *
+     * @param Closure|TransformerInterface|string $transformer
+     *
+     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     */
+    private function normalizeTransformer(Closure|TransformerInterface|string $transformer): SerializableClosure|TransformerInterface
+    {
+        if ($transformer instanceof Closure) {
+            return new SerializableClosure($transformer);
+        }
+
+        if ($transformer instanceof TransformerInterface) {
+            return $transformer;
+        }
+
+        if (is_string($transformer)) {
+            if (!class_exists($transformer)) {
+                throw new InvalidConfigurationException(
+                    "Transformer class '{$transformer}' does not exist."
+                );
+            }
+
+            if (!is_subclass_of($transformer, TransformerInterface::class)) {
+                throw new InvalidConfigurationException(
+                    "Transformer class '{$transformer}' must implement " . TransformerInterface::class
+                );
+            }
+
+            return new $transformer();
+        }
+
+        throw new InvalidConfigurationException(
+            'Transformer must be a Closure, TransformerInterface instance, or class name.'
+        );
     }
 
     /**
