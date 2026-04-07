@@ -1,0 +1,34 @@
+﻿# Introduction to Laravel Ingest
+
+> Stop writing spaghetti code for imports.
+
+- [Introduction to Laravel Ingest](https://zappzerapp.github.io/laravel-ingest/index.md): Introduction to Laravel Ingest
+- [Configuration](https://zappzerapp.github.io/laravel-ingest/configuration/index.md): This section covers all aspects of configuring Laravel Ingest, from basic setup to advanced security considerations.
+- [Advanced Topics](https://zappzerapp.github.io/laravel-ingest/advanced/index.md): This section covers advanced configuration, optimization techniques, and troubleshooting for Laravel Ingest.
+- [API Reference](https://zappzerapp.github.io/laravel-ingest/api-reference.md): Laravel Ingest exposes a RESTful API for managing and monitoring import processes. All endpoints are prefixed with /api/v1/ingest (configurable via config/ingest.php).
+
+## Getting Started
+
+- [Installation](https://zappzerapp.github.io/laravel-ingest/getting-started/installation.md): Getting started with Laravel Ingest is simple. Follow these steps to integrate the package into your project.
+- [Your First Importer](https://zappzerapp.github.io/laravel-ingest/getting-started/first-importer.md): Let's create a simple importer to understand the core concepts of Laravel Ingest. We will build an importer for a User model.
+
+## Configuration
+
+- [The IngestConfig Class](https://zappzerapp.github.io/laravel-ingest/configuration/ingest-config.md): The IngestConfig object is the declarative heart of your importer. It allows you to define the entire ETL (Extract, Transform, Load) process in a fluent, readable way.
+- [Configuration Files](https://zappzerapp.github.io/laravel-ingest/configuration/config-files.md): Laravel Ingest provides two configuration files that control the behavior of the package. After installation, publish them with:
+- [Enums Reference](https://zappzerapp.github.io/laravel-ingest/configuration/enums.md): Laravel Ingest uses several PHP 8.1+ enums for type-safe configuration. This page documents all available enums and their values.
+- [Available Source Types](https://zappzerapp.github.io/laravel-ingest/configuration/source-types.md): Laravel Ingest is designed to be source-agnostic. You define the source of your data using the fromSource() method on your IngestConfig object. Here are the built-in source handlers and their required options.
+
+## Usage
+
+- [Facade Reference](https://zappzerapp.github.io/laravel-ingest/usage/facade.md): The Ingest Facade provides a convenient interface to interact with the IngestManager. Use it to programmatically start imports, retry failed runs, and access importer definitions.
+- [Monitoring, Cancellation, and Retries](https://zappzerapp.github.io/laravel-ingest/usage/monitoring-and-retries.md): After starting an import, you can monitor its progress, cancel it if necessary, or retry any failed rows. These actions can be performed via Artisan commands or the API.
+- [Running Imports](https://zappzerapp.github.io/laravel-ingest/usage/running-imports.md): Once an importer is defined and registered, you can start an import process in several ways, depending on your use case.
+
+## Advanced Topics
+
+- [Troubleshooting](https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting.md): Fehlermeldung:
+- [Working with Events](https://zappzerapp.github.io/laravel-ingest/advanced/events.md): Laravel Ingest dispatches events at every stage of the import lifecycle. This allows you to decouple your logic: the importer handles the data, and your listeners handle notifications, logging, or cleanup.
+- [Custom Source Handlers](https://zappzerapp.github.io/laravel-ingest/advanced/custom-source-handlers.md): Sometimes CSVs aren't enough. You might need to import data from a JSON API, an XML feed, or a Google Sheet. You can add support for any data source by creating a custom Source Handler.
+- [UI Integration Guide](https://zappzerapp.github.io/laravel-ingest/advanced/ui-integration.md): Laravel Ingest provides a full REST API, making it easy to build rich, real-time import interfaces in React, Vue, or Livewire.
+- [Exceptions](https://zappzerapp.github.io/laravel-ingest/advanced/exceptions.md): Laravel Ingest provides specific exception classes for different error scenarios. Understanding these exceptions helps you implement proper error handling in your application.

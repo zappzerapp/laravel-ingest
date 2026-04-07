@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.11.0.823643483617">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.2.828911574153">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 3.11.0">
+    <meta name="generator" content="Retype 4.5.2">
 
     <!-- Primary Meta Tags -->
     <title>Troubleshooting</title>
@@ -16,224 +17,200 @@
 
     <!-- Canonical -->
     <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://zappzerapp.github.io/laravel-ingest/sitemap.xml">
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
     <meta property="og:title" content="Troubleshooting">
     <meta property="og:description" content="Fehlermeldung:">
+    <meta property="og:site_name" content="Laravel Ingest">
+    <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
-    <meta property="twitter:title" content="Troubleshooting">
-    <meta property="twitter:description" content="Fehlermeldung:">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting/">
+    <meta name="twitter:title" content="Troubleshooting">
+    <meta name="twitter:description" content="Fehlermeldung:">
+
+    <!-- Alternate Markdown -->
+    <link rel="alternate" type="text/markdown" href="https://zappzerapp.github.io/laravel-ingest/advanced/troubleshooting.md">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=3.11.0.823643483617" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=4.5.2.828911574153" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.11.0.823643483617" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../../resources/js/retype.js?v=3.11.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.11.0.823643483617" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.11.0.823643483617" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.2" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.2.828911574153" defer></script>
 
     <script defer src="https://analytics.zebra-fruit.de/script.js" data-website-id="6f1b70fe-d321-4e14-987e-629870d98640"></script>
     <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/docs/_includes/favicon.ico">
 </head>
 <body>
     <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
-        <div class="absolute bottom-0 left-0" style="top: 5rem; right: 50%"></div>
+    <div class="absolute bottom-0 left-0" style="top: 5rem; right: 50%"></div>
+
+    <header id="retype-header" class="sticky top-0 z-30 flex w-full h-16 bg-header-bg border-b border-header-border md:h-20">
+        <div class="container relative flex items-center justify-between pr-6 grow md:justify-start">
+            <!-- Mobile menu button skeleton -->
+            <button v-cloak class="skeleton retype-mobile-menu-button flex items-center justify-center shrink-0 overflow-hidden dark:text-white focus:outline-hidden rounded-full w-10 h-10 ml-3.5 md:hidden"><svg xmlns="http://www.w3.org/2000/svg" class="mb-px shrink-0" width="24" height="24" viewBox="0 0 24 24" role="presentation" style="margin-bottom: 0px;"><g fill="currentColor"><path d="M2 4h20v2H2zM2 11h20v2H2zM2 18h20v2H2z"></path></g></svg></button>
+            <div v-cloak id="retype-sidebar-left-toggle-button"></div>
     
-        <header id="retype-header" class="sticky top-0 z-30 flex w-full h-16 bg-header-bg border-b border-header-border md:h-20">
-            <div class="container relative flex items-center justify-between pr-6 grow md:justify-start">
-                <!-- Mobile menu button skeleton -->
-                <button v-cloak class="skeleton retype-mobile-menu-button flex items-center justify-center shrink-0 overflow-hidden dark:text-white focus:outline-none rounded-full w-10 h-10 ml-3.5 md:hidden"><svg xmlns="http://www.w3.org/2000/svg" class="mb-px shrink-0" width="24" height="24" viewBox="0 0 24 24" role="presentation" style="margin-bottom: 0px;"><g fill="currentColor"><path d="M2 4h20v2H2zM2 11h20v2H2zM2 18h20v2H2z"></path></g></svg></button>
-                <div v-cloak id="retype-sidebar-left-toggle-button"></div>
-        
-                <!-- Logo -->
-                <div class="flex items-center justify-between h-full py-2 md:w-75">
-                    <div class="flex items-center px-2 md:px-6">
-                        <a id="retype-branding-logo" href="../../" class="flex items-center leading-snug text-xl">
-                            <span class="dark:text-white font-bold line-clamp-1 md:line-clamp-2">Laravel Ingest</span>
-                        </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.2</span>
-                    </div>
-        
-                    <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
+            <!-- Logo -->
+            <div class="flex items-center justify-between h-full py-2 md:w-75">
+                <div class="flex items-center px-2 md:px-6">
+                    <a id="retype-branding-logo" href="https://zappzerapp.github.io/laravel-ingest/" class="flex items-center leading-snug text-xl">
+                        <span class="dark:text-white font-bold line-clamp-1 md:line-clamp-2">Laravel Ingest</span>
+                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.2</span>
                 </div>
-        
-                <div class="flex justify-between md:grow">
-                    <!-- Top Nav -->
-                    <nav id="retype-header-nav" class="hidden md:flex">
-                        <ul class="flex flex-col mb-4 md:pl-16 md:mb-0 md:flex-row md:items-center">
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
-                            </li>
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../configuration/">Configuration</a>
-                            </li>
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
-                            </li>
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../advanced/">Advanced</a>
-                            </li>
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
-                            </li>
-                            <li class="mr-6">
-                                <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
-                            </li>
-        
-                        </ul>
-                    </nav>
-        
-                    <!-- Header Right Skeleton -->
-                    <div v-cloak class="flex justify-end grow skeleton">
-        
-                        <!-- Search input mock -->
-                        <div class="relative hidden w-40 lg:block lg:max-w-sm lg:ml-auto">
-                            <div class="absolute flex items-center justify-center h-full pl-3 dark:text-dark-300">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon-base" width="16" height="16" viewBox="0 0 24 24" aria-labelledby="icon" role="presentation" style="margin-bottom: 1px;"><g fill="currentColor" ><path d="M21.71 20.29l-3.68-3.68A8.963 8.963 0 0020 11c0-4.96-4.04-9-9-9s-9 4.04-9 9 4.04 9 9 9c2.12 0 4.07-.74 5.61-1.97l3.68 3.68c.2.19.45.29.71.29s.51-.1.71-.29c.39-.39.39-1.03 0-1.42zM4 11c0-3.86 3.14-7 7-7s7 3.14 7 7c0 1.92-.78 3.66-2.04 4.93-.01.01-.02.01-.02.01-.01.01-.01.01-.01.02A6.98 6.98 0 0111 18c-3.86 0-7-3.14-7-7z" ></path></g></svg>
-                            </div>
-                            <input class="w-full h-10 placeholder-search-placeholder transition-colors duration-200 ease-in bg-search-bg border border-transparent rounded md:text-sm hover:border-search-border-hover focus:outline-none focus:border-search-border-focus" style="padding: 0.625rem 0.75rem 0.625rem 2rem" type="text" placeholder="Search">
-                        </div>
-        
-                        <!-- Mobile search button -->
-                        <div class="flex items-center justify-center w-10 h-10 lg:hidden">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="shrink-0 icon-base" width="20" height="20" viewBox="0 0 24 24" aria-labelledby="icon" role="presentation" style="margin-bottom: 0px;"><g fill="currentColor" ><path d="M21.71 20.29l-3.68-3.68A8.963 8.963 0 0020 11c0-4.96-4.04-9-9-9s-9 4.04-9 9 4.04 9 9 9c2.12 0 4.07-.74 5.61-1.97l3.68 3.68c.2.19.45.29.71.29s.51-.1.71-.29c.39-.39.39-1.03 0-1.42zM4 11c0-3.86 3.14-7 7-7s7 3.14 7 7c0 1.92-.78 3.66-2.04 4.93-.01.01-.02.01-.02.01-.01.01-.01.01-.01.02A6.98 6.98 0 0111 18c-3.86 0-7-3.14-7-7z" ></path></g></svg>
-                        </div>
-        
-                        <!-- Dark mode switch placeholder -->
-                        <div class="w-10 h-10 lg:ml-2"></div>
-        
-                        <!-- History button -->
-                        <div class="flex items-center justify-center w-10 h-10" style="margin-right: -0.625rem;">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="shrink-0 icon-base" width="22" height="22" viewBox="0 0 24 24" aria-labelledby="icon" role="presentation" style="margin-bottom: 0px;"><g fill="currentColor" ><g ><path d="M12.01 6.01c-.55 0-1 .45-1 1V12a1 1 0 00.4.8l3 2.22a.985.985 0 001.39-.2.996.996 0 00-.21-1.4l-2.6-1.92V7.01c.02-.55-.43-1-.98-1z"></path><path d="M12.01 1.91c-5.33 0-9.69 4.16-10.05 9.4l-.29-.26a.997.997 0 10-1.34 1.48l1.97 1.79c.19.17.43.26.67.26s.48-.09.67-.26l1.97-1.79a.997.997 0 10-1.34-1.48l-.31.28c.34-4.14 3.82-7.41 8.05-7.41 4.46 0 8.08 3.63 8.08 8.09s-3.63 8.08-8.08 8.08c-2.18 0-4.22-.85-5.75-2.4a.996.996 0 10-1.42 1.4 10.02 10.02 0 007.17 2.99c5.56 0 10.08-4.52 10.08-10.08.01-5.56-4.52-10.09-10.08-10.09z"></path></g></g></svg>
-                        </div>
-                    </div>
-        
-                    <div v-cloak class="flex justify-end grow">
-                        <div id="retype-mobile-search-button"></div>
-                        <doc-search-desktop></doc-search-desktop>
-        
-                        <doc-theme-switch class="lg:ml-2"></doc-theme-switch>
-                        <doc-history></doc-history>
-                    </div>
+    
+                <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
+            </div>
+    
+            <div class="flex justify-between md:grow">
+                <!-- Top Nav -->
+                <nav id="retype-header-nav" class="hidden md:flex">
+                    <ul class="flex flex-col mb-4 md:pl-16 md:mb-0 md:flex-row md:items-center">
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../configuration/">Configuration</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../advanced/">Advanced</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
+                        </li>
+    
+                    </ul>
+                </nav>
+    
+                <div v-cloak class="flex justify-end grow">
+                    <div id="retype-mobile-search-button"></div>
+                    <doc-search-desktop></doc-search-desktop>
+    
+                    <doc-theme-switch class="lg:ml-2"></doc-theme-switch>
+                    <doc-history></doc-history>
                 </div>
             </div>
-        </header>
-    
-    
-        <div id="retype-container" class="container relative flex bg-white">
-            <!-- Sidebar Skeleton -->
-            <div v-cloak class="fixed flex flex-col shrink-0 duration-300 ease-in-out bg-sidebar-left-bg border-sidebar-left-border sidebar top-20 w-75 border-r h-screen md:sticky transition-transform skeleton">
-            
-                <div class="flex items-center h-16 px-6">
-                    <input class="w-full h-8 px-3 py-2 transition-colors duration-200 ease-linear bg-filter-bg border border-filter-border rounded shadow-none text-sm focus:outline-none focus:border-filter-border-focus" type="text" placeholder="Filter">
-                </div>
-            
-                <div class="pl-6 mt-1 mb-4">
-                    <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                    <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                    <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                    <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                    <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                    <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                </div>
-            
-                <div class="shrink-0 mt-auto bg-transparent dark:border-base-border">
+        </div>
+    </header>
+
+
+    <div id="retype-container" class="container relative flex bg-white">
+        <!-- Sidebar Skeleton -->
+        <div v-cloak class="fixed flex flex-col shrink-0 duration-300 ease-in-out bg-sidebar-left-bg border-sidebar-left-border sidebar top-20 w-75 border-r h-screen md:sticky transition-transform skeleton">
+        
+            <div class="flex items-center h-16 px-6">
+                <input id="retype-filter-input-mock" class="w-full h-10 pl-8 px-3 py-2 transition-colors duration-200 ease-linear bg-filter-bg border border-filter-border rounded-lg shadow-none md:text-sm hover:border-filter-border-hover focus:outline-hidden focus:border-filter-border-focus placeholder-filter-placeholder" type="text">
+            </div>
+        
+            <div class="pl-6 mt-1 mb-4">
+                <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            </div>
+        
+            <div class="shrink-0 mt-auto bg-transparent dark:border-base-border">
+                <a class="flex items-center justify-center flex-nowrap h-16 text-gray-350 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by" target="_blank" href="https://retype.com/" rel="noopener">
+                    <span class="text-xs whitespace-nowrap">Powered by</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-2" fill="currentColor" width="96" height="20" overflow="visible"><path d="M0 0v20h13.59V0H0zm11.15 17.54H2.44V2.46h8.71v15.08zM15.8 20h2.44V4.67L15.8 2.22zM20.45 6.89V20h2.44V9.34z"/><g><path d="M40.16 8.44c0 1.49-.59 2.45-1.75 2.88l2.34 3.32h-2.53l-2.04-2.96h-1.43v2.96h-2.06V5.36h3.5c1.43 0 2.46.24 3.07.73s.9 1.27.9 2.35zm-2.48 1.1c.26-.23.38-.59.38-1.09 0-.5-.13-.84-.4-1.03s-.73-.28-1.39-.28h-1.54v2.75h1.5c.72 0 1.2-.12 1.45-.35zM51.56 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92h4.74v1.83h-6.79V5.36h6.64zM60.09 7.15v7.48h-2.06V7.15h-2.61V5.36h7.28v1.79h-2.61zM70.81 14.64h-2.06v-3.66l-3.19-5.61h2.23l1.99 3.45 1.99-3.45H74l-3.19 5.61v3.66zM83.99 6.19c.65.55.97 1.4.97 2.55s-.33 1.98-1 2.51-1.68.8-3.04.8h-1.23v2.59h-2.06V5.36h3.26c1.42 0 2.45.28 3.1.83zm-1.51 3.65c.25-.28.37-.69.37-1.22s-.16-.92-.48-1.14c-.32-.23-.82-.34-1.5-.34H79.7v3.12h1.38c.68 0 1.15-.14 1.4-.42zM95.85 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92H96v1.83h-6.79V5.36h6.64z"/></g></svg>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Sidebar component -->
+        <doc-sidebar v-cloak>
+            <template #sidebar-footer>
+                <div class="shrink-0 mt-auto border-t md:bg-transparent md:border-none dark:border-base-border">
+        
+                    <div class="py-3 px-6 md:hidden border-b dark:border-base-border">
+                        <nav>
+                            <ul class="flex flex-wrap justify-center items-center">
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../configuration/">Configuration</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../advanced/">Advanced</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
+                                </li>
+        
+                            </ul>
+                        </nav>
+                    </div>
+        
                     <a class="flex items-center justify-center flex-nowrap h-16 text-gray-350 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by" target="_blank" href="https://retype.com/" rel="noopener">
                         <span class="text-xs whitespace-nowrap">Powered by</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="ml-2" fill="currentColor" width="96" height="20" overflow="visible"><path d="M0 0v20h13.59V0H0zm11.15 17.54H2.44V2.46h8.71v15.08zM15.8 20h2.44V4.67L15.8 2.22zM20.45 6.89V20h2.44V9.34z"/><g><path d="M40.16 8.44c0 1.49-.59 2.45-1.75 2.88l2.34 3.32h-2.53l-2.04-2.96h-1.43v2.96h-2.06V5.36h3.5c1.43 0 2.46.24 3.07.73s.9 1.27.9 2.35zm-2.48 1.1c.26-.23.38-.59.38-1.09 0-.5-.13-.84-.4-1.03s-.73-.28-1.39-.28h-1.54v2.75h1.5c.72 0 1.2-.12 1.45-.35zM51.56 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92h4.74v1.83h-6.79V5.36h6.64zM60.09 7.15v7.48h-2.06V7.15h-2.61V5.36h7.28v1.79h-2.61zM70.81 14.64h-2.06v-3.66l-3.19-5.61h2.23l1.99 3.45 1.99-3.45H74l-3.19 5.61v3.66zM83.99 6.19c.65.55.97 1.4.97 2.55s-.33 1.98-1 2.51-1.68.8-3.04.8h-1.23v2.59h-2.06V5.36h3.26c1.42 0 2.45.28 3.1.83zm-1.51 3.65c.25-.28.37-.69.37-1.22s-.16-.92-.48-1.14c-.32-.23-.82-.34-1.5-.34H79.7v3.12h1.38c.68 0 1.15-.14 1.4-.42zM95.85 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92H96v1.83h-6.79V5.36h6.64z"/></g></svg>
                     </a>
                 </div>
-            </div>
-            
-            <!-- Sidebar component -->
-            <doc-sidebar v-cloak>
-                <template #sidebar-footer>
-                    <div class="shrink-0 mt-auto border-t md:bg-transparent md:border-none dark:border-base-border">
-            
-                        <div class="py-3 px-6 md:hidden border-b dark:border-base-border">
-                            <nav>
-                                <ul class="flex flex-wrap justify-center items-center">
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
-                                    </li>
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../configuration/">Configuration</a>
-                                    </li>
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
-                                    </li>
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../advanced/">Advanced</a>
-                                    </li>
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
-                                    </li>
-                                    <li class="mr-6">
-                                        <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text-weight hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
-                                    </li>
-            
-                                </ul>
-                            </nav>
-                        </div>
-            
-                        <a class="flex items-center justify-center flex-nowrap h-16 text-gray-350 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by" target="_blank" href="https://retype.com/" rel="noopener">
-                            <span class="text-xs whitespace-nowrap">Powered by</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="ml-2" fill="currentColor" width="96" height="20" overflow="visible"><path d="M0 0v20h13.59V0H0zm11.15 17.54H2.44V2.46h8.71v15.08zM15.8 20h2.44V4.67L15.8 2.22zM20.45 6.89V20h2.44V9.34z"/><g><path d="M40.16 8.44c0 1.49-.59 2.45-1.75 2.88l2.34 3.32h-2.53l-2.04-2.96h-1.43v2.96h-2.06V5.36h3.5c1.43 0 2.46.24 3.07.73s.9 1.27.9 2.35zm-2.48 1.1c.26-.23.38-.59.38-1.09 0-.5-.13-.84-.4-1.03s-.73-.28-1.39-.28h-1.54v2.75h1.5c.72 0 1.2-.12 1.45-.35zM51.56 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92h4.74v1.83h-6.79V5.36h6.64zM60.09 7.15v7.48h-2.06V7.15h-2.61V5.36h7.28v1.79h-2.61zM70.81 14.64h-2.06v-3.66l-3.19-5.61h2.23l1.99 3.45 1.99-3.45H74l-3.19 5.61v3.66zM83.99 6.19c.65.55.97 1.4.97 2.55s-.33 1.98-1 2.51-1.68.8-3.04.8h-1.23v2.59h-2.06V5.36h3.26c1.42 0 2.45.28 3.1.83zm-1.51 3.65c.25-.28.37-.69.37-1.22s-.16-.92-.48-1.14c-.32-.23-.82-.34-1.5-.34H79.7v3.12h1.38c.68 0 1.15-.14 1.4-.42zM95.85 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92H96v1.83h-6.79V5.36h6.64z"/></g></svg>
-                        </a>
-                    </div>
-                </template>
-            </doc-sidebar>
-    
-            <div class="grow min-w-0 bg-body-bg">
-                <!-- Render "toolbar" template here on api pages --><!-- Render page content -->
-                <div class="flex">
-                    <div id="retype-main" class="min-w-0 p-4 grow md:px-16">
-                        <main class="relative pb-12 lg:pt-2">
-                            <div class="retype-markdown" id="retype-content">
-                                <!-- Rendered if sidebar right is enabled -->
-                                <div id="retype-sidebar-right-toggle"></div>
-                                <!-- Page content  -->
-<doc-anchor-target id="troubleshooting" class="break-words">
-    <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#troubleshooting">#</doc-anchor-trigger>
-        <span>Troubleshooting</span>
-    </h1>
-</doc-anchor-target>
-<doc-anchor-target id="1-file-not-found-bei-filesystem-quellen">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-file-not-found-bei-filesystem-quellen">#</doc-anchor-trigger>
-        <span>1. &quot;File not found&quot; bei Filesystem-Quellen</span>
-    </h2>
-</doc-anchor-target>
+            </template>
+        </doc-sidebar>
+
+        <div class="grow min-w-0 bg-body-bg">
+            <!-- Render "toolbar" template here on api pages --><!-- Render page content -->
+<div class="flex">
+    <div id="retype-main" class="min-w-0 p-4 grow md:px-16">
+        <main class="relative pb-12 lg:pt-2">
+            <div class="relative retype-markdown" id="retype-content">
+                <!-- Rendered if sidebar right is enabled -->
+                <div id="retype-sidebar-right-toggle"></div>
+                <doc-page-actions></doc-page-actions>
+
+                <!-- Page content  -->
+<h1 id="troubleshooting">Troubleshooting</h1>
+<h2 id="1-file-not-found-bei-filesystem-quellen">1. &quot;File not found&quot; bei Filesystem-Quellen</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="1-file-not-found-bei-filesystem-quellen-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">We could not find the file at '/path/to/file.csv' using the disk 'local'.</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
 <ul>
-<li>Der Pfad ist relativ (z.B. <code v-pre>imports/file.csv</code> statt <code v-pre>/absolute/path/file.csv</code>).</li>
+<li>Der Pfad ist relativ (z.B. <code translate="no" v-pre>imports/file.csv</code> statt <code translate="no" v-pre>/absolute/path/file.csv</code>).</li>
 <li>Die Datei existiert nicht auf dem konfigurierten Disk.</li>
-<li>Der Disk ist nicht korrekt in <code v-pre>config/filesystems.php</code> konfiguriert.</li>
+<li>Der Disk ist nicht korrekt in <code translate="no" v-pre>config/filesystems.php</code> konfiguriert.</li>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Absolute Pfade verwenden</strong>:</p>
+<li>
+<p><strong>Absolute Pfade verwenden</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; base_path('storage/app/imports/file.csv')])</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Existenz prüfen</strong>:</p>
+<li>
+<p><strong>Existenz prüfen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">use Illuminate\Support\Facades\Storage;
 Storage::disk('local')-&gt;exists('imports/file.csv'); // true/false</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Disk-Konfiguration prüfen</strong>:</p>
+<li>
+<p><strong>Disk-Konfiguration prüfen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// config/filesystems.php
 'disks' =&gt; [
@@ -246,73 +223,70 @@ Storage::disk('local')-&gt;exists('imports/file.csv'); // true/false</code></pre
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="2-memory-limit-fehler">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-memory-limit-fehler">#</doc-anchor-trigger>
-        <span>2. Memory-Limit Fehler</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="2-memory-limit-fehler">2. Memory-Limit Fehler</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="2-memory-limit-fehler-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">Allowed memory size of 134217728 bytes exhausted</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
 <ul>
-<li>Die CSV/Excel-Datei ist zu groß für das aktuelle <code v-pre>memory_limit</code> in PHP.</li>
-<li>Zu viele Zeilen werden gleichzeitig verarbeitet (z.B. <code v-pre>chunkSize</code> zu groß).</li>
+<li>Die CSV/Excel-Datei ist zu groß für das aktuelle <code translate="no" v-pre>memory_limit</code> in PHP.</li>
+<li>Zu viele Zeilen werden gleichzeitig verarbeitet (z.B. <code translate="no" v-pre>chunkSize</code> zu groß).</li>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong><code v-pre>memory_limit</code> erhöhen</strong> (in <code v-pre>php.ini</code>):</p>
+<li>
+<p><strong><code translate="no" v-pre>memory_limit</code> erhöhen</strong> (in <code translate="no" v-pre>php.ini</code>):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-ini"><code v-pre class="language-ini">memory_limit = 512M</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Kleinere Chunks verwenden</strong>:</p>
+<li>
+<p><strong>Kleinere Chunks verwenden</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setChunkSize(500) // Standard: 100</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Transaktionen deaktivieren</strong> (für maximale Performance):</p>
+<li>
+<p><strong>Transaktionen deaktivieren</strong> (für maximale Performance):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;transactionMode(TransactionMode::NONE)</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Queue-Worker optimieren</strong>:</p>
+<li>
+<p><strong>Queue-Worker optimieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan queue:work --memory=512</code></pre>
 </doc-codeblock></div>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="3-column-not-found-bei-strictheaderstrue">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#3-column-not-found-bei-strictheaderstrue">#</doc-anchor-trigger>
-        <span>3. &quot;Column not found&quot; bei <code v-pre>strictHeaders(true)</code></span>
-    </h2>
-</doc-anchor-target>
+<h2 id="3-column-not-found-bei-strictheaderstrue">3. &quot;Column not found&quot; bei <code translate="no" v-pre>strictHeaders(true)</code></h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="3-column-not-found-bei-strictheaderstrue-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">The column 'user_email' was not found in the source file headers.</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
 <ul>
-<li>Die Spaltenüberschrift im CSV stimmt nicht mit der Definition in <code v-pre>map()</code> oder <code v-pre>relate()</code> überein.</li>
+<li>Die Spaltenüberschrift im CSV stimmt nicht mit der Definition in <code translate="no" v-pre>map()</code> oder <code translate="no" v-pre>relate()</code> überein.</li>
 <li>Groß-/Kleinschreibung oder Leerzeichen unterscheiden sich (z.B. &quot;E-Mail&quot; vs. &quot;email&quot;).</li>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Aliase verwenden</strong>:</p>
+<li>
+<p><strong>Aliase verwenden</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;map(['E-Mail', 'Email', 'user_email'], 'email')</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong><code v-pre>strictHeaders(false)</code> setzen</strong> (wenn die Spalte optional ist):</p>
+<li>
+<p><strong><code translate="no" v-pre>strictHeaders(false)</code> setzen</strong> (wenn die Spalte optional ist):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;strictHeaders(false)</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>CSV-Datei anpassen</strong> (z.B. mit Excel oder <code v-pre>sed</code>):</p>
+<li>
+<p><strong>CSV-Datei anpassen</strong> (z.B. mit Excel oder <code translate="no" v-pre>sed</code>):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash"># Ersetze Leerzeichen in Headern (Linux/Mac)
 sed -i '1s/ /_/g' input.csv</code></pre>
@@ -320,25 +294,21 @@ sed -i '1s/ /_/g' input.csv</code></pre>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="4-connection-timeout-bei-großen-uploads">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#4-connection-timeout-bei-großen-uploads">#</doc-anchor-trigger>
-        <span>4. &quot;Connection timeout&quot; bei großen Uploads</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="4-connection-timeout-bei-großen-uploads">4. &quot;Connection timeout&quot; bei großen Uploads</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="4-connection-timeout-bei-großen-uploads-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">Connection timeout or Request timeout exceeded</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
 <ul>
-<li>Die Upload-Zeit überschreitet die PHP <code v-pre>max_execution_time</code>.</li>
+<li>Die Upload-Zeit überschreitet die PHP <code translate="no" v-pre>max_execution_time</code>.</li>
 <li>Der Webserver hat eine geringere Timeout-Einstellung.</li>
 <li>Die Datei ist zu groß für den Upload.</li>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>PHP-Konfiguration anpassen</strong>:</p>
+<li>
+<p><strong>PHP-Konfiguration anpassen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-ini"><code v-pre class="language-ini">; php.ini
 max_execution_time = 300
@@ -347,7 +317,8 @@ post_max_size = 100M
 max_input_time = 300</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Webserver-Timeout erhöhen</strong> (nginx Beispiel):</p>
+<li>
+<p><strong>Webserver-Timeout erhöhen</strong> (nginx Beispiel):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-nginx"><code v-pre class="language-nginx">client_max_body_size 100M;
 proxy_connect_timeout 300;
@@ -355,7 +326,8 @@ proxy_send_timeout 300;
 proxy_read_timeout 300;</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Chunked Uploads im Frontend implementieren</strong>:</p>
+<li>
+<p><strong>Chunked Uploads im Frontend implementieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-javascript"><code v-pre class="language-javascript">// Für sehr große Dateien
 const chunkSize = 1024 * 1024; // 1MB chunks
@@ -364,14 +336,9 @@ const chunkSize = 1024 * 1024; // 1MB chunks
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="5-queue-worker-is-not-running">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#5-queue-worker-is-not-running">#</doc-anchor-trigger>
-        <span>5. &quot;Queue worker is not running&quot;</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="5-queue-worker-is-not-running">5. &quot;Queue worker is not running&quot;</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="5-queue-worker-is-not-running-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">Job failed after maximum attempts</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
@@ -382,7 +349,8 @@ const chunkSize = 1024 * 1024; // 1MB chunks
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Worker starten und überwachen</strong>:</p>
+<li>
+<p><strong>Worker starten und überwachen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash"># Starten
 php artisan queue:work
@@ -391,7 +359,8 @@ php artisan queue:work
 php artisan queue:work --daemon --sleep=1 --tries=3</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Supervisor-Konfiguration</strong> (<code v-pre>/etc/supervisor/conf.d/laravel-worker.conf</code>):</p>
+<li>
+<p><strong>Supervisor-Konfiguration</strong> (<code translate="no" v-pre>/etc/supervisor/conf.d/laravel-worker.conf</code>):</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-ini"><code v-pre class="language-ini">[program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
@@ -405,7 +374,8 @@ stdout_logfile=/path/to/your/project/storage/logs/worker.log
 stopwaitsecs=3600</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Queue-Status prüfen</strong>:</p>
+<li>
+<p><strong>Queue-Status prüfen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan queue:failed
 php artisan queue:retry all</code></pre>
@@ -413,30 +383,27 @@ php artisan queue:retry all</code></pre>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="6-foreign-key-constraint-violation">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#6-foreign-key-constraint-violation">#</doc-anchor-trigger>
-        <span>6. &quot;Foreign key constraint violation&quot;</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="6-foreign-key-constraint-violation">6. &quot;Foreign key constraint violation&quot;</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="6-foreign-key-constraint-violation-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
 <ul>
-<li><code v-pre>relate()</code> oder <code v-pre>relateMany()</code> kann den referenzierten Datensatz nicht finden.</li>
+<li><code translate="no" v-pre>relate()</code> oder <code translate="no" v-pre>relateMany()</code> kann den referenzierten Datensatz nicht finden.</li>
 <li>Die referenzierte ID existiert nicht in der Zieltabelle.</li>
 <li>Die Beziehung ist falsch konfiguriert.</li>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Debug-Modus für Beziehungen aktivieren</strong>:</p>
+<li>
+<p><strong>Debug-Modus für Beziehungen aktivieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;relate('category_name', 'category', Category::class, 'name', createIfMissing: true)</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Datenvalidierung vor dem Import</strong>:</p>
+<li>
+<p><strong>Datenvalidierung vor dem Import</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
     // Prüfen ob Kategorie existiert
@@ -449,21 +416,17 @@ php artisan queue:retry all</code></pre>
 })</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Fehlende Datensätze erstellen</strong>:</p>
+<li>
+<p><strong>Fehlende Datensätze erstellen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;relate('category_name', 'category', Category::class, 'name', createIfMissing: true)</code></pre>
 </doc-codeblock></div>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="7-invalid-datetime-format">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#7-invalid-datetime-format">#</doc-anchor-trigger>
-        <span>7. &quot;Invalid datetime format&quot;</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="7-invalid-datetime-format">7. &quot;Invalid datetime format&quot;</h2>
 <p><strong>Fehlermeldung</strong>:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
+<div id="7-invalid-datetime-format-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none">DateTime::__construct(): Failed to parse time string</code></pre>
 </doc-codeblock></div>
 <p><strong>Ursachen</strong>:</p>
@@ -473,7 +436,8 @@ php artisan queue:retry all</code></pre>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Datumstransformation implementieren</strong>:</p>
+<li>
+<p><strong>Datumstransformation implementieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;mapAndTransform('import_date', 'created_at', function($value, $row) {
     if (empty($value)) return null;
@@ -491,7 +455,8 @@ php artisan queue:retry all</code></pre>
 })</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Flexible Validierung</strong>:</p>
+<li>
+<p><strong>Flexible Validierung</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;validate([
     'import_date' =&gt; 'nullable|date_format:d.m.Y|date_format:Y-m-d'
@@ -500,12 +465,7 @@ php artisan queue:retry all</code></pre>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="8-performance-ist-sehr-langsam">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#8-performance-ist-sehr-langsam">#</doc-anchor-trigger>
-        <span>8. Performance ist sehr langsam</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="8-performance-ist-sehr-langsam">8. Performance ist sehr langsam</h2>
 <p><strong>Symptome</strong>:</p>
 <ul>
 <li>Import von 10.000 Zeilen dauert mehrere Minuten.</li>
@@ -519,12 +479,14 @@ php artisan queue:retry all</code></pre>
 </ul>
 <p><strong>Lösungen</strong>:</p>
 <ol>
-<li><p><strong>Chunk-Size optimieren</strong>:</p>
+<li>
+<p><strong>Chunk-Size optimieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;setChunkSize(1000) // Erhöhen für bessere Performance</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Datenbank-Indizes prüfen</strong>:</p>
+<li>
+<p><strong>Datenbank-Indizes prüfen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-sql"><code v-pre class="language-sql">-- Index für keyedBy Spalte
 CREATE INDEX idx_products_email ON products(email);
@@ -533,7 +495,8 @@ CREATE INDEX idx_products_email ON products(email);
 CREATE INDEX idx_products_category_id ON products(category_id);</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Haken optimieren</strong>:</p>
+<li>
+<p><strong>Haken optimieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// ❌ Schlecht: N+1 Queries
 -&gt;afterRow(function($model, $row) {
@@ -546,7 +509,8 @@ CREATE INDEX idx_products_category_id ON products(category_id);</code></pre>
 })</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Transaktionen optimieren</strong>:</p>
+<li>
+<p><strong>Transaktionen optimieren</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;transactionMode(TransactionMode::CHUNK)
 -&gt;setChunkSize(500) // Größere Chunks mit Transaktionen</code></pre>
@@ -554,30 +518,23 @@ CREATE INDEX idx_products_category_id ON products(category_id);</code></pre>
 </li>
 </ol>
 <hr>
-<doc-anchor-target id="9-debugging-techniken">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#9-debugging-techniken">#</doc-anchor-trigger>
-        <span>9. Debugging-Techniken</span>
-    </h2>
-</doc-anchor-target>
-<doc-anchor-target id="log-dateien-überprüfen">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#log-dateien-überprüfen">#</doc-anchor-trigger>
-        <span>Log-Dateien überprüfen</span>
-    </h3>
-</doc-anchor-target>
+<h2 id="9-debugging-techniken">9. Debugging-Techniken</h2>
+<h3 id="log-dateien-überprüfen">Log-Dateien überprüfen</h3>
 <ol>
-<li><p><strong>Laravel Logs</strong>:</p>
+<li>
+<p><strong>Laravel Logs</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">tail -f storage/logs/laravel.log</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Queue Worker Logs</strong>:</p>
+<li>
+<p><strong>Queue Worker Logs</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">tail -f storage/logs/worker.log</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Datenbank-Queries loggen</strong>:</p>
+<li>
+<p><strong>Datenbank-Queries loggen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// In AppServiceProvider::boot()
 if (app()-&gt;environment('local')) {
@@ -588,33 +545,25 @@ if (app()-&gt;environment('local')) {
 </doc-codeblock></div>
 </li>
 </ol>
-<doc-anchor-target id="test-import-mit-kleinen-datenmengen">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#test-import-mit-kleinen-datenmengen">#</doc-anchor-trigger>
-        <span>Test-Import mit kleinen Datenmengen</span>
-    </h3>
-</doc-anchor-target>
+<h3 id="test-import-mit-kleinen-datenmengen">Test-Import mit kleinen Datenmengen</h3>
 <ol>
-<li><p><strong>Test-CSV erstellen</strong>:</p>
+<li>
+<p><strong>Test-CSV erstellen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-csv"><code v-pre class="language-csv">name,email,price
 Test Product,test@example.com,19.99
 Another Product,another@example.com,29.99</code></pre>
 </doc-codeblock></div>
 </li>
-<li><p><strong>Dry-Run durchführen</strong>:</p>
+<li>
+<p><strong>Dry-Run durchführen</strong>:</p>
 <div class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan ingest:run product-importer --file=test.csv --dry-run</code></pre>
 </doc-codeblock></div>
 </li>
 </ol>
-<doc-anchor-target id="schritt-für-schritt-debugging">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#schritt-für-schritt-debugging">#</doc-anchor-trigger>
-        <span>Schritt-für-Schritt-Debugging</span>
-    </h3>
-</doc-anchor-target>
-<div class="codeblock-wrapper"><doc-codeblock>
+<h3 id="schritt-für-schritt-debugging">Schritt-für-Schritt-Debugging</h3>
+<div id="schritt-für-schritt-debugging-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
     Log::debug('Processing row', ['row' =&gt; $row]);
 })
@@ -625,19 +574,9 @@ Another Product,another@example.com,29.99</code></pre>
 })</code></pre>
 </doc-codeblock></div>
 <hr>
-<doc-anchor-target id="10-häufige-konfigurationsfehler">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#10-häufige-konfigurationsfehler">#</doc-anchor-trigger>
-        <span>10. Häufige Konfigurationsfehler</span>
-    </h2>
-</doc-anchor-target>
-<doc-anchor-target id="falsche-source-type-konfiguration">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#falsche-source-type-konfiguration">#</doc-anchor-trigger>
-        <span>Falsche Source-Type-Konfiguration</span>
-    </h3>
-</doc-anchor-target>
-<div class="codeblock-wrapper"><doc-codeblock>
+<h2 id="10-häufige-konfigurationsfehler">10. Häufige Konfigurationsfehler</h2>
+<h3 id="falsche-source-type-konfiguration">Falsche Source-Type-Konfiguration</h3>
+<div id="falsche-source-type-konfiguration-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// ❌ Falsch
 -&gt;fromSource(SourceType::UPLOAD, ['path' =&gt; 'file.csv'])
 
@@ -645,26 +584,16 @@ Another Product,another@example.com,29.99</code></pre>
 -&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; 'file.csv'])
 -&gt;fromSource(SourceType::UPLOAD) // Keine Parameter für Upload</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="fehlende-berechtigungen">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#fehlende-berechtigungen">#</doc-anchor-trigger>
-        <span>Fehlende Berechtigungen</span>
-    </h3>
-</doc-anchor-target>
-<div class="codeblock-wrapper"><doc-codeblock>
+<h3 id="fehlende-berechtigungen">Fehlende Berechtigungen</h3>
+<div id="fehlende-berechtigungen-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// In Ihrer Policy
 public function import(User $user)
 {
     return $user-&gt;hasPermissionTo('import-products');
 }</code></pre>
 </doc-codeblock></div>
-<doc-anchor-target id="queue-konfiguration">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#queue-konfiguration">#</doc-anchor-trigger>
-        <span>Queue-Konfiguration</span>
-    </h3>
-</doc-anchor-target>
-<div class="codeblock-wrapper"><doc-codeblock>
+<h3 id="queue-konfiguration">Queue-Konfiguration</h3>
+<div id="queue-konfiguration-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// config/queue.php
 'connections' =&gt; [
     'database' =&gt; [
@@ -677,12 +606,7 @@ public function import(User $user)
 ],</code></pre>
 </doc-codeblock></div>
 <hr>
-<doc-anchor-target id="nächste-schritte-bei-problemen">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#nächste-schritte-bei-problemen">#</doc-anchor-trigger>
-        <span>Nächste Schritte bei Problemen</span>
-    </h2>
-</doc-anchor-target>
+<h2 id="nächste-schritte-bei-problemen">Nächste Schritte bei Problemen</h2>
 <ol>
 <li><strong>Logs prüfen</strong>: Überprüfen Sie Laravel- und Worker-Logs</li>
 <li><strong>Konfiguration validieren</strong>: Stellen Sie sicher, dass alle Pfade und Berechtigungen korrekt sind</li>
@@ -692,71 +616,71 @@ public function import(User $user)
 </ol>
 <p>Für weitere Hilfe besuchen Sie die <a href="../../">Dokumentation</a> oder erstellen Sie ein Issue im <a href="https://github.com/zappzerapp/laravel-ingest">GitHub Repository</a>.</p>
 
-                                
-                                <!-- Required only on API pages -->
-                                <doc-toolbar-member-filter-no-results></doc-toolbar-member-filter-no-results>
-                            </div>
-                            <footer id="retype-content-footer" class="clear-both">
-                            
-                                <nav id="retype-nextprev" class="print:hidden flex mt-14">
-                                    <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
-                                            <span>
-                                                <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                                <span class="block mt-1">Advanced Topics</span>
-                                            </span>
-                                        </a>
-                                    </div>
-                            
-                                    <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/events/">
-                                            <span>
-                                                <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                                <span class="block mt-1">Working with Events</span>
-                                            </span>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
-                                        </a>
-                                    </div>
-                                </nav>
-                            </footer>
-                        </main>
                 
-                        <div id="retype-page-footer" class="print:border-none border-t border-base-border pt-6 mb-8">
-                            <footer class="flex flex-wrap items-center justify-between print:justify-center">
-                                <div id="retype-footer-links" class="print:hidden">
-                                    <ul class="flex flex-wrap items-center text-sm">
-                                    </ul>
-                                </div>
-                                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link-weight text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
-                            </footer>
-                        </div>
-                    </div>
-                
-                    <!-- Rendered if sidebar right is enabled -->
-                    <!-- Sidebar right skeleton-->
-                    <div v-cloak class="fixed top-0 bottom-0 right-0 translate-x-full bg-sidebar-right-bg border-sidebar-right-border lg:sticky lg:border-l lg:shrink-0 lg:pt-6 lg:transform-none sm:w-1/2 lg:w-64 lg:z-0 md:w-104 sidebar-right skeleton">
-                        <div class="pl-5">
-                            <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                            <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                            <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
-                        </div>
-                    </div>
-                
-                    <!-- User should be able to hide sidebar right -->
-                    <doc-sidebar-right v-cloak></doc-sidebar-right>
-                </div>
-
+                <!-- Required only on API pages -->
+                <doc-toolbar-member-filter-no-results></doc-toolbar-member-filter-no-results>
             </div>
+            <footer id="retype-content-footer" class="clear-both">
+            
+                <nav id="retype-nextprev" class="print:hidden flex mt-14">
+                    <div class="w-1/2">
+                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+                            <span>
+                                <span class="block text-xs font-normal text-base-text-muted">Previous</span>
+                                <span class="block mt-1">Advanced Topics</span>
+                            </span>
+                        </a>
+                    </div>
+            
+                    <div class="w-1/2">
+                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/events/">
+                            <span>
+                                <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
+                                <span class="block mt-1">Working with Events</span>
+                            </span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+                        </a>
+                    </div>
+                </nav>
+            </footer>
+        </main>
+
+        <div id="retype-page-footer" class="print:border-none border-t border-base-border pt-6 mb-8">
+            <footer class="flex flex-wrap items-center justify-between print:justify-center">
+                <div id="retype-footer-links" class="print:hidden">
+                    <ul class="flex flex-wrap items-center text-sm">
+                    </ul>
+                </div>
+                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
+            </footer>
         </div>
-    
-        <doc-search-mobile></doc-search-mobile>
-        <doc-back-to-top></doc-back-to-top>
     </div>
+
+    <!-- Rendered if sidebar right is enabled -->
+    <!-- Sidebar right skeleton-->
+    <div v-cloak class="fixed top-0 bottom-0 right-0 translate-x-full bg-sidebar-right-bg border-sidebar-right-border lg:sticky lg:border-l lg:shrink-0 lg:pt-6 lg:translate-x-0 sm:w-1/2 lg:w-64 lg:z-0 md:w-104 sidebar-right skeleton">
+        <div class="pl-5">
+            <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+        </div>
+    </div>
+
+    <!-- User should be able to hide sidebar right -->
+    <doc-sidebar-right v-cloak></doc-sidebar-right>
+</div>
+
+        </div>
+    </div>
+
+    <doc-search-mobile></doc-search-mobile>
+    <doc-back-to-top></doc-back-to-top>
+</div>
 
 
     <div id="retype-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Troubleshooting", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+        <script data-cfasync="false">window.__DOCS__ = { "title": "Troubleshooting", level: 2, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: false, hasMath: false, tocDepth: 23, "md": "/advanced/troubleshooting.md" }</script>
 </body>
 </html>
