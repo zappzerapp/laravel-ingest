@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\MappingInterface;
 use LaravelIngest\Contracts\TransformerInterface;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
@@ -124,6 +125,20 @@ class IngestConfig
         ];
 
         return $this;
+    }
+
+    /**
+     * Apply a reusable mapping configuration.
+     *
+     * Allows mapping classes to be composed into IngestConfig instances,
+     * enabling DRY field definitions across multiple importers.
+     *
+     * @param  MappingInterface  $mapping  The mapping to apply
+     * @param  string  $prefix  Optional prefix for source field names
+     */
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): self
+    {
+        return $mapping->apply($this, $prefix);
     }
 
     /**

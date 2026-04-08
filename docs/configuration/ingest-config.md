@@ -291,6 +291,130 @@ use LaravelIngest\Enums\TransactionMode;
 
 ---
 
+## Reusable Mappings
+
+When multiple importers share the same field mappings (e.g., products appear in both orders and refunds), define reusable mapping classes that implement `MappingInterface`.
+
+### Creating a Mapping Class
+
+Create mapping classes in your application (e.g., `app/Ingest/Mappings/`):
+
+```php
+// app/Ingest/Mappings/ProductMapping.php
+use LaravelIngest\Contracts\MappingInterface;
+use LaravelIngest\IngestConfig;
+use LaravelIngest\Transformers\NumericTransformer;
+
+class ProductMapping implements MappingInterface
+{
+    public function apply(IngestConfig $config, string $prefix = ''): IngestConfig
+    {
+        $prefix = $prefix !== '' ? "{$prefix}_" : '';
+
+        return $config
+            ->map("{$prefix}product_id", 'product_id')
+            ->map("{$prefix}product_name", 'name')
+            ->mapAndTransform(
+                "{$prefix}price_cents",
+                'price',
+                new NumericTransformer(decimals: 2)
+            )
+            ->map("{$prefix}sku", 'sku');
+    }
+}
+```
+
+### Using Mappings in Importers
+
+```php
+class OrderImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Order::class)
+            ->fromSource(SourceType::UPLOAD)
+            ->map('order_id', 'id')
+            ->map('customer_email', 'customer_email')
+            ->applyMapping(new ProductMapping(), 'line_item');  // Prefix: line_item_product_id
+    }
+}
+
+class RefundImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Refund::class)
+            ->fromSource(SourceType::UPLOAD)
+            ->map('refund_id', 'id')
+            ->applyMapping(new ProductMapping());  // No prefix needed
+    }
+}
+```
+
+### Configurable Mappings
+
+Add fluent configuration methods for flexibility:
+
+```php
+// app/Ingest/Mappings/ProductMapping.php
+class ProductMapping implements MappingInterface
+{
+    private bool $includeSku = true;
+    private ?int $priceDecimals = 2;
+
+    public function apply(IngestConfig $config, string $prefix = ''): IngestConfig
+    {
+        $prefix = $prefix !== '' ? "{$prefix}_" : '';
+
+        $config
+            ->map("{$prefix}product_id", 'product_id')
+            ->map("{$prefix}product_name", 'name')
+            ->mapAndTransform(
+                "{$prefix}price_cents",
+                'price',
+                new NumericTransformer(decimals: $this->priceDecimals)
+            );
+
+        if ($this->includeSku) {
+            $config->map("{$prefix}sku", 'sku');
+        }
+
+        return $config;
+    }
+
+    public function withSku(bool $include = true): self
+    {
+        $this->includeSku = $include;
+        return $this;
+    }
+
+    public function withPriceDecimals(int $decimals): self
+    {
+        $this->priceDecimals = $decimals;
+        return $this;
+    }
+}
+```
+
+Usage with configuration:
+
+```php
+IngestConfig::for(Order::class)
+    ->applyMapping(
+        (new ProductMapping())->withSku(false)->withPriceDecimals(0),
+        'item'
+    );
+```
+
+### Benefits
+
+- **DRY**: Define product mappings once, reuse everywhere
+- **Testability**: Unit test mapping logic in isolation
+- **Consistency**: Same transformation logic across all importers
+- **Flexibility**: Configure behavior per importer via fluent methods
+
+---
+
 ## Composite Keys (geplant für v0.5)
 
 Aktuell unterstützt `keyedBy()` nur einfache Schlüssel. Für zusammengesetzte Schlüssel (z.B. `['store_id', 'sku']`) können Sie Workarounds verwenden:
