@@ -19,25 +19,6 @@ use LaravelIngest\Models\IngestRun;
 use RuntimeException as GlobalRuntimeException;
 use Throwable;
 
-/**
- * Test extractor that throws an exception for testing error handling
- */
-class FailingExtractor implements \Flow\ETL\Extractor
-{
-    private GlobalRuntimeException $exception;
-
-    public function __construct(GlobalRuntimeException $exception)
-    {
-        $this->exception = $exception;
-    }
-
-    public function extract(FlowContext $context): Generator
-    {
-        throw $this->exception;
-        yield new Rows(); // @phpstan-ignore-line (unreachable)
-    }
-}
-
 it('implements FlowEngineInterface', function () {
     $engine = new FlowEngine();
 

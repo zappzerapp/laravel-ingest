@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Fixtures;
+namespace LaravelIngest\Tests\Fixtures;
 
 use Flow\ETL\FlowContext;
 use Flow\ETL\Row;
