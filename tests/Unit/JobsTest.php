@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
+use LaravelIngest\Contracts\FlowEngineInterface;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Jobs\ProcessIngestChunkJob;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Tests\Fixtures\Models\User;
 
 it('does not process chunk if batch is cancelled', function () {
-    $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
-    $processorMock->shouldNotReceive('processChunk');
+    $flowEngineMock = $this->mock(FlowEngineInterface::class);
+    $flowEngineMock->shouldNotReceive('build');
+    $flowEngineMock->shouldNotReceive('execute');
 
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
@@ -21,21 +23,25 @@ it('does not process chunk if batch is cancelled', function () {
 
     $job->shouldReceive('batch')->andReturn($batchMock);
 
-    $job->handle($processorMock);
+    $job->handle(null, $flowEngineMock);
 });
 
 it('triggers garbage collection when memory usage exceeds 80%', function () {
-    $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
-    $processorMock->shouldReceive('processChunk')->once()->andReturn([
-        'processed' => 1,
-        'successful' => 1,
-        'failed' => 0,
-    ]);
+    $chunk = [['number' => 1, 'test' => 'data']];
+    $dataFrame = \Flow\ETL\DSL\data_frame()->read(\Flow\ETL\DSL\from_array($chunk));
+
+    $flowEngineMock = $this->mock(FlowEngineInterface::class);
+    $flowEngineMock->shouldReceive('build')
+        ->once()
+        ->andReturn($dataFrame);
+    $flowEngineMock->shouldReceive('execute')
+        ->once()
+        ->with($dataFrame);
 
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
 
-    $jobMock = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [['test' => 'data']], false])
+    $jobMock = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, $chunk, false])
         ->makePartial()
         ->shouldAllowMockingProtectedMethods();
 
@@ -48,61 +54,73 @@ it('triggers garbage collection when memory usage exceeds 80%', function () {
     $batchMock->shouldReceive('cancelled')->once()->andReturn(false);
     $jobMock->shouldReceive('batch')->andReturn($batchMock);
 
-    $jobMock->handle($processorMock);
+    $jobMock->handle(null, $flowEngineMock);
 });
 
 it('returns PHP_INT_MAX for unlimited memory limit', function () {
+    $chunk = [['number' => 1, 'test' => 'data']];
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
-    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
+    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, $chunk, false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(PHP_INT_MAX);
 
-    $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
-    $processorMock->shouldReceive('processChunk')->once()->andReturn([
-        'processed' => 1,
-        'successful' => 1,
-        'failed' => 0,
-    ]);
+    $dataFrame = \Flow\ETL\DSL\data_frame()->read(\Flow\ETL\DSL\from_array($chunk));
 
-    $job->handle($processorMock);
+    $flowEngineMock = $this->mock(FlowEngineInterface::class);
+    $flowEngineMock->shouldReceive('build')
+        ->once()
+        ->andReturn($dataFrame);
+    $flowEngineMock->shouldReceive('execute')
+        ->once()
+        ->with($dataFrame);
+
+    $job->handle(null, $flowEngineMock);
 });
 
 it('converts memory limit with G unit to bytes', function () {
+    $chunk = [['number' => 1, 'test' => 'data']];
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
-    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
+    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, $chunk, false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(2 * 1024 * 1024 * 1024);
 
-    $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
-    $processorMock->shouldReceive('processChunk')->once()->andReturn([
-        'processed' => 1,
-        'successful' => 1,
-        'failed' => 0,
-    ]);
+    $dataFrame = \Flow\ETL\DSL\data_frame()->read(\Flow\ETL\DSL\from_array($chunk));
 
-    $job->handle($processorMock);
+    $flowEngineMock = $this->mock(FlowEngineInterface::class);
+    $flowEngineMock->shouldReceive('build')
+        ->once()
+        ->andReturn($dataFrame);
+    $flowEngineMock->shouldReceive('execute')
+        ->once()
+        ->with($dataFrame);
+
+    $job->handle(null, $flowEngineMock);
 });
 
 it('converts memory limit with K unit to bytes', function () {
+    $chunk = [['number' => 1, 'test' => 'data']];
     $run = IngestRun::factory()->create();
     $config = IngestConfig::for(User::class);
-    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, [], false])->makePartial();
+    $job = Mockery::mock(ProcessIngestChunkJob::class, [$run, $config, $chunk, false])->makePartial();
     $job->shouldAllowMockingProtectedMethods();
 
     $job->shouldReceive('getMemoryLimitInBytes')->once()->andReturn(512 * 1024);
 
-    $processorMock = $this->mock(LaravelIngest\Services\RowProcessor::class);
-    $processorMock->shouldReceive('processChunk')->once()->andReturn([
-        'processed' => 1,
-        'successful' => 1,
-        'failed' => 0,
-    ]);
+    $dataFrame = \Flow\ETL\DSL\data_frame()->read(\Flow\ETL\DSL\from_array($chunk));
 
-    $job->handle($processorMock);
+    $flowEngineMock = $this->mock(FlowEngineInterface::class);
+    $flowEngineMock->shouldReceive('build')
+        ->once()
+        ->andReturn($dataFrame);
+    $flowEngineMock->shouldReceive('execute')
+        ->once()
+        ->with($dataFrame);
+
+    $job->handle(null, $flowEngineMock);
 });
 
 it('getMemoryLimitInBytes returns PHP_INT_MAX when memory_limit is -1', function () {

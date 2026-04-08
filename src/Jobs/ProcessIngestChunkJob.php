@@ -10,11 +10,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use LaravelIngest\Contracts\FlowEngineInterface;
 use LaravelIngest\Events\ChunkProcessed;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
-use Throwable;
 
 class ProcessIngestChunkJob implements ShouldQueue
 {
@@ -28,13 +28,11 @@ class ProcessIngestChunkJob implements ShouldQueue
         public IngestRun $ingestRun,
         public IngestConfig $config,
         public array $chunk,
-        public bool $isDryRun = false
+        public bool $isDryRun = false,
+        private ?FlowEngineInterface $flowEngine = null
     ) {}
 
-    /**
-     * @throws Throwable
-     */
-    public function handle(RowProcessor $rowProcessor): void
+    public function handle(?RowProcessor $rowProcessor = null, ?FlowEngineInterface $flowEngine = null): void
     {
         if ($this->batch() && $this->batch()->cancelled()) {
             return;
@@ -42,7 +40,12 @@ class ProcessIngestChunkJob implements ShouldQueue
 
         $this->checkMemoryUsage();
 
-        $results = $rowProcessor->processChunk($this->ingestRun, $this->config, $this->chunk, $this->isDryRun);
+        $engine = $flowEngine ?? $this->flowEngine ?? app(FlowEngineInterface::class);
+
+        $pipeline = $engine->build($this->config, $this->chunk, $this->ingestRun, $this->isDryRun);
+        $engine->execute($pipeline);
+
+        $results = $this->calculateResults();
 
         $this->ingestRun->increment('processed_rows', $results['processed']);
         $this->ingestRun->increment('successful_rows', $results['successful']);
@@ -77,6 +80,26 @@ class ProcessIngestChunkJob implements ShouldQueue
     protected function getCurrentMemoryUsage(): int
     {
         return memory_get_usage(true);
+    }
+
+    private function calculateResults(): array
+    {
+        $processed = count($this->chunk);
+        $rowNumbers = array_map(fn($item) => $item['number'], $this->chunk);
+
+        $stats = \LaravelIngest\Models\IngestRow::query()
+            ->where('ingest_run_id', $this->ingestRun->id)
+            ->whereIn('row_number', $rowNumbers)
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        return [
+            'processed' => $processed,
+            'successful' => $stats['success'] ?? 0,
+            'failed' => $stats['failed'] ?? 0,
+        ];
     }
 
     private function forceGarbageCollection(): void

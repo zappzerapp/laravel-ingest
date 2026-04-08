@@ -35,4 +35,18 @@ return [
         'url' => LaravelIngest\Sources\UrlHandler::class,
         'json-stream' => LaravelIngest\Sources\JsonHandler::class,
     ],
+
+    'flow_engine' => [
+        // Memory limit for Flow PHP operations (e.g., '256M', '512M')
+        'memory_limit' => '256M',
+
+        // Number of rows to process per chunk
+        'chunk_size' => 1000,
+
+        // Enable parallel processing of chunks (requires additional setup)
+        'parallel_processing' => false,
+
+        // Error handling strategy: 'skip_and_log', 'fail_fast', 'collect_and_report'
+        'error_strategy' => 'skip_and_log',
+    ],
 ];

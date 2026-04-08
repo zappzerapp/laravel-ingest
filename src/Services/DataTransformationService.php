@@ -4,26 +4,23 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
-use Laravel\SerializableClosure\SerializableClosure;
+use Exception;
+use Illuminate\Support\Facades\Schema;
 
 class DataTransformationService
 {
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function processMappings(array $processedData, array $mappings): array
     {
         $modelData = [];
 
         foreach ($mappings as $sourceField => $mapping) {
-            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
+            if (!data_get($processedData, $sourceField)) {
                 continue;
             }
 
             $value = data_get($processedData, $sourceField);
 
-            if (($transformer = $mapping['transformer'] ?? null) && $transformer instanceof SerializableClosure) {
+            if (($transformer = $mapping['transformer'] ?? null) && $transformer instanceof \Laravel\SerializableClosure\SerializableClosure) {
                 $value = call_user_func($transformer->getClosure(), $value, $processedData);
             }
 
@@ -78,6 +75,29 @@ class DataTransformationService
         $unmappedData = array_diff_key($processedData, $mappings, $relations, $manyRelations, $usedTopLevelKeys);
         $modelInstance = app($modelClass);
 
-        return array_filter($unmappedData, static fn($key) => $modelInstance->isFillable($key), ARRAY_FILTER_USE_KEY);
+        // Further filter to only include keys that actually exist as database columns
+        // This prevents trying to insert keys that don't correspond to real columns
+        return array_filter($unmappedData, static function ($key) use ($modelInstance) {
+            // Only include keys that are actually fillable AND correspond to real database columns
+            if (!$modelInstance->isFillable($key)) {
+                return false;
+            }
+
+            // For models where all attributes are fillable (guarded=[]),
+            // we need additional validation to ensure the key corresponds to a real column
+            if (empty($modelInstance->getGuarded()) || $modelInstance->getGuarded() === ['*']) {
+                try {
+                    // Get the actual database column names
+                    $tableColumns = Schema::getColumnListing($modelInstance->getTable());
+
+                    return in_array($key, $tableColumns, true);
+                } catch (Exception $e) {
+                    // If we can't determine the columns, fall back to the original behavior
+                    return true;
+                }
+            }
+
+            return true;
+        }, ARRAY_FILTER_USE_KEY);
     }
 }

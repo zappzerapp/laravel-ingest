@@ -16,6 +16,8 @@ use LaravelIngest\Console\PruneIngestFilesCommand;
 use LaravelIngest\Console\RetryIngestCommand;
 use LaravelIngest\Console\RunIngestCommand;
 use LaravelIngest\Console\StatusIngestCommand;
+use LaravelIngest\Contracts\FlowEngineInterface;
+use LaravelIngest\Flow\FlowEngine;
 use LaravelIngest\Sources\SourceHandlerFactory;
 
 class IngestServiceProvider extends ServiceProvider
@@ -27,6 +29,8 @@ class IngestServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/ingest.php', 'ingest');
+
+        $this->app->singleton(FlowEngineInterface::class, fn() => new FlowEngine());
 
         $this->app->singleton(IngestManager::class, function ($app) {
             $definitions = $this->discoverDefinitions($app);

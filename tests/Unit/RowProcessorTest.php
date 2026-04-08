@@ -15,7 +15,6 @@ use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\Models\UserWithRules;
-use ReflectionClass;
 
 it('executes afterRow callback after successful row processing', function () {
     $callbackExecuted = false;
