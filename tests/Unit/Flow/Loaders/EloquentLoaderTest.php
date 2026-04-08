@@ -852,3 +852,158 @@ it('uses model validation rules when configured', function () {
         'name' => 'Test User',
     ]);
 });
+
+it('upserts when model does not use timestamps', function () {
+    // SimpleItem doesn't use timestamps - test the branches in upsertModel
+    $config = IngestConfig::for(LaravelIngest\Tests\Fixtures\Models\SimpleItem::class)
+        ->map('code', 'code')
+        ->keyedBy('code')
+        ->onDuplicate(DuplicateStrategy::UPSERT);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['code' => 'ITEM001'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('simple_items', ['code' => 'ITEM001']);
+});
+
+it('throws runtime exception in testing mode for non-model beforeSave callback', function () {
+    // This tests line 125-126 in EloquentLoader (testing mode only)
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->beforeSave(fn($model, $data) => 'not a model');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test'])
+        )
+    );
+
+    // In testing mode, should throw RuntimeException
+    expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
+        ->toThrow(RuntimeException::class, 'beforeSave callback must return an Eloquent model');
+});
+
+it('syncs many-to-many relations when cache has values', function () {
+    $adminRole = LaravelIngest\Tests\Fixtures\Models\Role::create(['name' => 'Admin', 'slug' => 'admin']);
+    $editorRole = LaravelIngest\Tests\Fixtures\Models\Role::create(['name' => 'Editor', 'slug' => 'editor']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->relateMany('role_slugs', 'roles', LaravelIngest\Tests\Fixtures\Models\Role::class, 'slug', ',');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'admin,editor'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $user = User::where('email', 'john@test.com')->first();
+    expect($user->roles)->toHaveCount(2)
+        ->and($user->roles->pluck('slug')->toArray())->toContain('admin', 'editor');
+});
+
+it('skips syncing when relation value not found in cache', function () {
+    // Create roles
+    LaravelIngest\Tests\Fixtures\Models\Role::create(['name' => 'Admin', 'slug' => 'admin']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('name', 'name')
+        ->map('email', 'email')
+        ->relateMany('role_slugs', 'roles', LaravelIngest\Tests\Fixtures\Models\Role::class, 'slug', ',');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    // Role 'nonexistent' doesn't exist in database, so it won't be in the prefetch cache
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'nonexistent,admin'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $user = User::where('email', 'john@test.com')->first();
+    // Should only sync 'admin' role, 'nonexistent' should be skipped
+    expect($user->roles)->toHaveCount(1)
+        ->and($user->roles->first()->slug)->toBe('admin');
+});
+
+it('logs rows when ingest.log_rows is enabled', function () {
+    config(['ingest.log_rows' => true]);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('ingest_rows', [
+        'ingest_run_id' => $ingestRun->id,
+        'row_number' => 1,
+        'status' => 'success',
+    ]);
+
+    config(['ingest.log_rows' => false]);
+});
+
+it('logs failed rows with validation errors', function () {
+    config(['ingest.log_rows' => true]);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->validate(['email' => 'required|email']);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'invalid-email', 'name' => 'Test'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('ingest_rows', [
+        'ingest_run_id' => $ingestRun->id,
+        'row_number' => 1,
+        'status' => 'failed',
+    ]);
+
+    config(['ingest.log_rows' => false]);
+});
