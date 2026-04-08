@@ -288,3 +288,83 @@ it('falls back to allowing all fields when Schema throws exception', function ()
     // Clear the mock
     Illuminate\Support\Facades\Schema::partialMock();
 });
+
+it('returns true for fillable fields when model has specific guarded', function () {
+    $service = new DataTransformationService();
+
+    // ProductWithCategory has guarded = [] (all fillable)
+    // When isFillable returns true, it continues to check column existence
+    $processedData = ['name' => 'Product', 'category_id' => 1];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
+    );
+
+    expect($result)->toHaveKey('category_id');
+});
+
+it('excludes non-fillable attributes from unmapped data for models with explicit fillable', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test', 'password' => 'secret123'];
+    $mappings = ['email' => ['attribute' => 'email']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\FillableUser::class
+    );
+
+    expect($result)
+        ->toHaveKey('name')
+        ->not->toHaveKey('password');
+});
+
+it('includes fillable attributes when model has explicit guarded array', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test', 'extra_field' => 'value'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    // User has guarded = [] (all fillable), but the final return true at line 100
+    // is reached when the model has guarded (not empty array and not ['*'])
+    // We need a model with specific guarded fields
+
+    // Create a temporary model class inline just for this test
+    $model = new class() extends Illuminate\Database\Eloquent\Model
+    {
+        protected $guarded = ['id']; // Specific guarded, not empty and not ['*']
+        protected $table = 'users';
+    };
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        get_class($model)
+    );
+
+    expect($result)
+        ->toHaveKey('email')
+        ->toHaveKey('name');
+});
