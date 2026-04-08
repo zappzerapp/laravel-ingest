@@ -9,9 +9,6 @@ use LaravelIngest\Contracts\TransformerInterface;
 
 class DataTransformationService
 {
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function processMappings(array $processedData, array $mappings): array
     {
         $modelData = [];

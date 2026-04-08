@@ -360,20 +360,18 @@ class IngestConfig
             return $transformer;
         }
 
-        if (is_string($transformer)) {
-            if (!class_exists($transformer)) {
-                throw new InvalidConfigurationException(
-                    "Transformer class '{$transformer}' does not exist."
-                );
-            }
-
-            if (!is_subclass_of($transformer, TransformerInterface::class)) {
-                throw new InvalidConfigurationException(
-                    "Transformer class '{$transformer}' must implement " . TransformerInterface::class
-                );
-            }
-
-            return new $transformer();
+        if (!class_exists($transformer)) {
+            throw new InvalidConfigurationException(
+                "Transformer class '{$transformer}' does not exist."
+            );
         }
+
+        if (!is_subclass_of($transformer, TransformerInterface::class)) {
+            throw new InvalidConfigurationException(
+                "Transformer class '{$transformer}' must implement " . TransformerInterface::class
+            );
+        }
+
+        return new $transformer();
     }
 }
