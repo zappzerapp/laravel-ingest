@@ -7,7 +7,6 @@ use Flow\ETL\FlowContext;
 use Flow\ETL\Row;
 use Flow\ETL\Row\Entry\IntegerEntry;
 use Flow\ETL\Row\Entry\JsonEntry;
-use Flow\ETL\Row\Entry\StringEntry;
 use Flow\ETL\Rows;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
@@ -90,7 +89,8 @@ it('skips existing models with SKIP strategy', function () {
 
     $rows = new Rows(
         Row::create(
-            new JsonEntry('json_data', [
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', [
                 'email' => 'test@example.com',
                 'unmapped_field' => 'unmapped_value',
                 'another_field' => 123,
@@ -407,12 +407,12 @@ it('creates models without keyedBy using UPSERT strategy', function () {
     ]);
 });
 
-it('processes unmapped data into json_data column', function () {
+it('processes extraFields callback for additional model attributes', function () {
     $config = IngestConfig::for(User::class)
-        ->map('data', 'name')
+        ->map('email', 'email')
+        ->map('name', 'name')
         ->extraFields(fn($data) => [
-            'unmapped_field' => $data['unmapped'] ?? null,
-            'another_field' => $data['extra'] ?? null,
+            'is_admin' => $data['is_admin'] ?? false,
         ]);
 
     $ingestRun = IngestRun::factory()->create();
@@ -420,17 +420,22 @@ it('processes unmapped data into json_data column', function () {
 
     $rows = new Rows(
         Row::create(
-            new StringEntry('email', 'test@example.com'),
-            new JsonEntry('data', ['unmapped' => 'unmapped_value', 'extra' => 123])
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', [
+                'email' => 'test@example.com',
+                'name' => 'Test User',
+                'is_admin' => true,
+            ])
         )
     );
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    $user = User::where('email', 'test@example.com')->first();
-    expect($user->name)->toBeJson();
-    expect(json_decode($user->name, true))->toHaveKey('unmapped_field', 'unmapped_value');
-    expect(json_decode($user->name, true))->toHaveKey('another_field', 123);
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Test User',
+        'is_admin' => true,
+    ]);
 });
 
 it('calls after chunk callback', function () {
