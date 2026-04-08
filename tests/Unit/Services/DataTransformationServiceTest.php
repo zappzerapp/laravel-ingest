@@ -159,3 +159,75 @@ it('handles nested key failure safely', function () {
 
     expect($result)->not->toHaveKey('full_name');
 });
+
+it('filters unmapped data for non-fillable attributes', function () {
+    $service = new DataTransformationService();
+
+    // Product model has guarded fields
+    $processedData = ['sku' => 'ABC123', 'name' => 'Product', 'fake_column' => 'value'];
+    $mappings = ['sku' => ['attribute' => 'sku']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\Product::class
+    );
+
+    // name and fake_column should not be included since Product has guarded=['*']
+    // Only columns that exist in the database are included when guarded=['*']
+    expect($result)->not->toHaveKey('fake_column');
+});
+
+it('filters unmapped data for guarded models by checking database columns', function () {
+    $service = new DataTransformationService();
+
+    // User model has guarded=[] (all fillable)
+    $processedData = ['email' => 'test@example.com', 'nonexistent_column' => 'value'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    // User has guarded=[], so all attributes are fillable
+    // But the code should filter out columns that don't exist in the database
+    expect($result)->not->toHaveKey('nonexistent_column')
+        ->and($result)->toHaveKey('email');
+});
+
+it('includes unmapped data when model has partial guarded', function () {
+    $service = new DataTransformationService();
+
+    // Assuming User model - let's test with a real column
+    $processedData = ['name' => 'Test', 'email' => 'test@example.com'];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    // email is unmapped - should be included (fillable and valid column)
+    expect($result)->toHaveKey('email');
+});

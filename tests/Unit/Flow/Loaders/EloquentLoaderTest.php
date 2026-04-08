@@ -609,3 +609,246 @@ it('handles exception in after chunk callback', function () {
     expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
         ->toThrow(RuntimeException::class, 'Chunk processing failed');
 });
+
+it('auto-increments row number when number field is missing', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    // Create rows without IntegerEntry('number', ...) - uses plain array
+    $rows = new Rows(
+        Row::create(
+            new JsonEntry('data', ['email' => 'user1@example.com', 'name' => 'User 1'])
+        ),
+        Row::create(
+            new JsonEntry('data', ['email' => 'user2@example.com', 'name' => 'User 2'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('users', ['email' => 'user1@example.com']);
+    $this->assertDatabaseHas('users', ['email' => 'user2@example.com']);
+});
+
+it('handles extraFields with non-existent database column gracefully', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->extraFields(fn($data) => [
+            'nonexistent_column' => 'value',
+            'is_admin' => true,
+        ]);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    // Should not throw - nonexistent_column should be filtered out
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Test User',
+        'is_admin' => true,
+    ]);
+});
+
+it('handles nested source keys in mappings', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('user.email', 'email')
+        ->map('user.name', 'name');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['user' => ['email' => 'test@example.com', 'name' => 'Test User']])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Test User',
+    ]);
+});
+
+it('shows array keys in FAIL strategy error message', function () {
+    User::create(['email' => 'test@example.com', 'name' => 'Existing']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->keyedBy(['email', 'name'])
+        ->onDuplicate(DuplicateStrategy::FAIL);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Existing'])
+        )
+    );
+
+    expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
+        ->toThrow(RuntimeException::class, "Duplicate entry found for key 'email, name'.");
+});
+
+it('handles updateIfNewer when source column is missing', function () {
+    User::create(['email' => 'test@example.com', 'name' => 'Existing', 'updated_at' => '2024-12-01 00:00:00']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamps('updated_at', 'updated_at');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    // Row without updated_at in data - should not update
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'New Name'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    // Name should NOT have changed (no timestamp comparison available)
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Existing',
+    ]);
+});
+
+it('updates when db timestamp is null', function () {
+    // Create user without updated_at
+    $user = User::create(['email' => 'test@example.com', 'name' => 'Test', 'updated_at' => null]);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
+        ->compareTimestamps('updated_at', 'updated_at');
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', [
+                'email' => 'test@example.com',
+                'name' => 'Updated Name',
+                'updated_at' => '2024-01-01 00:00:00',
+            ])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    // Should update because db timestamp is null
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Updated Name',
+    ]);
+});
+
+it('finds existing model with multiple keys', function () {
+    User::create(['email' => 'test@example.com', 'name' => 'Existing']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->keyedBy(['email', 'name'])
+        ->onDuplicate(DuplicateStrategy::SKIP);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Existing'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    // Should find existing and skip
+    $this->assertDatabaseHas('users', [
+        'email' => 'test@example.com',
+        'name' => 'Existing',
+    ]);
+    expect(User::count())->toBe(1);
+});
+
+it('handles missing key in model data when searching', function () {
+    // Create a user
+    User::create(['email' => 'test@example.com', 'name' => 'Existing']);
+
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->keyedBy('email')
+        ->onDuplicate(DuplicateStrategy::UPDATE);
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    // Row with a new email - should create new model since key not found
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'new@example.com', 'name' => 'New User'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    // Should create a new user
+    expect(User::count())->toBe(2);
+    $this->assertDatabaseHas('users', ['email' => 'new@example.com']);
+});
+
+it('uses model validation rules when configured', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->map('name', 'name')
+        ->validateWithModelRules();
+
+    $ingestRun = IngestRun::factory()->create();
+    $loader = new EloquentLoader($config, $ingestRun);
+
+    $rows = new Rows(
+        Row::create(
+            new IntegerEntry('number', 1),
+            new JsonEntry('data', ['email' => 'valid@example.com', 'name' => 'Test User'])
+        )
+    );
+
+    $loader->load($rows, new FlowContext(EtlConfig::default()));
+
+    $this->assertDatabaseHas('users', [
+        'email' => 'valid@example.com',
+        'name' => 'Test User',
+    ]);
+});
