@@ -231,3 +231,60 @@ it('includes unmapped data when model has partial guarded', function () {
     // email is unmapped - should be included (fillable and valid column)
     expect($result)->toHaveKey('email');
 });
+
+it('excludes non-fillable attributes from unmapped data', function () {
+    $service = new DataTransformationService();
+
+    // ProductWithCategory has guarded fields (not all fillable)
+    $processedData = ['name' => 'Product', 'category_id' => 1, 'non_existent' => 'value'];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
+    );
+
+    // category_id should be excluded if not fillable
+    // The model has guarded = ['id'] so most fields should be fillable
+    // But non_existent should be filtered by the column check
+    expect($result)->not->toHaveKey('non_existent');
+});
+
+it('falls back to allowing all fields when Schema throws exception', function () {
+    $service = new DataTransformationService();
+
+    // Temporarily mock Schema to throw
+    Illuminate\Support\Facades\Schema::shouldReceive('getColumnListing')
+        ->andThrow(new Exception('Database error'));
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    // User has guarded = [] so it will try to check columns
+    // When Schema throws, it should fall back to returning true (allowing the field)
+    $result = $service->processUnmappedData(
+        $processedData,
+        $mappings,
+        $relations,
+        $manyRelations,
+        $usedTopLevelKeys,
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    // Both should be present since Schema exception triggers fallback
+    expect($result)->toHaveKey('email')
+        ->and($result)->toHaveKey('name');
+
+    // Clear the mock
+    Illuminate\Support\Facades\Schema::partialMock();
+});

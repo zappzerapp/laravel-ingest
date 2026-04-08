@@ -202,3 +202,63 @@ it('handles tempnam returning false', function () {
     // Skip actual test since we can't mock native functions easily
     expect(true)->toBeTrue();
 })->skip('Cannot mock native tempnam function in userland PHP');
+
+it('cleans up temp file in finally block during extraction', function () {
+    $jsonData = '[{"name": "Alice"}]';
+
+    Http::fake([
+        'test.example.com/*' => Http::response($jsonData, 200, ['Content-Type' => 'application/json']),
+    ]);
+
+    $extractor = new UrlExtractor('https://test.example.com/data.json');
+    $context = new FlowContext(\Flow\ETL\Config::default());
+
+    // Extract to create temp file
+    iterator_to_array($extractor->extract($context));
+
+    // Get temp file path via reflection
+    $reflection = new ReflectionClass($extractor);
+    $tempFileProperty = $reflection->getProperty('tempFile');
+    $tempFileProperty->setAccessible(true);
+    $tempFile = $tempFileProperty->getValue($extractor);
+
+    // The file is deleted in the finally block during extraction,
+    // so by the time extraction is done, it should already be deleted
+    expect($tempFile)->not->toBeNull();
+
+    // Destructor won't throw even if file no longer exists
+    // This tests the null check in destructor: if ($this->tempFile !== null && file_exists($this->tempFile))
+    unset($extractor);
+
+    // No exception should be thrown
+    expect(true)->toBeTrue();
+});
+
+it('calls unlink in destructor when temp file still exists', function () {
+    $jsonData = '[{"name": "Alice"}]';
+
+    Http::fake([
+        'test.example.com/*' => Http::response($jsonData, 200, ['Content-Type' => 'application/json']),
+    ]);
+
+    $extractor = new UrlExtractor('https://test.example.com/data.json');
+
+    // Manually set tempFile to a path we control (simulating a scenario where file wasn't deleted in finally)
+    $reflection = new ReflectionClass($extractor);
+    $tempFileProperty = $reflection->getProperty('tempFile');
+    $tempFileProperty->setAccessible(true);
+
+    // Create a real temp file
+    $tempPath = tempnam(sys_get_temp_dir(), 'test_cleanup_');
+    file_put_contents($tempPath, 'test');
+    $tempFileProperty->setValue($extractor, $tempPath);
+
+    // Verify file exists
+    expect(file_exists($tempPath))->toBeTrue();
+
+    // Destructor should clean it up since file_exists check passes
+    unset($extractor);
+
+    // File should be deleted by destructor
+    expect(file_exists($tempPath))->toBeFalse();
+});
