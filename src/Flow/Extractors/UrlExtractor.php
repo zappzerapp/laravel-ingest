@@ -37,7 +37,11 @@ class UrlExtractor extends FlowExtractor
             throw new RuntimeException("Failed to fetch URL: {$this->url}");
         }
 
-        $this->tempFile = tempnam(sys_get_temp_dir(), 'flow_url_');
+        $tempFile = tempnam(sys_get_temp_dir(), 'flow_url_');
+        if ($tempFile === false) {
+            throw new RuntimeException('Failed to create temporary file for URL extraction');
+        }
+        $this->tempFile = $tempFile;
         file_put_contents($this->tempFile, $response->body());
 
         try {
@@ -54,7 +58,7 @@ class UrlExtractor extends FlowExtractor
 
             yield from $extractor->extract($context);
         } finally {
-            if ($this->tempFile !== null && file_exists($this->tempFile)) {
+            if (file_exists($this->tempFile)) {
                 unlink($this->tempFile);
             }
         }

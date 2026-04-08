@@ -30,9 +30,9 @@ class EloquentLoader implements Loader
     private DataTransformationService $transformationService;
 
     public function __construct(
-        private IngestConfig $config,
-        private IngestRun $ingestRun,
-        private bool $isDryRun = false,
+        private readonly IngestConfig $config,
+        private readonly IngestRun $ingestRun,
+        private readonly bool $isDryRun = false,
         ?DataTransformationService $transformationService = null
     ) {
         $this->transformationService = $transformationService ?? new DataTransformationService();
@@ -246,7 +246,7 @@ class EloquentLoader implements Loader
         return $topLevelKeys;
     }
 
-    private function persist(array $modelData, string $modelClass): ?Model
+    private function persist(array $modelData, string $modelClass): Model
     {
         if ($this->config->duplicateStrategy === DuplicateStrategy::UPSERT) {
             return $this->upsertModel($modelData, $modelClass);
@@ -285,8 +285,12 @@ class EloquentLoader implements Loader
             DuplicateStrategy::UPDATE, DuplicateStrategy::UPSERT => $this->updateModel($existingModel, $modelData),
             DuplicateStrategy::SKIP => $existingModel,
             DuplicateStrategy::UPDATE_IF_NEWER => $this->updateIfNewer($existingModel, $modelData),
-            DuplicateStrategy::FAIL => $this->handleFailStrategy(),
-            default => $existingModel,
+            DuplicateStrategy::FAIL => throw new RuntimeException(sprintf(
+                'Duplicate entry found for key \'%s\'.',
+                is_array($this->config->keyedBy)
+                    ? implode(', ', $this->config->keyedBy)
+                    : $this->config->keyedBy
+            )),
         };
     }
 
@@ -347,15 +351,6 @@ class EloquentLoader implements Loader
         }
 
         return $query->first();
-    }
-
-    private function handleFailStrategy(): never
-    {
-        $keys = is_array($this->config->keyedBy)
-            ? implode(', ', $this->config->keyedBy)
-            : $this->config->keyedBy;
-
-        throw new RuntimeException("Duplicate entry found for key '{$keys}'.");
     }
 
     private function shouldUpdate(Model $existingModel, array $newData): bool
