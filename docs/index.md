@@ -4,6 +4,10 @@ icon: home
 order: 100
 ---
 
+<p align="center">
+    <img src="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/.github/header.png" alt="Laravel Ingest Banner" width="50%">
+</p>
+
 # Introduction to Laravel Ingest
 
 **Stop writing spaghetti code for imports.**
