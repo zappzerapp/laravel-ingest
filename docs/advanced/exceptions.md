@@ -53,10 +53,21 @@ use LaravelIngest\Exceptions\DefinitionNotFoundException;
 try {
     $run = Ingest::start('non-existent-importer');
 } catch (DefinitionNotFoundException $e) {
-    // "No importer found with the slug 'non-existent-importer'. 
-    //  Please check your spelling or run 'php artisan ingest:list' 
+    // "No importer found with the slug 'non-existent-importer'.
+    //  Please check your spelling or run 'php artisan ingest:list'
     //  to see available importers."
 }
+```
+
+### Factory Method
+
+You can create exceptions using the static factory method:
+
+```php
+// Creates a DefinitionNotFoundException with a helpful message
+DefinitionNotFoundException::forSlug('missing-importer');
+// "No importer found with the slug 'missing-importer'. Please check your spelling
+//  or run 'php artisan ingest:list' to see available importers."
 ```
 
 **Solution:** Ensure the importer is registered:
@@ -227,7 +238,36 @@ try {
 
 ## Global Exception Handling
 
-You can handle Ingest exceptions globally in your exception handler:
+### Using IngestExceptionHandler
+
+Laravel Ingest provides a convenient `IngestExceptionHandler` class that automatically registers all Ingest exceptions with proper HTTP status codes:
+
+```php
+// app/Exceptions/Handler.php (Laravel 10 and earlier)
+// or bootstrap/app.php (Laravel 11+)
+
+use Illuminate\Foundation\Exceptions\Handler;
+use LaravelIngest\Exceptions\IngestExceptionHandler;
+
+// Laravel 11+
+->withExceptions(function (Exceptions $exceptions) {
+    // Register all Ingest exception handlers
+    IngestExceptionHandler::register($exceptions);
+})
+```
+
+The `IngestExceptionHandler` automatically configures the following HTTP responses:
+
+| Exception | HTTP Status | Response Body |
+|-----------|-------------|---------------|
+| `NoFailedRowsException` | 400 | `{ "message": "..." }` |
+| `DefinitionNotFoundException` | 404 | `{ "message": "..." }` |
+| `InvalidConfigurationException` | 422 | `{ "message": "..." }` |
+| `ConcurrencyException` | 409 | `{ "message": "..." }` |
+
+### Manual Exception Handling
+
+If you prefer to handle exceptions manually, you can do so in your exception handler:
 
 ```php
 // app/Exceptions/Handler.php (Laravel 10 and earlier)

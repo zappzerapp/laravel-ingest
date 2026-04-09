@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LaravelIngest;
 
+use Closure;
 use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\UploadedFile;
@@ -78,10 +79,7 @@ class IngestManager
     public function getDefinition(string $slug): IngestDefinition
     {
         if (!isset($this->definitions[$slug])) {
-            throw new DefinitionNotFoundException(
-                "No importer found with the slug '{$slug}'. " .
-                "Please check your spelling or run 'php artisan ingest:list' to see available importers."
-            );
+            throw DefinitionNotFoundException::forSlug($slug);
         }
 
         return $this->definitions[$slug];
@@ -95,44 +93,21 @@ class IngestManager
      */
     public function retry(IngestRun $originalRun, ?Authenticatable $user = null, bool $isDryRun = false): IngestRun
     {
-        $lock = Cache::lock('retry-ingest-run-' . $originalRun->id, 10);
-        if (!$lock->get()) {
-            throw ConcurrencyException::duplicateRetryAttempt($originalRun->id);
-        }
+        return $this->executeWithRetryLock($originalRun, function () use ($originalRun, $user, $isDryRun) {
+            $this->validateFailedRowsExist($originalRun);
 
-        try {
-            if ($originalRun->failed_rows === 0) {
-                throw new NoFailedRowsException('The original run has no failed rows to retry.');
-            }
-
-            $newRun = IngestRun::create([
-                'parent_id' => $originalRun->id,
-                'retried_from_run_id' => $originalRun->id,
-                'importer' => $originalRun->importer,
-                'user_id' => $user?->getAuthIdentifier(),
-                'status' => IngestStatus::PROCESSING,
-                'original_filename' => $originalRun->original_filename,
-            ]);
-
+            $newRun = $this->createRetryRun($originalRun, $user);
             IngestRunStarted::dispatch($newRun);
 
             try {
-                $definition = $this->getDefinition($originalRun->importer);
-                $config = $definition->getConfig();
-
-                $failedRowsData = $originalRun->rows()->where('status', 'failed')->cursor()
-                    ->map(fn($row) => assert($row instanceof IngestRow) ? $row->data : []);
-
-                $this->dispatchBatch($newRun, $config, $failedRowsData, $isDryRun);
+                $this->processRetryBatch($originalRun, $newRun, $isDryRun);
             } catch (Throwable $e) {
                 $this->handleFailure($newRun, $e);
                 throw $e;
             }
 
             return $newRun;
-        } finally {
-            $lock->release();
-        }
+        });
     }
 
     /**
@@ -145,33 +120,118 @@ class IngestManager
         bool $isDryRun,
         ?callable $cleanupCallback = null
     ): void {
-        $rowCounter = 1;
-        $totalRows = 0;
-        $chunk = [];
         $batch = null;
+        $totalRows = 0;
+        $chunks = $this->chunkRows($rows, $config->chunkSize, $totalRows);
+
+        foreach ($chunks as $chunk) {
+            $batch = $this->addChunkToBatch($batch, $ingestRun, $config, $chunk, $isDryRun, $cleanupCallback);
+        }
+
+        $this->updateTotalRows($ingestRun, $totalRows);
+        $this->finalizeBatchDispatch($ingestRun, $batch, $cleanupCallback);
+    }
+
+    protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
+    {
+        $this->logFailure($ingestRun, $e);
+
+        $ingestRun->update([
+            'status' => IngestStatus::FAILED,
+            'summary' => $this->buildFailureSummary($e),
+        ]);
+
+        IngestRunFailed::dispatch($ingestRun, $e);
+    }
+
+    /**
+     * @throws ConcurrencyException
+     */
+    private function executeWithRetryLock(IngestRun $originalRun, callable $callback): mixed
+    {
+        $lock = Cache::lock('retry-ingest-run-' . $originalRun->id, 10);
+        if (!$lock->get()) {
+            throw ConcurrencyException::duplicateRetryAttempt($originalRun->id);
+        }
+
+        try {
+            return $callback();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * @throws NoFailedRowsException
+     */
+    private function validateFailedRowsExist(IngestRun $originalRun): void
+    {
+        if ($originalRun->failed_rows === 0) {
+            throw new NoFailedRowsException('The original run has no failed rows to retry.');
+        }
+    }
+
+    private function createRetryRun(IngestRun $originalRun, ?Authenticatable $user): IngestRun
+    {
+        return IngestRun::create([
+            'parent_id' => $originalRun->id,
+            'retried_from_run_id' => $originalRun->id,
+            'importer' => $originalRun->importer,
+            'user_id' => $user?->getAuthIdentifier(),
+            'status' => IngestStatus::PROCESSING,
+            'original_filename' => $originalRun->original_filename,
+        ]);
+    }
+
+    /**
+     * @throws DefinitionNotFoundException
+     * @throws Throwable
+     */
+    private function processRetryBatch(IngestRun $originalRun, IngestRun $newRun, bool $isDryRun): void
+    {
+        $definition = $this->getDefinition($originalRun->importer);
+        $config = $definition->getConfig();
+
+        $failedRowsData = $originalRun->rows()->where('status', 'failed')->cursor()
+            ->map(fn($row) => assert($row instanceof IngestRow) ? $row->data : []);
+
+        $this->dispatchBatch($newRun, $config, $failedRowsData, $isDryRun);
+    }
+
+    /**
+     * @param-out int $totalRows
+     *
+     * @return iterable<array{number: int, data: mixed}[]>
+     */
+    private function chunkRows(iterable $rows, int $chunkSize, int &$totalRows): iterable
+    {
+        $rowCounter = 1;
+        $chunk = [];
+        $totalRows = 0;
 
         foreach ($rows as $row) {
             $totalRows++;
             $chunk[] = ['number' => $rowCounter++, 'data' => $row];
 
-            if (count($chunk) >= $config->chunkSize) {
-                $batch = $this->addChunkToBatch($batch, $ingestRun, $config, $chunk, $isDryRun, $cleanupCallback);
+            if (count($chunk) >= $chunkSize) {
+                yield $chunk;
                 $chunk = [];
             }
         }
 
         if (!empty($chunk)) {
-            $batch = $this->addChunkToBatch($batch, $ingestRun, $config, $chunk, $isDryRun, $cleanupCallback);
+            yield $chunk;
         }
+    }
 
-        $this->updateTotalRows($ingestRun, $totalRows);
-
+    private function finalizeBatchDispatch(IngestRun $ingestRun, ?Batch $batch, ?callable $cleanupCallback): void
+    {
         if ($batch === null) {
             $this->handleEmptyBatch($ingestRun, $cleanupCallback);
         }
     }
 
-    protected function handleFailure(IngestRun $ingestRun, Throwable $e): void
+    private function logFailure(IngestRun $ingestRun, Throwable $e): void
     {
         Log::error('Ingest run failed', [
             'run_id' => $ingestRun->id,
@@ -182,25 +242,26 @@ class IngestManager
             'file' => $e->getFile(),
             'line' => $e->getLine(),
         ]);
+    }
 
+    /**
+     * @return array{errors: array<int, array{message: string, exception: string}>, warnings: array<mixed>, meta: array<mixed>}
+     */
+    private function buildFailureSummary(Throwable $e): array
+    {
         ErrorMessageService::setEnvironment(app()->environment('production'));
         $sanitizedMessage = ErrorMessageService::sanitize($e->getMessage());
 
-        $ingestRun->update([
-            'status' => IngestStatus::FAILED,
-            'summary' => [
-                'errors' => [
-                    [
-                        'message' => $sanitizedMessage,
-                        'exception' => get_class($e),
-                    ],
+        return [
+            'errors' => [
+                [
+                    'message' => $sanitizedMessage,
+                    'exception' => get_class($e),
                 ],
-                'warnings' => [],
-                'meta' => [],
             ],
-        ]);
-
-        IngestRunFailed::dispatch($ingestRun, $e);
+            'warnings' => [],
+            'meta' => [],
+        ];
     }
 
     private function extractOriginalFilename(mixed $payload): ?string
@@ -228,11 +289,11 @@ class IngestManager
 
     private function updateIngestRunWithMetadata(IngestRun $ingestRun, mixed $sourceHandler): void
     {
-        $totalRows = $sourceHandler->getTotalRows();
         $ingestRun->update([
             'processed_filepath' => $sourceHandler->getProcessedFilePath(),
         ]);
 
+        $totalRows = $sourceHandler->getTotalRows();
         if ($totalRows !== null) {
             $ingestRun->update(['total_rows' => $totalRows]);
         }
@@ -261,31 +322,38 @@ class IngestManager
      */
     private function dispatchBatchJobs(IngestRun $ingestRun, array $batchJobs, ?callable $cleanupCallback): Batch
     {
-        $queueConnection = Config::get('ingest.queue.connection');
-        $queueName = Config::get('ingest.queue.name');
-
         $batch = Bus::batch($batchJobs)
-            ->then(function () use ($ingestRun, $cleanupCallback) {
-                $ingestRun->finalize();
-                if ($cleanupCallback) {
-                    $cleanupCallback();
-                }
-                IngestRunCompleted::dispatch($ingestRun);
-            })
-            ->catch(function (Throwable $e) use ($ingestRun, $cleanupCallback) {
-                $ingestRun->update(['status' => IngestStatus::FAILED]);
-                if ($cleanupCallback) {
-                    $cleanupCallback();
-                }
-                IngestRunFailed::dispatch($ingestRun, $e);
-            })
-            ->onConnection($queueConnection)
-            ->onQueue($queueName)
+            ->then($this->createBatchSuccessCallback($ingestRun, $cleanupCallback))
+            ->catch($this->createBatchFailureCallback($ingestRun, $cleanupCallback))
+            ->onConnection(Config::get('ingest.queue.connection'))
+            ->onQueue(Config::get('ingest.queue.name'))
             ->dispatch();
 
         $ingestRun->update(['batch_id' => $batch->id]);
 
         return $batch;
+    }
+
+    private function createBatchSuccessCallback(IngestRun $ingestRun, ?callable $cleanupCallback): Closure
+    {
+        return function () use ($ingestRun, $cleanupCallback) {
+            $ingestRun->finalize();
+            if ($cleanupCallback) {
+                $cleanupCallback();
+            }
+            IngestRunCompleted::dispatch($ingestRun);
+        };
+    }
+
+    private function createBatchFailureCallback(IngestRun $ingestRun, ?callable $cleanupCallback): Closure
+    {
+        return function (Throwable $e) use ($ingestRun, $cleanupCallback) {
+            $ingestRun->update(['status' => IngestStatus::FAILED]);
+            if ($cleanupCallback) {
+                $cleanupCallback();
+            }
+            IngestRunFailed::dispatch($ingestRun, $e);
+        };
     }
 
     /**

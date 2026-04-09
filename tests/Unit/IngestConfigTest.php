@@ -168,3 +168,9 @@ it('returns correct attribute from getAttributeForKeyedBy when keyedBy matches a
     $config->keyedBy('email');
     expect($config->getAttributeForKeyedBy())->toBe('email');
 });
+
+it('can enable model rules validation', function () {
+    $config = IngestConfig::for(User::class)->validateWithModelRules();
+    expect($config->useModelRules)->toBeTrue()
+        ->and($config)->toBeInstanceOf(IngestConfig::class);
+});
