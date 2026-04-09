@@ -32,8 +32,6 @@ use LaravelIngest\IngestConfig;
 interface MappingInterface
 {
     /**
-     * Apply this mapping configuration to an IngestConfig instance.
-     *
      * @param  IngestConfig  $config  The config to apply mappings to
      * @param  string  $prefix  Optional prefix for source field names (e.g., 'line_item' for 'line_item_product_id')
      * @return IngestConfig The modified config (for chaining)

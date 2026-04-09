@@ -68,23 +68,48 @@ class RowProcessor
         $rowsToLog = [];
 
         foreach ($chunk as $rowItem) {
-            $rowData = new RowData($rowItem['data'], $rowItem['number']);
-            $results['processed']++;
-
-            try {
-                $model = $this->processRow($config, $rowData, $isDryRun, $relationCache, $manyRelationCache);
-
-                $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'success');
-                $results['successful']++;
-                RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model);
-            } catch (Throwable $e) {
-                $this->handleRowFailure($config, $e, $ingestRun, $rowData, $rowsToLog, $results, $isDryRun);
-            }
+            $this->processSingleRow($rowItem, $ingestRun, $config, $isDryRun, $relationCache, $manyRelationCache, $results, $rowsToLog);
         }
 
         $this->logRowsIfEnabled($rowsToLog);
 
         return $results;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    private function processSingleRow(
+        array $rowItem,
+        IngestRun $ingestRun,
+        IngestConfig $config,
+        bool $isDryRun,
+        array &$relationCache,
+        array &$manyRelationCache,
+        array &$results,
+        array &$rowsToLog
+    ): void {
+        $rowData = new RowData($rowItem['data'], $rowItem['number']);
+        $results['processed']++;
+
+        try {
+            $model = $this->processRow($config, $rowData, $isDryRun, $relationCache, $manyRelationCache);
+            $this->handleRowSuccess($ingestRun, $rowData, $model, $results, $rowsToLog);
+        } catch (Throwable $e) {
+            $this->handleRowFailure($config, $e, $ingestRun, $rowData, $rowsToLog, $results, $isDryRun);
+        }
+    }
+
+    private function handleRowSuccess(
+        IngestRun $ingestRun,
+        RowData $rowData,
+        ?Model $model,
+        array &$results,
+        array &$rowsToLog
+    ): void {
+        $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'success');
+        $results['successful']++;
+        RowProcessed::dispatch($ingestRun, 'success', $rowData->originalData, $model);
     }
 
     /**
@@ -99,30 +124,40 @@ class RowProcessor
         array &$relationCache,
         array &$manyRelationCache
     ): ?Model {
-        /**
-         * @throws InvalidConfigurationException
-         * @throws PhpVersionNotSupportedException
-         */
         $rowLogic = function () use ($config, $rowData, $isDryRun, &$relationCache, &$manyRelationCache) {
-            $this->executeBeforeRowCallback($config, $rowData);
-            $this->validate($rowData->processedData, $config);
-
-            $modelClass = $config->resolveModelClass($rowData->processedData);
-            $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass, $isDryRun);
-
-            $model = null;
-            if (!$isDryRun) {
-                $model = $this->persist($transformedData, $config, $modelClass);
-                $this->syncManyRelations($model, $rowData->originalData, $config, $manyRelationCache);
-                $this->executeAfterRowCallback($config, $model, $rowData);
-            }
-
-            return $model;
+            return $this->executeRowLifecycle($config, $rowData, $isDryRun, $relationCache, $manyRelationCache);
         };
 
         return $config->transactionMode === TransactionMode::ROW && !$isDryRun
             ? DB::transaction($rowLogic)
             : $rowLogic();
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     * @throws PhpVersionNotSupportedException
+     */
+    private function executeRowLifecycle(
+        IngestConfig $config,
+        RowData $rowData,
+        bool $isDryRun,
+        array &$relationCache,
+        array &$manyRelationCache
+    ): ?Model {
+        $this->executeBeforeRowCallback($config, $rowData);
+        $this->validate($rowData->processedData, $config);
+
+        $modelClass = $config->resolveModelClass($rowData->processedData);
+        $transformedData = $this->transform($config, $rowData->processedData, $relationCache, $modelClass, $isDryRun);
+
+        $model = null;
+        if (!$isDryRun) {
+            $model = $this->persist($transformedData, $config, $modelClass);
+            $this->syncManyRelations($model, $rowData->originalData, $config, $manyRelationCache);
+            $this->executeAfterRowCallback($config, $model, $rowData);
+        }
+
+        return $model;
     }
 
     /**
@@ -179,58 +214,79 @@ class RowProcessor
     {
         $cache = [];
         foreach ($config->relations as $sourceField => $relationConfig) {
-            $values = collect($chunk)
-                ->map(fn($item) => data_get($item, 'data.' . $sourceField))
-                ->filter()
-                ->unique()
-                ->values();
-
-            if ($values->isEmpty()) {
-                continue;
-            }
-
-            $relatedModelClass = $relationConfig['model'];
-            $relatedInstance = app($relatedModelClass);
-            $primaryKeyName = $relatedInstance->getKeyName();
-            $lookupKey = $relationConfig['key'];
-
-            $results = $relatedModelClass::query()->whereIn($lookupKey, $values)->get([$primaryKeyName, $lookupKey]);
-            $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
+            $this->prefetchSingleRelation($chunk, $sourceField, $relationConfig, $cache);
         }
 
         return $cache;
+    }
+
+    private function prefetchSingleRelation(
+        array $chunk,
+        string $sourceField,
+        array $relationConfig,
+        array &$cache
+    ): void {
+        $values = $this->extractUniqueFieldValues($chunk, $sourceField);
+
+        if ($values->isEmpty()) {
+            return;
+        }
+
+        $relatedModelClass = $relationConfig['model'];
+        $lookupKey = $relationConfig['key'];
+        $primaryKeyName = app($relatedModelClass)->getKeyName();
+
+        $results = $relatedModelClass::query()->whereIn($lookupKey, $values)->get([$primaryKeyName, $lookupKey]);
+        $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, mixed>
+     */
+    private function extractUniqueFieldValues(array $chunk, string $field): \Illuminate\Support\Collection
+    {
+        return collect($chunk)
+            ->map(fn($item) => data_get($item, 'data.' . $field))
+            ->filter()
+            ->unique()
+            ->values();
     }
 
     private function prefetchManyRelations(array $chunk, IngestConfig $config): array
     {
         $cache = [];
         foreach ($config->manyRelations as $sourceField => $relationConfig) {
-            $rawValues = collect($chunk)
-                ->map(fn($item) => data_get($item, 'data.' . $sourceField))
-                ->filter()
-                ->values();
-
-            if ($rawValues->isEmpty()) {
-                continue;
-            }
-
-            $separator = $relationConfig['separator'];
-            $lookupKey = $relationConfig['key'];
-            $relatedModelClass = $relationConfig['model'];
-            $relatedInstance = app($relatedModelClass);
-            $primaryKeyName = $relatedInstance->getKeyName();
-
-            $allValues = $rawValues->flatMap(fn($value) => explode($separator, $value))->filter()->unique()->values();
-
-            if ($allValues->isEmpty()) {
-                continue;
-            }
-
-            $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$primaryKeyName, $lookupKey]);
-            $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
+            $this->prefetchSingleManyRelation($chunk, $sourceField, $relationConfig, $cache);
         }
 
         return $cache;
+    }
+
+    private function prefetchSingleManyRelation(
+        array $chunk,
+        string $sourceField,
+        array $relationConfig,
+        array &$cache
+    ): void {
+        $rawValues = $this->extractUniqueFieldValues($chunk, $sourceField);
+
+        if ($rawValues->isEmpty()) {
+            return;
+        }
+
+        $separator = $relationConfig['separator'];
+        $allValues = $rawValues->flatMap(fn($value) => explode($separator, $value))->filter()->unique()->values();
+
+        if ($allValues->isEmpty()) {
+            return;
+        }
+
+        $lookupKey = $relationConfig['key'];
+        $relatedModelClass = $relationConfig['model'];
+        $primaryKeyName = app($relatedModelClass)->getKeyName();
+
+        $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$primaryKeyName, $lookupKey]);
+        $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
     }
 
     private function validate(array $data, IngestConfig $config): void
@@ -261,8 +317,6 @@ class RowProcessor
             $isDryRun
         );
 
-        $modelData = array_merge($modelData, $relationData);
-
         $unmappedData = $this->transformationService->processUnmappedData(
             $processedData,
             $config->mappings,
@@ -272,8 +326,7 @@ class RowProcessor
             $modelClass
         );
 
-        return array_merge($modelData, $unmappedData);
-
+        return array_merge($modelData, $relationData, $unmappedData);
     }
 
     private function syncManyRelations(Model $model, array $originalData, IngestConfig $config, array $manyRelationCache): void
@@ -283,36 +336,54 @@ class RowProcessor
         }
 
         foreach ($config->manyRelations as $sourceField => $relationConfig) {
-            if (!RelationService::hasNestedKey($originalData, $sourceField)) {
-                continue;
-            }
-
-            $relationValue = data_get($originalData, $sourceField);
-            if (empty($relationValue)) {
-                continue;
-            }
-
-            $separator = $relationConfig['separator'];
-            $values = array_filter(array_map('trim', explode($separator, (string) $relationValue)));
-
-            if (empty($values)) {
-                continue;
-            }
-
-            $ids = [];
-            $cache = $manyRelationCache[$sourceField] ?? [];
-
-            foreach ($values as $value) {
-                $id = $cache[$value] ?? null;
-                if ($id !== null) {
-                    $ids[] = $id;
-                }
-            }
-
-            if (!empty($ids)) {
-                $model->{$relationConfig['relation']}()->syncWithoutDetaching($ids);
-            }
+            $this->syncSingleManyRelation($model, $originalData, $sourceField, $relationConfig, $manyRelationCache);
         }
+    }
+
+    private function syncSingleManyRelation(
+        Model $model,
+        array $originalData,
+        string $sourceField,
+        array $relationConfig,
+        array $manyRelationCache
+    ): void {
+        if (!RelationService::hasNestedKey($originalData, $sourceField)) {
+            return;
+        }
+
+        $ids = $this->resolveRelationIds($originalData, $sourceField, $relationConfig, $manyRelationCache);
+
+        if (!empty($ids)) {
+            $model->{$relationConfig['relation']}()->syncWithoutDetaching($ids);
+        }
+    }
+
+    /**
+     * @return int[]
+     */
+    private function resolveRelationIds(
+        array $originalData,
+        string $sourceField,
+        array $relationConfig,
+        array $manyRelationCache
+    ): array {
+        $relationValue = data_get($originalData, $sourceField);
+        if (empty($relationValue)) {
+            return [];
+        }
+
+        $separator = $relationConfig['separator'];
+        $values = array_filter(array_map('trim', explode($separator, (string) $relationValue)));
+
+        if (empty($values)) {
+            return [];
+        }
+
+        $cache = $manyRelationCache[$sourceField] ?? [];
+
+        return array_filter(
+            array_map(fn($value) => $cache[$value] ?? null, $values)
+        );
     }
 
     private function getUsedTopLevelKeys(IngestConfig $config): array
@@ -390,21 +461,8 @@ class RowProcessor
         $model = new $modelClass();
         $table = $model->getTable();
 
-        if ($model->usesTimestamps()) {
-            $now = now();
-            $createdAtColumn = $model->getCreatedAtColumn();
-            $updatedAtColumn = $model->getUpdatedAtColumn();
-
-            $modelData[$createdAtColumn] = $now;
-            $modelData[$updatedAtColumn] = $now;
-        }
-
-        $excludeFromUpdate = array_flip($uniqueKeys);
-        if ($model->usesTimestamps()) {
-            $excludeFromUpdate[$model->getCreatedAtColumn()] = true;
-        }
-
-        $updateColumns = array_keys(array_diff_key($modelData, $excludeFromUpdate));
+        $this->prepareUpsertTimestamps($model, $modelData);
+        $updateColumns = $this->calculateUpdateColumns($model, $modelData, $uniqueKeys);
 
         if (empty($updateColumns)) {
             return $modelClass::create($modelData);
@@ -412,6 +470,33 @@ class RowProcessor
 
         DB::table($table)->upsert([$modelData], $uniqueKeys, $updateColumns);
 
+        return $this->fetchUpsertedModel($modelClass, $modelData, $uniqueKeys);
+    }
+
+    private function prepareUpsertTimestamps(Model $model, array &$modelData): void
+    {
+        if ($model->usesTimestamps()) {
+            $now = now();
+            $modelData[$model->getCreatedAtColumn()] = $now;
+            $modelData[$model->getUpdatedAtColumn()] = $now;
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    private function calculateUpdateColumns(Model $model, array $modelData, array $uniqueKeys): array
+    {
+        $excludeFromUpdate = array_flip($uniqueKeys);
+        if ($model->usesTimestamps()) {
+            $excludeFromUpdate[$model->getCreatedAtColumn()] = true;
+        }
+
+        return array_keys(array_diff_key($modelData, $excludeFromUpdate));
+    }
+
+    private function fetchUpsertedModel(string $modelClass, array $modelData, array $uniqueKeys): Model
+    {
         $query = $modelClass::query();
         foreach ($uniqueKeys as $key) {
             $query->where($key, $modelData[$key]);

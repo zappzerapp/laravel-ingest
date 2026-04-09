@@ -171,8 +171,6 @@ class IngestConfig
     }
 
     /**
-     * Map with both transformation and validation.
-     *
      * @throws InvalidConfigurationException|PhpVersionNotSupportedException
      */
     public function mapTransformAndValidate(
@@ -362,9 +360,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * Register an event handler for import lifecycle events.
-     */
     public function withEventHandler(ImportEventHandlerInterface $handler): self
     {
         $this->eventHandler = $handler;

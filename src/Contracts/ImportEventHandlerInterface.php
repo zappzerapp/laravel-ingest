@@ -41,9 +41,6 @@ use Throwable;
  */
 interface ImportEventHandlerInterface
 {
-    /**
-     * Use this for setup, notifications, or preprocessing.
-     */
     public function beforeImport(IngestRun $run): void;
 
     /**

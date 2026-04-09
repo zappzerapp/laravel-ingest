@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace LaravelIngest\ValueObjects;
 
-/**
- * Immutable value object containing import statistics.
- */
 final readonly class ImportStats
 {
     /**
@@ -19,11 +16,11 @@ final readonly class ImportStats
      * @param  array  $errors  Array of error summaries
      */
     public function __construct(
-        public int   $totalRows,
-        public int   $successCount,
-        public int   $failureCount,
-        public int   $createdCount,
-        public int   $updatedCount,
+        public int $totalRows,
+        public int $successCount,
+        public int $failureCount,
+        public int $createdCount,
+        public int $updatedCount,
         public float $duration,
         public array $errors = []
     ) {}
