@@ -145,11 +145,6 @@ class IngestManager
     }
 
     /**
-     * @template T
-     *
-     * @param  callable(): T  $callback
-     * @return T
-     *
      * @throws ConcurrencyException
      */
     private function executeWithRetryLock(IngestRun $originalRun, callable $callback): mixed
