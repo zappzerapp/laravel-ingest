@@ -191,11 +191,11 @@ class RowProcessor
 
             $relatedModelClass = $relationConfig['model'];
             $relatedInstance = app($relatedModelClass);
-            $pkName = $relatedInstance->getKeyName();
+            $primaryKeyName = $relatedInstance->getKeyName();
             $lookupKey = $relationConfig['key'];
 
-            $results = $relatedModelClass::query()->whereIn($lookupKey, $values)->get([$pkName, $lookupKey]);
-            $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
+            $results = $relatedModelClass::query()->whereIn($lookupKey, $values)->get([$primaryKeyName, $lookupKey]);
+            $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
         }
 
         return $cache;
@@ -218,7 +218,7 @@ class RowProcessor
             $lookupKey = $relationConfig['key'];
             $relatedModelClass = $relationConfig['model'];
             $relatedInstance = app($relatedModelClass);
-            $pkName = $relatedInstance->getKeyName();
+            $primaryKeyName = $relatedInstance->getKeyName();
 
             $allValues = $rawValues->flatMap(fn($value) => explode($separator, $value))->filter()->unique()->values();
 
@@ -226,8 +226,8 @@ class RowProcessor
                 continue;
             }
 
-            $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$pkName, $lookupKey]);
-            $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
+            $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$primaryKeyName, $lookupKey]);
+            $cache[$sourceField] = $results->pluck($primaryKeyName, $lookupKey)->toArray();
         }
 
         return $cache;
@@ -356,7 +356,7 @@ class RowProcessor
             DuplicateStrategy::UPDATE, DuplicateStrategy::UPSERT => $this->updateModel($existingModel, $modelData),
             DuplicateStrategy::SKIP => $existingModel,
             DuplicateStrategy::UPDATE_IF_NEWER => $this->updateIfNewer($existingModel, $modelData, $config),
-            DuplicateStrategy::FAIL => $this->handleFailStrategy($config),
+            DuplicateStrategy::FAIL => $this->throwDuplicateEntryException($config),
         };
     }
 
@@ -420,7 +420,7 @@ class RowProcessor
         return $query->first();
     }
 
-    private function handleFailStrategy(IngestConfig $config): never
+    private function throwDuplicateEntryException(IngestConfig $config): never
     {
         $keys = is_array($config->keyedBy)
             ? implode(', ', $config->keyedBy)
