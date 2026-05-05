@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-05-05
+
+### Added
+
+- Contract layer: added `ConditionalMappingInterface`, `HasMappings`, `ImportEventHandlerInterface`, `MappingInterface`, `NestedMappingInterface`, `SourceInterface`, `TransformerInterface`, `ValidationResult`, `ValidatorInterface`
+- Built-in Transformers: `BooleanTransformer`, `ConcatTransformer`, `DateTransformer`, `DefaultValueTransformer`, `MapTransformer`, `NumericTransformer`, `SlugTransformer`, `TrimTransformer`
+- Built-in Validators: `DateValidator`, `EmailValidator`, `InArrayValidator`, `RangeValidator`, `RegexValidator`, `RequiredValidator`
+- `NestedIngestConfig` for reusable nested mapping configurations
+- `NestedMappingInterface` for modular nested data structures
+- `ImportEventHandlerInterface` for custom lifecycle event handling
+- `IngestExceptionHandler` for centralized exception management
+- `ImportStats` value object for structured import statistics
+- `SourceInterface` abstraction for custom source types
+- Advanced documentation: `advanced-features.md`, enhanced `troubleshooting.md`, `events.md`, `exceptions.md`, `security.md`
+
+### Changed
+
+- Refactored `DataTransformationService` and `RowProcessor` for better separation of concerns
+- Extended `IngestConfig` and `IngestManager` with new capabilities
+- Separated Transformers from the monolithic service into dedicated classes
+- Improved `IngestOperationController` consistency
+- Extensive documentation updates across configuration, getting started, and advanced guides
+- Updated GitHub workflows (`main-pipeline.yml`, `publish-to-packagist.yml`)
+
+
+## [0.5.3] - 2026-04-07
+
 ### Added
 
 - Laravel 13 support: extended `illuminate/*` constraints to include `^13.0`
@@ -106,7 +133,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full documentation site
 - GitHub workflow integration
 
-[Unreleased]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.4...HEAD
+
+[0.5.4]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.3...v0.5.4
+
+[0.5.3]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.2...v0.5.3
 
 [0.5.2]: https://github.com/zappzerapp/laravel-ingest/compare/v0.5.1...v0.5.2
 
