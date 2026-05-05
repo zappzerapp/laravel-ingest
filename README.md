@@ -217,6 +217,21 @@ See the [Documentation](https://zappzerapp.github.io/laravel-ingest/) for all av
 
 ---
 
+## ✨ Advanced Features
+
+Beyond the basics, Laravel Ingest supports advanced capabilities for complex import scenarios:
+
+- **[Validators](docs/configuration/advanced-features.md#validators)** — Rule-based and custom validators to reject rows before processing.
+- **[Transformers & Pipelines](docs/configuration/advanced-features.md#transformers--pipelines)** — Chain multiple transformations on field values.
+- **[Conditional Mappings](docs/configuration/advanced-features.md#conditional-mappings)** — Apply mappings only when row conditions are met.
+- **[Custom Sources](docs/configuration/advanced-features.md#custom-sources)** — Define your own source types (e.g., database, API).
+- **[Import Event Handlers](docs/configuration/advanced-features.md#import-event-handlers)** — React to lifecycle events (start, progress, complete, failure).
+- **[Nested Mappings](docs/configuration/advanced-features.md#nested-mappings)** — Handle nested data structures and one-to-many relationships.
+- **[Schema Validation](docs/configuration/advanced-features.md#schema-validation)** — Validate the structure of your file before processing.
+- **[Tracing & Debugging](docs/configuration/advanced-features.md#tracing--debugging)** — Inspect row-level decision trees and resolve issues fast.
+
+---
+
 ## 🧪 Testing
 
 We provide a Docker-based test environment to ensure consistency.

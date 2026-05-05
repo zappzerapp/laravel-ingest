@@ -74,23 +74,95 @@ A 1:1 copy from source to database. Supports column aliases for files with varyi
 ->map(['name', 'full_name', 'Name'], 'name')
 ```
 
-### `mapAndTransform(string|array $sourceColumn, string $modelAttribute, callable $callback)`
-Transforms the value before saving. Also supports column aliases.
-- **Callback Signature**: `fn($value, array $row)`
-- **$value**: The value of the specific column.
-- **$row**: The entire raw row array (useful for combining columns).
+### `mapAndTransform(string|array $sourceColumn, string $modelAttribute, Closure|TransformerInterface|string|array $transformer)`
+Transforms the value before saving. Also supports column aliases. The transformer can be provided in four forms:
+
+1. **Closure**: `fn($value, array $row) => mixed`
+2. **TransformerInterface instance**: `new NumericTransformer(decimals: 2)`
+3. **Class-name string** (auto-resolved): `DivideByHundredTransformer::class`
+4. **Array of transformers** (applied in sequence): `[new NumericTransformer(), fn($val) => $val * 100]`
 
 ```php
-// Combine First and Last name
+// Closure
 ->mapAndTransform('Last Name', 'full_name', function($value, $row) {
     return $row['First Name'] . ' ' . $value;
 })
 
-// Format currency
-->mapAndTransform('Price', 'price_in_cents', fn($val) => (int)($val * 100))
+// TransformerInterface instance
+->mapAndTransform('price_cents', 'price', new NumericTransformer(decimals: 2))
+
+// Class-name string (auto-resolved)
+->mapAndTransform('price_cents', 'price', DivideByHundredTransformer::class)
+
+// Array of transformers (applied in sequence)
+->mapAndTransform('price_cents', 'price', [
+    fn($val) => (int) $val,
+    new DivideByHundredTransformer(),
+])
 
 // With aliases
 ->mapAndTransform(['status', 'Status', 'STATE'], 'is_active', fn($val) => $val === 'active')
+```
+
+### `mapAndValidate(string|array $sourceColumn, string $modelAttribute, ValidatorInterface|string|array $validator)`
+Maps a column and validates it using a custom validator before saving. Supports column aliases. The validator can be provided as a `ValidatorInterface` instance, a class-name string (auto-resolved), or an array of validators.
+
+```php
+// ValidatorInterface instance
+->mapAndValidate('email', 'email', new EmailValidator())
+
+// Class-name string (auto-resolved)
+->mapAndValidate('email', 'email', EmailValidator::class)
+
+// Array of validators
+->mapAndValidate('price', 'price', [MinValueValidator::class, NumericValidator::class])
+```
+
+### `mapTransformAndValidate(string|array $sourceColumn, string $modelAttribute, array $transformers, array $validators)`
+Combines transformation and validation in a single call. Applies all transformers in sequence, then runs all validators. Supports column aliases.
+
+```php
+->mapTransformAndValidate(
+    'price',
+    'price',
+    [fn($val) => (float) $val, new DivideByHundredTransformer()],
+    [MinValueValidator::class, NumericValidator::class]
+)
+```
+
+### `mapWhen(string|array $sourceColumn, string $modelAttribute, Closure|ConditionalMappingInterface $condition, Closure|TransformerInterface|string|null $transformer = null, Closure|ValidatorInterface|string|null $validator = null)`
+Conditionally applies a mapping only when the given condition evaluates to `true` for the current row. Supports column aliases, optional transformation, and optional validation.
+
+The condition can be a `Closure` receiving the full row array, or a class implementing `ConditionalMappingInterface`.
+
+```php
+// Conditional mapping with a closure
+->mapWhen('status', 'is_active', fn($row) => $row['type'] === 'user', fn($val) => $val === 'active')
+
+// Conditional mapping with a transformer and validator
+->mapWhen(
+    'price',
+    'price',
+    fn($row) => $row['type'] === 'premium',
+    new NumericTransformer(decimals: 2),
+    MinValueValidator::class
+)
+
+// Using a ConditionalMappingInterface class
+->mapWhen('status', 'order_status', new OrderStatusMapping())
+```
+
+### `nest(string $sourceColumn, Closure $callback)`
+Maps nested data structures (e.g., JSON objects) into related models. The callback receives a `NestedIngestConfig` instance to define mappings for the nested fields.
+
+```php
+->nest('address', function(NestedIngestConfig $config) {
+    $config
+        ->map('street', 'street_address')
+        ->map('city', 'city')
+        ->map('zip', 'postal_code')
+        ->keyedBy('zip');
+})
 ```
 
 ### `relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey, bool $createIfMissing = false)`
@@ -123,11 +195,11 @@ Synchronizes Many-to-Many relationships from a delimited list in your source dat
 ```php
 // Example 1: Tags from CSV column "Tags" containing "PHP, Laravel, Backend"
 ->relateMany(
-    sourceField: 'tag_names',       // Spalte im CSV (z.B. "Laravel,PHP,API")
-    relation: 'tags',                // Name der Beziehung im Model
-    relatedModel: Tag::class,        // Klasse des verwandten Models
-    relatedKey: 'name',              // Attribut zum Suchen/Aufösen
-    separator: ','                   // Trennzeichen (Default: ",")
+    sourceField: 'tag_names',       // Column in CSV (e.g. "Laravel,PHP,API")
+    relation: 'tags',                // Name of the relationship in the model
+    relatedModel: Tag::class,        // Class of the related model
+    relatedKey: 'name',              // Attribute to search/resolve by
+    separator: ','                   // Separator (Default: ",")
 )
 
 // Example 2: Categories with semicolon separator
@@ -187,12 +259,25 @@ public static function getRules(): array
 ->validate(['price' => 'required|numeric']) // Additional rules
 ```
 
+### `expectSchema(array $schema)`
+Validates the structure of the source data before processing. Define expected columns with their types and constraints. If the source schema does not match, the import fails early with a clear error.
+
+```php
+->expectSchema([
+    'sku' => ['type' => 'string', 'required' => true],
+    'price' => ['type' => 'numeric', 'required' => true, 'nullable' => false],
+    'description' => ['type' => 'string', 'nullable' => true],
+])
+```
+
 ---
 
 ## Hooks
 
 ### `beforeRow(callable $callback)`
 Executed **before** validation. Allows you to modify the raw data array by reference. Perfect for cleaning up messy data globally.
+
+> **Note:** Closures passed to `beforeRow` are automatically wrapped in a `SerializableClosure` for serialization safety. This ensures the config can be cached or queued without losing the callback logic.
 
 ```php
 ->beforeRow(function(array &$data) {
@@ -208,6 +293,8 @@ Executed **before** validation. Allows you to modify the raw data array by refer
 Executed **after** the model has been successfully saved.
 - **$model**: The saved Eloquent model.
 - **$row**: The original raw data.
+
+> **Note:** Closures passed to `afterRow` are automatically wrapped in a `SerializableClosure` for serialization safety. This ensures the config can be cached or queued without losing the callback logic.
 
 ```php
 ->afterRow(function(Product $product, array $row) {
@@ -244,6 +331,48 @@ Enables strict header validation. When enabled, the import will fail immediately
 ->map('email', 'email')      // Must exist in source file
 ->map('name', 'name')        // Must exist in source file
 ```
+
+---
+
+## Tracing & Debugging
+
+### `withTracing()`
+Enables full tracing for the import. This records detailed logs for both mappings and transformations, making it easier to debug complex imports.
+
+```php
+->withTracing()
+```
+
+### `traceTransformations()`
+Enables tracing for transformations only. Records how each value is transformed during the import process.
+
+```php
+->traceTransformations()
+```
+
+### `traceMappings()`
+Enables tracing for mappings only. Records how source columns are mapped to model attributes.
+
+```php
+->traceMappings()
+```
+
+---
+
+## Event Handling
+
+### `withEventHandler(ImportEventHandlerInterface $handler)`
+Registers a custom event handler to hook into the import lifecycle. The handler must be an instance of `ImportEventHandlerInterface`.
+
+```php
+->withEventHandler(new SendSlackNotificationHandler())
+```
+
+The handler receives callbacks for:
+- `beforeImport(IngestRun $run)`: Called once before processing starts.
+- `onRowProcessed(IngestRun $run, RowData $row, object $model)`: Called after each row is successfully processed.
+- `onError(IngestRun $run, RowData $row, Throwable $error)`: Called when a row fails processing.
+- `afterImport(IngestRun $run, ImportStats $stats)`: Called once after all processing completes.
 
 ---
 
@@ -415,42 +544,42 @@ IngestConfig::for(Order::class)
 
 ---
 
-## Composite Keys (geplant für v0.5)
+## Composite Keys
 
-Aktuell unterstützt `keyedBy()` nur einfache Schlüssel. Für zusammengesetzte Schlüssel (z.B. `['store_id', 'sku']`) können Sie Workarounds verwenden:
+Currently, `keyedBy()` only accepts a single string. For composite keys (e.g., `['store_id', 'sku']`), use one of the following workarounds:
 
-### Workaround 1: Künstliche Unique-Spalte erstellen
-Erstellen Sie eine kombinierte Spalte in Ihrer Quelldatei:
+### Workaround 1: Add a synthetic unique column
+Create a combined column in your source file:
 
 ```php
-// CSV enthält: store_id, sku, product_name
-// Erstellen Sie eine neue Spalte: unique_key = "store_id|sku"
+// CSV contains: store_id, sku, product_name
+// Create a new column: unique_key = "store_id|sku"
 ->keyedBy('unique_key')
 ```
 
-Beispiel CSV-Transformation:
+Example CSV transformation:
 ```csv
 store_id,sku,product_name,unique_key
 1,PROD001,Product A,"1|PROD001"
 2,PROD001,Product B,"2|PROD001"
 ```
 
-### Workaround 2: Transformation in beforeRow()
-Verwenden Sie die `beforeRow()` Methode, um einen kombinierten Schlüssel zur Laufzeit zu erstellen:
+### Workaround 2: Build the key in `beforeRow()`
+Use the `beforeRow()` method to create a combined key at runtime:
 
 ```php
 ->beforeRow(function(array &$row) {
-    // Kombiniere store_id und sku zu einem einzigartigen Schlüssel
+    // Combine store_id and sku into a unique key
     $row['composite_key'] = ($row['store_id'] ?? '') . '|' . ($row['sku'] ?? '');
 })
 ->keyedBy('composite_key')
 ```
 
-### Workaround 3: Daten vor dem Import vorverarbeiten
-Für komplexe Szenarien können Sie die Daten vor dem Import in einem separaten Prozess vorbereiten:
+### Workaround 3: Pre-process data before import
+For complex scenarios, prepare the data in a separate process before importing:
 
 ```php
-// In einem Service oder Controller:
+// In a service or controller:
 public function prepareImportData(string $inputPath, string $outputPath): void
 {
     $csv = array_map('str_getcsv', file($inputPath));
@@ -463,7 +592,7 @@ public function prepareImportData(string $inputPath, string $outputPath): void
         $prepared[] = $row;
     }
     
-    // Schreibe bereinigte CSV
+    // Write cleaned CSV
     $fp = fopen($outputPath, 'w');
     fputcsv($fp, array_keys($prepared[0]));
     foreach ($prepared as $row) {
@@ -473,5 +602,5 @@ public function prepareImportData(string $inputPath, string $outputPath): void
 }
 ```
 
-> **Hinweis**: Echte Composite-Key-Unterstützung ist für Version 0.5 geplant und wird diese Workarounds überflüssig machen.
+> **Note:** Native composite-key support for the fluent API is planned for version 0.5 and will make these workarounds obsolete.
 ```

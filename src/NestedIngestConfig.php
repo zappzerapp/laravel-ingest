@@ -6,16 +6,19 @@ namespace LaravelIngest;
 
 use Closure;
 use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\HasMappings;
+use LaravelIngest\Contracts\MappingInterface;
+use LaravelIngest\Contracts\NestedMappingInterface;
 use LaravelIngest\Contracts\TransformerInterface;
 use LaravelIngest\Contracts\ValidatorInterface;
 
-class NestedIngestConfig
+class NestedIngestConfig implements HasMappings
 {
     public array $mappings = [];
     public array $transformers = [];
     public array $validators = [];
 
-    public function map(string|array $sourceField, string $modelAttribute): self
+    public function map(string|array $sourceField, string $modelAttribute): static
     {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
@@ -31,8 +34,8 @@ class NestedIngestConfig
     public function mapAndTransform(
         string|array $sourceField,
         string $modelAttribute,
-        Closure|TransformerInterface|string $transformer
-    ): self {
+        Closure|TransformerInterface|string|array $transformer
+    ): static {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
@@ -51,8 +54,8 @@ class NestedIngestConfig
     public function mapAndValidate(
         string|array $sourceField,
         string $modelAttribute,
-        ValidatorInterface|string $validator
-    ): self {
+        ValidatorInterface|string|array $validator
+    ): static {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
@@ -66,9 +69,18 @@ class NestedIngestConfig
         return $this;
     }
 
-    public function keyedBy(string $sourceField): self
+    public function keyedBy(string $sourceField): static
     {
         $this->mappings['_keyedBy'] = $sourceField;
+
+        return $this;
+    }
+
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): static
+    {
+        if ($mapping instanceof NestedMappingInterface) {
+            return $mapping->applyNested($this, $prefix);
+        }
 
         return $this;
     }

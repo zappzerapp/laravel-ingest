@@ -1,27 +1,27 @@
-# Erweiterte Features
+# Advanced Features
 
-Diese Dokumentation beschreibt die neuen erweiterten Features von Laravel Ingest, die die Developer Experience und Testbarkeit erheblich verbessern.
+This documentation describes the advanced features of Laravel Ingest that significantly improve the developer experience and testability.
 
 ---
 
-## Inhalt
+## Contents
 
-1. [Validatoren](#validatoren)
-2. [Transformations-Pipelines](#transformations-pipelines)
-3. [Bedingte Mappings](#bedingte-mappings)
-4. [Eigene Datenquellen](#eigene-datenquellen)
+1. [Validators](#validators)
+2. [Transformation Pipelines](#transformation-pipelines)
+3. [Conditional Mappings](#conditional-mappings)
+4. [Custom Data Sources](#custom-data-sources)
 5. [Import Events](#import-events)
-6. [Verschachtelte Mappings](#verschachtelte-mappings)
-7. [Schema-Validierung](#schema-validierung)
+6. [Nested Mappings](#nested-mappings)
+7. [Schema Validation](#schema-validation)
 8. [Debugging & Tracing](#debugging--tracing)
 
 ---
 
-## Validatoren
+## Validators
 
-Validatoren sind analog zu Transformern für Validierungs-Logik - wiederverwendbar, testbar und deklarativ.
+Validators are to validation logic what transformers are to transformation logic: reusable, testable, and declarative.
 
-### Grundprinzip
+### Basic Principle
 
 ```php
 use LaravelIngest\IngestConfig;
@@ -37,11 +37,11 @@ IngestConfig::for(Product::class)
     ]);
 ```
 
-### Built-in Validatoren
+### Built-in Validators
 
 #### RequiredValidator
 
-Prüft, ob ein Feld einen Wert enthält.
+Checks whether a field contains a value.
 
 ```php
 use LaravelIngest\Validators\RequiredValidator;
@@ -49,11 +49,11 @@ use LaravelIngest\Validators\RequiredValidator;
 ->mapAndValidate('name', 'product_name', RequiredValidator::class)
 ```
 
-Für null, leere Strings und leere Arrays schlägt die Validierung fehl.
+Validation fails for null, empty strings, and empty arrays.
 
 #### EmailValidator
 
-Validiert E-Mail-Formate.
+Validates email formats.
 
 ```php
 use LaravelIngest\Validators\EmailValidator;
@@ -61,41 +61,41 @@ use LaravelIngest\Validators\EmailValidator;
 ->mapAndValidate('email', 'customer_email', EmailValidator::class)
 ```
 
-Leere Werte werden als gültig betrachtet (null, '').
+Empty values are considered valid (null, '').
 
 #### RangeValidator
 
-Prüft numerische Werte gegen Min/Max-Grenzen.
+Checks numeric values against min/max boundaries.
 
 ```php
 use LaravelIngest\Validators\RangeValidator;
 
-// Nur Minimum
+// Minimum only
 ->mapAndValidate('price', 'price', new RangeValidator(min: 0))
 
-// Min und Max
+// Min and Max
 ->mapAndValidate('quantity', 'qty', new RangeValidator(min: 1, max: 100))
 
-// Mit benutzerdefinierter Fehlermeldung
+// With custom error message
 ->mapAndValidate('discount', 'discount_percent', 
     new RangeValidator(min: 0, max: 100, message: 'Discount must be between 0% and 100%'))
 ```
 
 #### RegexValidator
 
-Validiert gegen ein Regex-Pattern.
+Validates against a regex pattern.
 
 ```php
 use LaravelIngest\Validators\RegexValidator;
 
-// PLZ-Validierung (5 Ziffern)
+// Postal code validation (5 digits)
 ->mapAndValidate('zip', 'postal_code', 
     new RegexValidator('/^\d{5}$/', 'Must be a 5-digit postal code'))
 ```
 
 #### InArrayValidator
 
-Prüft, ob ein Wert in einer erlaubten Liste enthalten ist.
+Checks whether a value is contained in an allowed list.
 
 ```php
 use LaravelIngest\Validators\InArrayValidator;
@@ -103,26 +103,26 @@ use LaravelIngest\Validators\InArrayValidator;
 ->mapAndValidate('status', 'status', 
     new InArrayValidator(['active', 'inactive', 'pending']))
 
-// Mit Strict Mode (Typ-Prüfung)
+// With strict mode (type checking)
 ->mapAndValidate('type', 'type', 
     new InArrayValidator(['1', '2', '3'], strict: true))
 ```
 
 #### DateValidator
 
-Validiert Datumsformate.
+Validates date formats.
 
 ```php
 use LaravelIngest\Validators\DateValidator;
 
-// Standard: Y-m-d
+// Default: Y-m-d
 ->mapAndValidate('date', 'order_date', new DateValidator())
 
-// Benutzerdefiniertes Format
+// Custom format
 ->mapAndValidate('date', 'order_date', new DateValidator('d/m/Y'))
 ```
 
-### Kombinierte Transformation + Validierung
+### Combined Transformation + Validation
 
 ```php
 ->mapTransformAndValidate(
@@ -135,16 +135,16 @@ use LaravelIngest\Validators\DateValidator;
 
 ---
 
-## Transformations-Pipelines
+## Transformation Pipelines
 
-Wende mehrere Transformationen nacheinander an:
+Apply multiple transformations in sequence:
 
 ```php
 use LaravelIngest\Transformers\TrimTransformer;
 use LaravelIngest\Transformers\SlugTransformer;
 use LaravelIngest\Transformers\DefaultValueTransformer;
 
-// Pipeline: Trim → Slug → Default
+// Pipeline: Trim -> Slug -> Default
 ->mapAndTransform('title', 'slug', [
     new TrimTransformer(),
     new SlugTransformer(),
@@ -152,7 +152,7 @@ use LaravelIngest\Transformers\DefaultValueTransformer;
 ])
 ```
 
-### Weitere Built-in Transformer
+### Additional Built-in Transformers
 
 #### TrimTransformer
 
@@ -161,7 +161,7 @@ use LaravelIngest\Transformers\TrimTransformer;
 
 ->mapAndTransform('name', 'name', new TrimTransformer())
 
-// Mit custom Zeichen
+// With custom characters
 ->mapAndTransform('code', 'code', new TrimTransformer('x'))
 ```
 
@@ -172,13 +172,13 @@ use LaravelIngest\Transformers\SlugTransformer;
 
 ->mapAndTransform('title', 'slug', new SlugTransformer())
 
-// Mit Unterstrich statt Bindestrich
+// With underscore instead of hyphen
 ->mapAndTransform('title', 'slug', new SlugTransformer('_'))
 ```
 
 #### MapTransformer
 
-Werte aus einer Lookup-Tabelle mappen:
+Map values from a lookup table:
 
 ```php
 use LaravelIngest\Transformers\MapTransformer;
@@ -192,12 +192,12 @@ use LaravelIngest\Transformers\MapTransformer;
 
 #### ConcatTransformer
 
-Mehrere Felder zusammenführen:
+Merge multiple fields:
 
 ```php
 use LaravelIngest\Transformers\ConcatTransformer;
 
-// Aus verschiedenen Spalten einen vollständigen Namen bilden
+// Build a full name from different columns
 ->mapAndTransform(null, 'full_name', new ConcatTransformer(
     ['first_name', 'last_name'], 
     separator: ' '
@@ -206,14 +206,14 @@ use LaravelIngest\Transformers\ConcatTransformer;
 
 #### DefaultValueTransformer
 
-Leere Werte durch Default ersetzen:
+Replace empty values with a default:
 
 ```php
 use LaravelIngest\Transformers\DefaultValueTransformer;
 
 ->mapAndTransform('description', 'description', new DefaultValueTransformer('No description available'))
 
-// Mit custom "leere" Werte
+// With custom "empty" values
 ->mapAndTransform('status', 'status', new DefaultValueTransformer(
     'unknown', 
     ['null', 'NULL', '']
@@ -222,15 +222,15 @@ use LaravelIngest\Transformers\DefaultValueTransformer;
 
 ---
 
-## Bedingte Mappings
+## Conditional Mappings
 
-Wende Mappings nur an, wenn eine Bedingung erfüllt ist:
+Apply mappings only when a condition is met:
 
 ```php
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Transformers\NumericTransformer;
 
-// Verschiedene Status-Felder je nach Typ
+// Different status fields depending on type
 IngestConfig::for(Transaction::class)
     ->mapWhen('status', 'order_status', 
         fn($row) => $row['type'] === 'order',
@@ -242,7 +242,7 @@ IngestConfig::for(Transaction::class)
     );
 ```
 
-Mit ConditionalMappingInterface für komplexe Logik:
+Use ConditionalMappingInterface for complex logic:
 
 ```php
 use LaravelIngest\Contracts\ConditionalMappingInterface;
@@ -275,15 +275,15 @@ class OrderStatusMapping implements ConditionalMappingInterface
     }
 }
 
-// Verwendung
+// Usage
 ->mapWhen('status', 'order_status', new OrderStatusMapping())
 ```
 
 ---
 
-## Eigene Datenquellen
+## Custom Data Sources
 
-Verwende `SourceInterface` für externe Datenquellen:
+Use SourceInterface for external data sources:
 
 ```php
 use LaravelIngest\Contracts\SourceInterface;
@@ -329,7 +329,7 @@ class ShopifyProductSource implements SourceInterface
     }
 }
 
-// Verwendung
+// Usage
 IngestConfig::for(Product::class)
     ->fromSource(new ShopifyProductSource($shopDomain, $apiKey));
 ```
@@ -338,7 +338,7 @@ IngestConfig::for(Product::class)
 
 ## Import Events
 
-Hook in den Import-Lifecycle mit Event Handlern:
+Hook into the import lifecycle with event handlers:
 
 ```php
 use LaravelIngest\Contracts\ImportEventHandlerInterface;
@@ -355,7 +355,7 @@ class SlackNotificationHandler implements ImportEventHandlerInterface
 
     public function onRowProcessed(IngestRun $run, RowData $row, object $model): void
     {
-        // Per row logging (sparing verwenden!)
+        // Per row logging (use sparingly!)
     }
 
     public function onError(IngestRun $run, RowData $row, \Throwable $error): void
@@ -375,7 +375,7 @@ class SlackNotificationHandler implements ImportEventHandlerInterface
     }
 }
 
-// Registrieren
+// Register
 IngestConfig::for(Product::class)
     ->withEventHandler(new SlackNotificationHandler())
     ->fromSource(SourceType::UPLOAD);
@@ -383,26 +383,26 @@ IngestConfig::for(Product::class)
 
 ### ImportStats
 
-Das `ImportStats`-Objekt enthält:
+The ImportStats object contains:
 
 ```php
-$stats->totalRows           // Gesamtanzahl
-$stats->successCount        // Erfolgreich verarbeitet
-$stats->failureCount        // Fehlgeschlagene Zeilen
-$stats->createdCount        // Neu erstellte Records
-$stats->updatedCount        // Aktualisierte Records
-$stats->skippedCount()      // Übersprungene Zeilen
-$stats->successRate()       // Erfolgsrate in %
-$stats->wasFullySuccessful() // True wenn keine Fehler
-$stats->duration            // Dauer in Sekunden
-$stats->toArray()           // Als Array für JSON
+$stats->totalRows           // Total count
+$stats->successCount        // Successfully processed
+$stats->failureCount        // Failed rows
+$stats->createdCount        // Newly created records
+$stats->updatedCount        // Updated records
+$stats->skippedCount()      // Skipped rows
+$stats->successRate()       // Success rate in %
+$stats->wasFullySuccessful() // True if no errors
+$stats->duration            // Duration in seconds
+$stats->toArray()           // As array for JSON
 ```
 
 ---
 
-## Verschachtelte Mappings
+## Nested Mappings
 
-Für komplexe, verschachtelte Datenstrukturen:
+For complex, nested data structures:
 
 ```php
 use LaravelIngest\IngestConfig;
@@ -438,9 +438,9 @@ Input:
 
 ---
 
-## Schema-Validierung
+## Schema Validation
 
-Definiere das erwartete Schema für bessere Fehlermeldungen:
+Define the expected schema for better error messages:
 
 ```php
 IngestConfig::for(Product::class)
@@ -457,22 +457,22 @@ IngestConfig::for(Product::class)
 
 ## Debugging & Tracing
 
-Aktiviere detaillierte Logs für Debugging:
+Enable detailed logs for debugging:
 
 ```php
 IngestConfig::for(Product::class)
-    ->withTracing()                    // Alles tracen
-    // oder:
-    ->traceTransformations()          // Nur Transformationen
-    ->traceMappings()                  // Nur Mappings
+    ->withTracing()                    // Trace everything
+    // or:
+    ->traceTransformations()          // Only transformations
+    ->traceMappings()                  // Only mappings
 ```
 
-Das Tracing protokolliert:
-- Input/Output jeder Transformation
-- Welche Felder wohin gemappt wurden
-- Welche bedingten Mappings aktiv waren
+Tracing logs:
+- Input/output of each transformation
+- Which fields were mapped where
+- Which conditional mappings were active
 
-Zugriff auf Traces:
+Access traces:
 
 ```php
 $service = app(DataTransformationService::class);
@@ -489,17 +489,17 @@ $traces = $service->getTraceLog();
 
 ---
 
-## Zusammenfassung
+## Summary
 
-| Feature | Zweck | API |
-|---------|-------|-----|
-| **Validatoren** | Wiederverwendbare, testbare Validierung | `mapAndValidate()` |
-| **Pipelines** | Mehrere Transformationen hintereinander | Array an `mapAndTransform()` |
-| **Bedingte Mappings** | Kontextabhängige Mapping-Logik | `mapWhen()` |
-| **Custom Sources** | Externe Datenquellen (APIs, etc.) | `SourceInterface` |
-| **Events** | Hook in den Import-Lifecycle | `ImportEventHandlerInterface` |
-| **Nested Mappings** | Verschachtelte Datenstrukturen | `nest()` |
-| **Schema** | Input-Validierung | `expectSchema()` |
-| **Tracing** | Debugging-Informationen | `withTracing()` |
+| Feature | Purpose | API |
+|---------|---------|-----|
+| **Validators** | Reusable, testable validation | `mapAndValidate()` |
+| **Pipelines** | Multiple transformations in sequence | Array to `mapAndTransform()` |
+| **Conditional Mappings** | Context-dependent mapping logic | `mapWhen()` |
+| **Custom Sources** | External data sources (APIs, etc.) | `SourceInterface` |
+| **Events** | Hook into the import lifecycle | `ImportEventHandlerInterface` |
+| **Nested Mappings** | Nested data structures | `nest()` |
+| **Schema** | Input validation | `expectSchema()` |
+| **Tracing** | Debugging information | `withTracing()` |
 
-Alle Features folgen dem gleichen Muster: **Interface-basiert, testbar, deklarativ**.
+All features follow the same pattern: **interface-based, testable, declarative**.

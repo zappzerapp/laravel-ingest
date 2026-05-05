@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Contracts\ConditionalMappingInterface;
+use LaravelIngest\Contracts\HasMappings;
 use LaravelIngest\Contracts\ImportEventHandlerInterface;
 use LaravelIngest\Contracts\MappingInterface;
 use LaravelIngest\Contracts\SourceInterface;
@@ -20,7 +21,7 @@ use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
 use LaravelIngest\Services\DataTransformationService;
 
-class IngestConfig
+class IngestConfig implements HasMappings
 {
     public string $model;
     public SourceType|SourceInterface $sourceType;
@@ -81,7 +82,7 @@ class IngestConfig
         return $this;
     }
 
-    public function keyedBy(string $sourceField): self
+    public function keyedBy(string $sourceField): static
     {
         $this->keyedBy = $sourceField;
 
@@ -95,7 +96,7 @@ class IngestConfig
         return $this;
     }
 
-    public function map(string|array $sourceField, string $modelAttribute): self
+    public function map(string|array $sourceField, string $modelAttribute): static
     {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
@@ -117,7 +118,7 @@ class IngestConfig
         string|array $sourceField,
         string $modelAttribute,
         Closure|TransformerInterface|string|array $transformer
-    ): self {
+    ): static {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
@@ -145,7 +146,7 @@ class IngestConfig
         string|array $sourceField,
         string $modelAttribute,
         ValidatorInterface|string|array $validator
-    ): self {
+    ): static {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
@@ -219,7 +220,7 @@ class IngestConfig
         return $this;
     }
 
-    public function applyMapping(MappingInterface $mapping, string $prefix = ''): self
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): static
     {
         return $mapping->apply($this, $prefix);
     }
