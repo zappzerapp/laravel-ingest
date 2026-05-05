@@ -220,7 +220,7 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    public function applyMapping(MappingInterface $mapping, string $prefix = ''): static
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): self
     {
         return $mapping->apply($this, $prefix);
     }

@@ -442,13 +442,26 @@ Create mapping classes in your application (e.g., `app/Ingest/Mappings/`):
 
 ```php
 // app/Ingest/Mappings/ProductMapping.php
+use LaravelIngest\Contracts\HasMappings;
 use LaravelIngest\Contracts\MappingInterface;
+use LaravelIngest\Contracts\NestedMappingInterface;
 use LaravelIngest\IngestConfig;
+use LaravelIngest\NestedIngestConfig;
 use LaravelIngest\Transformers\NumericTransformer;
 
-class ProductMapping implements MappingInterface
+class ProductMapping implements MappingInterface, NestedMappingInterface
 {
     public function apply(IngestConfig $config, string $prefix = ''): IngestConfig
+    {
+        return $this->applyMappings($config, $prefix);
+    }
+
+    public function applyNested(NestedIngestConfig $config, string $prefix = ''): NestedIngestConfig
+    {
+        return $this->applyMappings($config, $prefix);
+    }
+
+    private function applyMappings(HasMappings $config, string $prefix = ''): HasMappings
     {
         $prefix = $prefix !== '' ? "{$prefix}_" : '';
 
@@ -491,6 +504,27 @@ class RefundImporter implements IngestDefinition
     }
 }
 ```
+
+### Using Mappings in Nested Configs
+
+Reusable mappings can also be used inside `nest()` blocks to keep nested data structures DRY. The mapping class must implement `NestedMappingInterface` in addition to `MappingInterface`.
+
+```php
+class OrderImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Order::class)
+            ->fromSource(SourceType::UPLOAD)
+            ->map('order_id', 'id')
+            ->nest('line_items', function (NestedIngestConfig $nested) {
+                $nested->applyMapping(new ProductMapping(), 'item');
+            });
+    }
+}
+```
+
+> **Note:** Mapping classes that only implement `MappingInterface` (not `NestedMappingInterface`) are silently ignored when used inside a `nest()` block. This prevents existing mappings from breaking when reused in nested contexts.
 
 ### Configurable Mappings
 

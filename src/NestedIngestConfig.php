@@ -76,7 +76,7 @@ class NestedIngestConfig implements HasMappings
         return $this;
     }
 
-    public function applyMapping(MappingInterface $mapping, string $prefix = ''): static
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): self
     {
         if ($mapping instanceof NestedMappingInterface) {
             return $mapping->applyNested($this, $prefix);
