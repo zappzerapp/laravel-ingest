@@ -648,5 +648,5 @@ public function prepareImportData(string $inputPath, string $outputPath): void
 }
 ```
 
-> **Note:** Native composite-key support for the fluent API is planned for version 0.5 and will make these workarounds obsolete.
+> **Note:** Native composite-key support for the fluent API is planned for a future version and will make these workarounds obsolete.
 ```

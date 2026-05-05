@@ -60,7 +60,13 @@ php artisan migrate
 
 ### 2. Define an Importer
 
-Create a class implementing `IngestDefinition`. This is the only code you need to write.
+Use the Artisan generator to scaffold a new importer:
+
+```bash
+php artisan make:importer UserImporter --model=User
+```
+
+Alternatively, create a class implementing `IngestDefinition` manually:
 
 ```php
 namespace App\Ingest;
@@ -158,6 +164,7 @@ Ingest runs happen in the background. You can monitor and manage them easily:
 | `ingest:status {id}` | Show progress bar, stats, and errors for a run.                       |
 | `ingest:cancel {id}` | Stop a running import gracefully.                                     |
 | `ingest:retry {id}`  | Create a **new run** containing only the rows that failed previously. |
+| `ingest:prune-files` | Remove temporary import files older than the configured TTL. |
 
 ### API Endpoints
 

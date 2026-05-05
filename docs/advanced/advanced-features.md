@@ -190,6 +190,49 @@ use LaravelIngest\Transformers\MapTransformer;
 ], default: -1))
 ```
 
+#### BooleanTransformer
+
+Convert string values to boolean (0/1):
+
+```php
+use LaravelIngest\Transformers\BooleanTransformer;
+
+// Default truthy: yes, true, 1, on, y
+// Default falsy: no, false, 0, off, n
+->mapAndTransform('is_active', 'is_active', new BooleanTransformer())
+
+// Custom truthy/falsy values
+->mapAndTransform('status', 'is_active', new BooleanTransformer(
+    truthyValues: ['aktiv', 'active', '1'],
+    falsyValues: ['inaktiv', 'inactive', '0'],
+    default: 0
+))
+```
+
+Empty or null values are mapped to `default` (null by default).
+
+#### DateTransformer
+
+Parse and reformat date values:
+
+```php
+use LaravelIngest\Transformers\DateTransformer;
+
+// Input: "31.12.2024", Output: "2024-12-31"
+->mapAndTransform('date', 'created_at', new DateTransformer(
+    inputFormat: 'd.m.Y',
+    outputFormat: 'Y-m-d'
+))
+
+// Parse ISO date and store as timestamp
+->mapAndTransform('date', 'created_at', new DateTransformer(
+    inputFormat: DateTimeInterface::ATOM,
+    outputFormat: 'Y-m-d H:i:s'
+))
+```
+
+Invalid or empty values return `default` (null by default).
+
 #### ConcatTransformer
 
 Merge multiple fields:
