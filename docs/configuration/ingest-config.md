@@ -104,6 +104,8 @@ Transforms the value before saving. Also supports column aliases. The transforme
 ->mapAndTransform(['status', 'Status', 'STATE'], 'is_active', fn($val) => $val === 'active')
 ```
 
+**See also:** [Transformation Pipelines](docs/advanced/advanced-features.md#transformation-pipelines)
+
 ### `mapAndValidate(string|array $sourceColumn, string $modelAttribute, ValidatorInterface|string|array $validator)`
 Maps a column and validates it using a custom validator before saving. Supports column aliases. The validator can be provided as a `ValidatorInterface` instance, a class-name string (auto-resolved), or an array of validators.
 
@@ -118,6 +120,8 @@ Maps a column and validates it using a custom validator before saving. Supports 
 ->mapAndValidate('price', 'price', [MinValueValidator::class, NumericValidator::class])
 ```
 
+**See also:** [Validators](docs/advanced/advanced-features.md#validators)
+
 ### `mapTransformAndValidate(string|array $sourceColumn, string $modelAttribute, array $transformers, array $validators)`
 Combines transformation and validation in a single call. Applies all transformers in sequence, then runs all validators. Supports column aliases.
 
@@ -129,6 +133,8 @@ Combines transformation and validation in a single call. Applies all transformer
     [MinValueValidator::class, NumericValidator::class]
 )
 ```
+
+**See also:** [Validators](docs/advanced/advanced-features.md#validators) and [Transformation Pipelines](docs/advanced/advanced-features.md#transformation-pipelines)
 
 ### `mapWhen(string|array $sourceColumn, string $modelAttribute, Closure|ConditionalMappingInterface $condition, Closure|TransformerInterface|string|null $transformer = null, Closure|ValidatorInterface|string|null $validator = null)`
 Conditionally applies a mapping only when the given condition evaluates to `true` for the current row. Supports column aliases, optional transformation, and optional validation.
@@ -152,6 +158,8 @@ The condition can be a `Closure` receiving the full row array, or a class implem
 ->mapWhen('status', 'order_status', new OrderStatusMapping())
 ```
 
+**See also:** [Conditional Mappings](docs/advanced/advanced-features.md#conditional-mappings)
+
 ### `nest(string $sourceColumn, Closure $callback)`
 Maps nested data structures (e.g., JSON objects) into related models. The callback receives a `NestedIngestConfig` instance to define mappings for the nested fields.
 
@@ -164,6 +172,8 @@ Maps nested data structures (e.g., JSON objects) into related models. The callba
         ->keyedBy('zip');
 })
 ```
+
+**See also:** [Nested Mappings](docs/advanced/advanced-features.md#nested-mappings)
 
 ### `relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey, bool $createIfMissing = false)`
 Automatically resolves `BelongsTo` relationships.
@@ -270,6 +280,8 @@ Validates the structure of the source data before processing. Define expected co
 ])
 ```
 
+**See also:** [Schema Validation](docs/advanced/advanced-features.md#schema-validation)
+
 ---
 
 ## Hooks
@@ -303,6 +315,8 @@ Executed **after** the model has been successfully saved.
     $product->saveQuietly();
 })
 ```
+
+**See also:** [Import Events](docs/advanced/advanced-features.md#import-events)
 
 ---
 
@@ -357,6 +371,8 @@ Enables tracing for mappings only. Records how source columns are mapped to mode
 ->traceMappings()
 ```
 
+**See also:** [Debugging & Tracing](docs/advanced/advanced-features.md#debugging--tracing)
+
 ---
 
 ## Event Handling
@@ -368,11 +384,7 @@ Registers a custom event handler to hook into the import lifecycle. The handler 
 ->withEventHandler(new SendSlackNotificationHandler())
 ```
 
-The handler receives callbacks for:
-- `beforeImport(IngestRun $run)`: Called once before processing starts.
-- `onRowProcessed(IngestRun $run, RowData $row, object $model)`: Called after each row is successfully processed.
-- `onError(IngestRun $run, RowData $row, Throwable $error)`: Called when a row fails processing.
-- `afterImport(IngestRun $run, ImportStats $stats)`: Called once after all processing completes.
+**See also:** [Import Events](docs/advanced/advanced-features.md#import-events)
 
 ---
 
