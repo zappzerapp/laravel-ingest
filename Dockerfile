@@ -17,9 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-COPY . .
+COPY composer.json composer.lock ./
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+COPY . .
 
 RUN chown -R nobody:nogroup /var/www/html
 

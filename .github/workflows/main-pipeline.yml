@@ -18,24 +18,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Start Docker services
-        run: docker compose up -d
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Install dependencies
-        run: docker compose exec -T --user root app composer install --no-progress --prefer-dist --optimize-autoloader
+      - name: Build image with BuildKit cache
+        uses: docker/bake-action@v5
+        with:
+          files: |
+            docker-compose.ci.yml
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+          load: true
+
+      - name: Start Docker services
+        run: docker compose -f docker-compose.ci.yml up -d
 
       - name: Check code style with Pint
-        run: docker compose exec -T --user root app composer lint:check
+        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer lint:check
 
       - name: Run static analysis with Larastan
-        run: docker compose exec -T --user root app composer analyse
+        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer analyse
 
       - name: Run Pest tests
-        run: docker compose exec -T --user root app composer test
+        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer test
 
       - name: Stop Docker services
         if: always()
-        run: docker compose down
+        run: docker compose -f docker-compose.ci.yml down
 
   publish:
     needs: test
