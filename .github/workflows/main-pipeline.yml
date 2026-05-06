@@ -11,30 +11,30 @@ on:
 
 jobs:
   test:
-
     if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Build and start Docker services
-        run: |
-          export DOCKER_BUILDKIT=1
-          docker compose -f docker-compose.ci.yml up -d --build
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, sqlite, zip, gd, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Check code style with Pint
-        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer lint:check
+        run: composer lint:check
 
       - name: Run static analysis with Larastan
-        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer analyse
+        run: composer analyse
 
       - name: Run Pest tests
-        run: docker compose -f docker-compose.ci.yml exec -T --user root app composer test
-
-      - name: Stop Docker services
-        if: always()
-        run: docker compose -f docker-compose.ci.yml down
+        run: composer test
 
   publish:
     needs: test
