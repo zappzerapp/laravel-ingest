@@ -60,7 +60,13 @@ php artisan migrate
 
 ### 2. Define an Importer
 
-Create a class implementing `IngestDefinition`. This is the only code you need to write.
+Use the Artisan generator to scaffold a new importer:
+
+```bash
+php artisan make:importer UserImporter --model=User
+```
+
+Alternatively, create a class implementing `IngestDefinition` manually:
 
 ```php
 namespace App\Ingest;
@@ -158,6 +164,7 @@ Ingest runs happen in the background. You can monitor and manage them easily:
 | `ingest:status {id}` | Show progress bar, stats, and errors for a run.                       |
 | `ingest:cancel {id}` | Stop a running import gracefully.                                     |
 | `ingest:retry {id}`  | Create a **new run** containing only the rows that failed previously. |
+| `ingest:prune-files` | Remove temporary import files older than the configured TTL. |
 
 ### API Endpoints
 
@@ -214,6 +221,21 @@ IngestConfig::for(Product::class)
 ```
 
 See the [Documentation](https://zappzerapp.github.io/laravel-ingest/) for all available methods.
+
+---
+
+## ✨ Advanced Features
+
+Beyond the basics, Laravel Ingest supports advanced capabilities for complex import scenarios:
+
+- **[Validators](docs/advanced/advanced-features.md#validators)** — Rule-based and custom validators to reject rows before processing.
+- **[Transformers & Pipelines](docs/advanced/advanced-features.md#transformers--pipelines)** — Chain multiple transformations on field values.
+- **[Conditional Mappings](docs/advanced/advanced-features.md#conditional-mappings)** — Apply mappings only when row conditions are met.
+- **[Custom Sources](docs/advanced/advanced-features.md#custom-sources)** — Define your own source types (e.g., database, API).
+- **[Import Event Handlers](docs/advanced/advanced-features.md#import-events)** — React to lifecycle events (start, progress, complete, failure).
+- **[Nested Mappings](docs/advanced/advanced-features.md#nested-mappings)** — Handle nested data structures and one-to-many relationships.
+- **[Schema Validation](docs/advanced/advanced-features.md#schema-validation)** — Validate the structure of your file before processing.
+- **[Tracing & Debugging](docs/advanced/advanced-features.md#debugging--tracing)** — Inspect row-level decision trees and resolve issues fast.
 
 ---
 

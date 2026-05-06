@@ -144,6 +144,7 @@ use LaravelIngest\Enums\DuplicateStrategy;
 | `UPDATE` | `'update'` | Overwrite existing record with new data |
 | `FAIL` | `'fail'` | Mark row as failed, don't modify existing |
 | `UPDATE_IF_NEWER` | `'update_if_newer'` | Update only if source is newer (requires `compareTimestamp()`) |
+| `UPSERT` | `'upsert'` | Insert if missing, update if exists (native database UPSERT) |
 
 ### Usage Examples
 
@@ -171,6 +172,11 @@ IngestConfig::for(Article::class)
     ->keyedBy('external_id')
     ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER)
     ->compareTimestamp('last_modified', 'updated_at')
+
+// Native UPSERT (insert or update in a single query)
+IngestConfig::for(Product::class)
+    ->keyedBy('sku')
+    ->onDuplicate(DuplicateStrategy::UPSERT)
 ```
 
 ### Decision Guide
@@ -181,6 +187,7 @@ IngestConfig::for(Article::class)
 | Importing new user registrations | `SKIP` |
 | Financial transactions (no duplicates allowed) | `FAIL` |
 | Incremental updates from CMS | `UPDATE_IF_NEWER` |
+| High-frequency partial syncs | `UPSERT` |
 
 ---
 

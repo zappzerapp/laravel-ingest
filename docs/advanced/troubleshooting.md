@@ -5,32 +5,32 @@ order: 90
 
 # Troubleshooting
 
-## 1. "File not found" bei Filesystem-Quellen
+## 1. "File not found" with Filesystem Sources
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 We could not find the file at '/path/to/file.csv' using the disk 'local'.
 ```
 
-**Ursachen**:
-- Der Pfad ist relativ (z.B. `imports/file.csv` statt `/absolute/path/file.csv`).
-- Die Datei existiert nicht auf dem konfigurierten Disk.
-- Der Disk ist nicht korrekt in `config/filesystems.php` konfiguriert.
+**Causes**:
+- The path is relative (e.g. `imports/file.csv` instead of `/absolute/path/file.csv`).
+- The file does not exist on the configured disk.
+- The disk is not configured correctly in `config/filesystems.php`.
 
-**Lösungen**:
+**Solutions**:
 
-1. **Absolute Pfade verwenden**:
+1. **Use absolute paths**:
    ```php
    ->fromSource(SourceType::FILESYSTEM, ['path' => base_path('storage/app/imports/file.csv')])
    ```
 
-2. **Existenz prüfen**:
+2. **Check existence**:
    ```php
    use Illuminate\Support\Facades\Storage;
    Storage::disk('local')->exists('imports/file.csv'); // true/false
    ```
 
-3. **Disk-Konfiguration prüfen**:
+3. **Check disk configuration**:
    ```php
    // config/filesystems.php
    'disks' => [
@@ -43,87 +43,87 @@ We could not find the file at '/path/to/file.csv' using the disk 'local'.
 
 ---
 
-## 2. Memory-Limit Fehler
+## 2. Memory Limit Errors
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 Allowed memory size of 134217728 bytes exhausted
 ```
 
-**Ursachen**:
-- Die CSV/Excel-Datei ist zu groß für das aktuelle `memory_limit` in PHP.
-- Zu viele Zeilen werden gleichzeitig verarbeitet (z.B. `chunkSize` zu groß).
+**Causes**:
+- The CSV/Excel file is too large for the current PHP `memory_limit`.
+- Too many rows are processed at once (e.g. `chunkSize` is too large).
 
-**Lösungen**:
+**Solutions**:
 
-1. **`memory_limit` erhöhen** (in `php.ini`):
+1. **Increase `memory_limit`** (in `php.ini`):
    ```ini
    memory_limit = 512M
    ```
 
-2. **Kleinere Chunks verwenden**:
+2. **Use smaller chunks**:
    ```php
-   ->setChunkSize(500) // Standard: 100
+   ->setChunkSize(500) // Default: 100
    ```
 
-3. **Transaktionen deaktivieren** (für maximale Performance):
+3. **Disable transactions** (for maximum performance):
    ```php
    ->transactionMode(TransactionMode::NONE)
    ```
 
-4. **Queue-Worker optimieren**:
+4. **Optimize queue worker**:
    ```bash
    php artisan queue:work --memory=512
    ```
 
 ---
 
-## 3. "Column not found" bei `strictHeaders(true)`
+## 3. "Column not found" with `strictHeaders(true)`
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 The column 'user_email' was not found in the source file headers.
 ```
 
-**Ursachen**:
-- Die Spaltenüberschrift im CSV stimmt nicht mit der Definition in `map()` oder `relate()` überein.
-- Groß-/Kleinschreibung oder Leerzeichen unterscheiden sich (z.B. "E-Mail" vs. "email").
+**Causes**:
+- The CSV header does not match the definition in `map()` or `relate()`.
+- Case sensitivity or whitespace differences (e.g. "E-Mail" vs. "email").
 
-**Lösungen**:
+**Solutions**:
 
-1. **Aliase verwenden**:
+1. **Use aliases**:
    ```php
    ->map(['E-Mail', 'Email', 'user_email'], 'email')
    ```
 
-2. **`strictHeaders(false)` setzen** (wenn die Spalte optional ist):
+2. **Set `strictHeaders(false)`** (if the column is optional):
    ```php
    ->strictHeaders(false)
    ```
 
-3. **CSV-Datei anpassen** (z.B. mit Excel oder `sed`):
+3. **Adjust CSV file** (e.g. with Excel or `sed`):
    ```bash
-   # Ersetze Leerzeichen in Headern (Linux/Mac)
+   # Replace spaces in headers (Linux/Mac)
    sed -i '1s/ /_/g' input.csv
    ```
 
 ---
 
-## 4. "Connection timeout" bei großen Uploads
+## 4. "Connection timeout" with Large Uploads
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 Connection timeout or Request timeout exceeded
 ```
 
-**Ursachen**:
-- Die Upload-Zeit überschreitet die PHP `max_execution_time`.
-- Der Webserver hat eine geringere Timeout-Einstellung.
-- Die Datei ist zu groß für den Upload.
+**Causes**:
+- The upload time exceeds PHP's `max_execution_time`.
+- The web server has a lower timeout setting.
+- The file is too large for the upload.
 
-**Lösungen**:
+**Solutions**:
 
-1. **PHP-Konfiguration anpassen**:
+1. **Adjust PHP configuration**:
    ```ini
    ; php.ini
    max_execution_time = 300
@@ -132,7 +132,7 @@ Connection timeout or Request timeout exceeded
    max_input_time = 300
    ```
 
-2. **Webserver-Timeout erhöhen** (nginx Beispiel):
+2. **Increase Web Server Timeout** (nginx example):
    ```nginx
    client_max_body_size 100M;
    proxy_connect_timeout 300;
@@ -140,39 +140,39 @@ Connection timeout or Request timeout exceeded
    proxy_read_timeout 300;
    ```
 
-3. **Chunked Uploads im Frontend implementieren**:
+3. **Implement chunked uploads in the frontend**:
    ```javascript
-   // Für sehr große Dateien
+   // For very large files
    const chunkSize = 1024 * 1024; // 1MB chunks
-   // Implementieren Sie chunk-by-chunk Upload
+   // Implement chunk-by-chunk upload
    ```
 
 ---
 
 ## 5. "Queue worker is not running"
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 Job failed after maximum attempts
 ```
 
-**Ursachen**:
-- Der Queue-Worker läuft nicht.
-- Der Worker ist abgestürzt oder hat das Zeitlimit überschritten.
-- Queue-Konfiguration ist fehlerhaft.
+**Causes**:
+- The queue worker is not running.
+- The worker crashed or exceeded its time limit.
+- Queue configuration is incorrect.
 
-**Lösungen**:
+**Solutions**:
 
-1. **Worker starten und überwachen**:
+1. **Start and monitor worker**:
    ```bash
-   # Starten
+   # Start
    php artisan queue:work
    
-   # Mit Supervisord überwachen
+   # Monitor with Supervisord
    php artisan queue:work --daemon --sleep=1 --tries=3
    ```
 
-2. **Supervisor-Konfiguration** (`/etc/supervisor/conf.d/laravel-worker.conf`):
+2. **Supervisor configuration** (`/etc/supervisor/conf.d/laravel-worker.conf`):
    ```ini
    [program:laravel-worker]
    process_name=%(program_name)s_%(process_num)02d
@@ -186,7 +186,7 @@ Job failed after maximum attempts
    stopwaitsecs=3600
    ```
 
-3. **Queue-Status prüfen**:
+3. **Check queue status**:
    ```bash
    php artisan queue:failed
    php artisan queue:retry all
@@ -196,37 +196,37 @@ Job failed after maximum attempts
 
 ## 6. "Foreign key constraint violation"
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row
 ```
 
-**Ursachen**:
-- `relate()` oder `relateMany()` kann den referenzierten Datensatz nicht finden.
-- Die referenzierte ID existiert nicht in der Zieltabelle.
-- Die Beziehung ist falsch konfiguriert.
+**Causes**:
+- `relate()` or `relateMany()` cannot find the referenced record.
+- The referenced ID does not exist in the target table.
+- The relationship is configured incorrectly.
 
-**Lösungen**:
+**Solutions**:
 
-1. **Debug-Modus für Beziehungen aktivieren**:
+1. **Enable debug mode for relationships**:
    ```php
    ->relate('category_name', 'category', Category::class, 'name', createIfMissing: true)
    ```
 
-2. **Datenvalidierung vor dem Import**:
+2. **Validate data before import**:
    ```php
    ->beforeRow(function(array &$row) {
-       // Prüfen ob Kategorie existiert
+       // Check whether category exists
        if (!empty($row['category_name'])) {
            $exists = Category::where('name', $row['category_name'])->exists();
            if (!$exists) {
-               $row['category_name'] = 'Default Category'; // oder werfen Sie Exception
+               $row['category_name'] = 'Default Category'; // or throw exception
            }
        }
    })
    ```
 
-3. **Fehlende Datensätze erstellen**:
+3. **Create missing records**:
    ```php
    ->relate('category_name', 'category', Category::class, 'name', createIfMissing: true)
    ```
@@ -235,23 +235,23 @@ SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a chi
 
 ## 7. "Invalid datetime format"
 
-**Fehlermeldung**:
+**Error Message**:
 ```
 DateTime::__construct(): Failed to parse time string
 ```
 
-**Ursachen**:
-- Das Datumsformat im CSV entspricht nicht dem erwarteten Format.
-- Leere oder ungültige Datumswerte.
+**Causes**:
+- The date format in the CSV does not match the expected format.
+- Empty or invalid date values.
 
-**Lösungen**:
+**Solutions**:
 
-1. **Datumstransformation implementieren**:
+1. **Implement date transformation**:
    ```php
    ->mapAndTransform('import_date', 'created_at', function($value, $row) {
        if (empty($value)) return null;
        
-       // Verschiedene Formate versuchen
+       // Try various formats
        $formats = ['d.m.Y', 'Y-m-d', 'm/d/Y', 'd/m/Y'];
        foreach ($formats as $format) {
            $date = DateTime::createFromFormat($format, $value);
@@ -264,7 +264,7 @@ DateTime::__construct(): Failed to parse time string
    })
    ```
 
-2. **Flexible Validierung**:
+2. **Flexible validation**:
    ```php
    ->validate([
        'import_date' => 'nullable|date_format:d.m.Y|date_format:Y-m-d'
@@ -273,57 +273,57 @@ DateTime::__construct(): Failed to parse time string
 
 ---
 
-## 8. Performance ist sehr langsam
+## 8. Performance is Very Slow
 
-**Symptome**:
-- Import von 10.000 Zeilen dauert mehrere Minuten.
-- Hohe CPU- und Speicher-Auslastung.
+**Symptoms**:
+- Importing 10,000 rows takes several minutes.
+- High CPU and memory usage.
 
-**Ursachen**:
-- Ineffiziente Datenbankabfragen in Hooks.
-- Zu kleine Chunk-Size.
-- Fehlende Indizes in der Datenbank.
+**Causes**:
+- Inefficient database queries in hooks.
+- Chunk size too small.
+- Missing indexes in the database.
 
-**Lösungen**:
+**Solutions**:
 
-1. **Chunk-Size optimieren**:
+1. **Optimize chunk size**:
    ```php
-   ->setChunkSize(1000) // Erhöhen für bessere Performance
+   ->setChunkSize(1000) // Increase for better performance
    ```
 
-2. **Datenbank-Indizes prüfen**:
+2. **Check database indexes**:
    ```sql
-   -- Index für keyedBy Spalte
+   -- Index for keyedBy column
    CREATE INDEX idx_products_email ON products(email);
    
-   -- Fremdschlüssel-Indizes
+   -- Foreign key indexes
    CREATE INDEX idx_products_category_id ON products(category_id);
    ```
 
-3. **Haken optimieren**:
+3. **Optimize hooks**:
    ```php
-   // ❌ Schlecht: N+1 Queries
+   // ❌ Bad: N+1 Queries
    ->afterRow(function($model, $row) {
-       $model->category; // Lädt Kategorie für jede Zeile einzeln
+       $model->category; // Loads category individually for each row
    })
    
-   // ✅ Gut: Eager Loading
+   // ✅ Good: Eager Loading
    ->afterRow(function($model, $row) {
        $model->load('category');
    })
    ```
 
-4. **Transaktionen optimieren**:
+4. **Optimize transactions**:
    ```php
    ->transactionMode(TransactionMode::CHUNK)
-   ->setChunkSize(500) // Größere Chunks mit Transaktionen
+   ->setChunkSize(500) // Larger chunks with transactions
    ```
 
 ---
 
-## 9. Debugging-Techniken
+## 9. Debugging Techniques
 
-### Log-Dateien überprüfen
+### Check Log Files
 
 1. **Laravel Logs**:
    ```bash
@@ -335,7 +335,7 @@ DateTime::__construct(): Failed to parse time string
    tail -f storage/logs/worker.log
    ```
 
-3. **Datenbank-Queries loggen**:
+3. **Log database queries**:
    ```php
    // In AppServiceProvider::boot()
    if (app()->environment('local')) {
@@ -345,21 +345,21 @@ DateTime::__construct(): Failed to parse time string
    }
    ```
 
-### Test-Import mit kleinen Datenmengen
+### Test Import with Small Data Sets
 
-1. **Test-CSV erstellen**:
+1. **Create test CSV**:
    ```csv
    name,email,price
    Test Product,test@example.com,19.99
    Another Product,another@example.com,29.99
    ```
 
-2. **Dry-Run durchführen**:
+2. **Perform a dry-run**:
    ```bash
    php artisan ingest:run product-importer --file=test.csv --dry-run
    ```
 
-### Schritt-für-Schritt-Debugging
+### Step-by-Step Debugging
 
 ```php
 ->beforeRow(function(array &$row) {
@@ -374,30 +374,30 @@ DateTime::__construct(): Failed to parse time string
 
 ---
 
-## 10. Häufige Konfigurationsfehler
+## 10. Common Configuration Errors
 
-### Falsche Source-Type-Konfiguration
+### Incorrect Source Type Configuration
 
 ```php
-// ❌ Falsch
+// ❌ Wrong
 ->fromSource(SourceType::UPLOAD, ['path' => 'file.csv'])
 
-// ✅ Richtig
+// ✅ Correct
 ->fromSource(SourceType::FILESYSTEM, ['path' => 'file.csv'])
-->fromSource(SourceType::UPLOAD) // Keine Parameter für Upload
+->fromSource(SourceType::UPLOAD) // No parameters for upload
 ```
 
-### Fehlende Berechtigungen
+### Missing Permissions
 
 ```php
-// In Ihrer Policy
+// In your Policy
 public function import(User $user)
 {
     return $user->hasPermissionTo('import-products');
 }
 ```
 
-### Queue-Konfiguration
+### Queue Configuration
 
 ```php
 // config/queue.php
@@ -406,7 +406,7 @@ public function import(User $user)
         'driver' => 'database',
         'table' => 'jobs',
         'queue' => 'default',
-        'retry_after' => 90, // Wichtig für langlaufende Jobs
+        'retry_after' => 90, // Important for long-running jobs
         'after_commit' => false,
     ],
 ],
@@ -414,12 +414,12 @@ public function import(User $user)
 
 ---
 
-## Nächste Schritte bei Problemen
+## Next Steps When Problems Occur
 
-1. **Logs prüfen**: Überprüfen Sie Laravel- und Worker-Logs
-2. **Konfiguration validieren**: Stellen Sie sicher, dass alle Pfade und Berechtigungen korrekt sind
-3. **Mit kleinen Datenmengen testen**: Isolieren Sie das Problem
-4. **Datenbank-Performance prüfen**: Indizes und Query-Optimierung
-5. **Community-Support**: Eröffnen Sie ein Issue auf GitHub mit detaillierten Informationen
+1. **Check logs**: Review Laravel and worker logs
+2. **Validate configuration**: Make sure all paths and permissions are correct
+3. **Test with small data sets**: Isolate the problem
+4. **Check database performance**: Indexes and query optimization
+5. **Community support**: Open an issue on GitHub with detailed information
 
-Für weitere Hilfe besuchen Sie die [Dokumentation](../index.md) oder erstellen Sie ein Issue im [GitHub Repository](https://github.com/zappzerapp/laravel-ingest).
+For further help, visit the [Documentation](../index.md) or create an issue in the [GitHub Repository](https://github.com/zappzerapp/laravel-ingest).
