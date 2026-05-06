@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `relate()` fields are now visible to `keyedBy()` — `IngestConfig::getAttributesForKeyedBy()`, `getAttributeForKeyedBy()`, and `getHeaderNormalizationMap()` now include relation source fields. `ProcessesSource::validateKeyedByHeader()` accepts relation source fields as valid keyedBy targets, enabling duplicate detection by relation columns.
+- Synthetic keys created in `beforeRow()` now work with `keyedBy()` — unmapped keyedBy fields skip header validation and fall back to the source field name as the model attribute, allowing composite keys built at runtime (e.g. `composite_key`) to function as documented.
+
+### Changed
+
+- Updated `docs/configuration/ingest-config.md` to remove broken workaround caveats for composite/synthetic keys and document native support for synthetic keyedBy fields.
+
 ## [0.5.4] - 2026-05-05
 
 ### Added
