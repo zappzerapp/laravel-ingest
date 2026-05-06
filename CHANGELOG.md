@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-05-06
+
 ### Fixed
 
 - `relate()` fields are now visible to `keyedBy()` — `IngestConfig::getAttributesForKeyedBy()`, `getAttributeForKeyedBy()`, and `getHeaderNormalizationMap()` now include relation source fields. `ProcessesSource::validateKeyedByHeader()` accepts relation source fields as valid keyedBy targets, enabling duplicate detection by relation columns.
