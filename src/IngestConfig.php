@@ -82,7 +82,7 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    public function keyedBy(string $sourceField): static
+    public function keyedBy(string|array $sourceField): static
     {
         $this->keyedBy = $sourceField;
 
@@ -472,6 +472,9 @@ class IngestConfig implements HasMappings
                 $map[$alias] = $primaryField;
             }
         }
+        foreach ($this->relations as $sourceField => $config) {
+            $map[$sourceField] = $sourceField;
+        }
 
         return $map;
     }
@@ -494,7 +497,14 @@ class IngestConfig implements HasMappings
             }
         }
 
-        return null;
+        $relationConfig = $this->relations[$firstKey] ?? null;
+        if ($relationConfig) {
+            $modelInstance = app($this->model);
+
+            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+        }
+
+        return $firstKey;
     }
 
     /**
@@ -510,11 +520,22 @@ class IngestConfig implements HasMappings
         $attributes = [];
 
         foreach ($keyedBy as $key) {
+            $found = false;
             foreach ($this->mappings as $sourceField => $map) {
                 $allSourceFields = array_merge([$sourceField], $map['aliases']);
                 if (in_array($key, $allSourceFields, true)) {
                     $attributes[] = $map['attribute'];
+                    $found = true;
                     break;
+                }
+            }
+            if (!$found) {
+                $relationConfig = $this->relations[$key] ?? null;
+                if ($relationConfig) {
+                    $modelInstance = app($this->model);
+                    $attributes[] = $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+                } else {
+                    $attributes[] = $key;
                 }
             }
         }
