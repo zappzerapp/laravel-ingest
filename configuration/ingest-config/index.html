@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.831396931437">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.831397203210">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 4.5.3">
@@ -38,12 +38,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=4.5.3.831396931437" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=4.5.3.831397203210" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.3.831396931437" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.3.831397203210" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.3.831396931437" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.3.831396931437" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.3.831397203210" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.3.831397203210" defer></script>
 
     <script defer src="https://analytics.zebra-fruit.de/script.js" data-website-id="6f1b70fe-d321-4e14-987e-629870d98640"></script>
     <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/docs/_includes/favicon.ico">
@@ -202,12 +202,32 @@
 </doc-codeblock></div>
 <hr>
 <h2 id="identity--duplicates">Identity &amp; Duplicates</h2>
-<h3 id="keyedbystring-sourcecolumn"><code translate="no" v-pre>keyedBy(string $sourceColumn)</code></h3>
-<p>Defines the &quot;Unique ID&quot; column in your <strong>source file</strong> (not the database column name). This is used to check if a record already exists.</p>
-<div id="keyedbystring-sourcecolumn-code-1" class="codeblock-wrapper"><doc-codeblock>
+<h3 id="keyedbystringarray-sourcecolumn"><code translate="no" v-pre>keyedBy(string|array $sourceColumn)</code></h3>
+<p>Defines the &quot;Unique ID&quot; column(s) in your <strong>source file</strong> (not the database column name). This is used to check if a record already exists.</p>
+<div id="keyedbystringarray-sourcecolumn-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// The CSV has a column &quot;EAN-Code&quot; which is unique
 -&gt;keyedBy('EAN-Code')</code></pre>
 </doc-codeblock></div>
+<p>You can also pass an array for composite keys:</p>
+<div id="keyedbystringarray-sourcecolumn-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;keyedBy(['store_id', 'sku'])</code></pre>
+</doc-codeblock></div>
+<h4 id="synthetic--unmapped-keys">Synthetic / Unmapped Keys</h4>
+<p>If a <code translate="no" v-pre>keyedBy</code> field is <strong>not</strong> registered as a mapping or a relation, it is treated as a <em>synthetic key</em>. The field name itself is used as the model attribute / database column. This is useful when you build a combined key at runtime (e.g. inside <code translate="no" v-pre>beforeRow()</code>):</p>
+<div id="synthetic--unmapped-keys-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">IngestConfig::for(Product::class)
+    -&gt;map('store_id', 'store_id')
+    -&gt;map('sku', 'sku')
+    -&gt;map('name', 'name')
+    -&gt;beforeRow(function (array &amp;$row) {
+        $row['composite_key'] = $row['store_id'] . '|' . $row['sku'];
+    })
+    -&gt;keyedBy('composite_key')
+    -&gt;onDuplicate(DuplicateStrategy::UPDATE);</code></pre>
+</doc-codeblock></div>
+<blockquote>
+<p><strong>Precondition:</strong> The synthetic column must either be a fillable model attribute or exist as a column in the database. If it does not exist, the import will fail at the database level with a <code translate="no" v-pre>QueryException</code>.</p>
+</blockquote>
 <h3 id="onduplicateduplicatestrategy-strategy"><code translate="no" v-pre>onDuplicate(DuplicateStrategy $strategy)</code></h3>
 <p>Defines behavior when a record with the <code translate="no" v-pre>keyedBy</code> value is found in the database.</p>
 <ul>
@@ -693,58 +713,31 @@ class ProductMapping implements MappingInterface
 </ul>
 <hr>
 <h2 id="composite-keys">Composite Keys</h2>
-<p>Currently, <code translate="no" v-pre>keyedBy()</code> only accepts a single string. For composite keys (e.g., <code translate="no" v-pre>['store_id', 'sku']</code>), use one of the following workarounds:</p>
-<h3 id="workaround-1-add-a-synthetic-unique-column">Workaround 1: Add a synthetic unique column</h3>
-<p>Create a combined column in your source file:</p>
-<div id="workaround-1-add-a-synthetic-unique-column-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// CSV contains: store_id, sku, product_name
-// Create a new column: unique_key = &quot;store_id|sku&quot;
--&gt;keyedBy('unique_key')</code></pre>
+<p><code translate="no" v-pre>keyedBy()</code> accepts either a single string or an array of strings for composite keys:</p>
+<div id="composite-keys-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Single column
+-&gt;keyedBy('sku')
+
+// Composite key
+-&gt;keyedBy(['store_id', 'sku'])</code></pre>
 </doc-codeblock></div>
-<p>Example CSV transformation:</p>
-<div id="workaround-1-add-a-synthetic-unique-column-code-2" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-csv"><code v-pre class="language-csv">store_id,sku,product_name,unique_key
-1,PROD001,Product A,&quot;1|PROD001&quot;
-2,PROD001,Product B,&quot;2|PROD001&quot;</code></pre>
-</doc-codeblock></div>
-<h3 id="workaround-2-build-the-key-in-beforerow">Workaround 2: Build the key in <code translate="no" v-pre>beforeRow()</code></h3>
-<p>Use the <code translate="no" v-pre>beforeRow()</code> method to create a combined key at runtime:</p>
-<div id="workaround-2-build-the-key-in-beforerow-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
-    // Combine store_id and sku into a unique key
-    $row['composite_key'] = ($row['store_id'] ?? '') . '|' . ($row['sku'] ?? '');
-})
--&gt;keyedBy('composite_key')</code></pre>
-</doc-codeblock></div>
-<h3 id="workaround-3-pre-process-data-before-import">Workaround 3: Pre-process data before import</h3>
-<p>For complex scenarios, prepare the data in a separate process before importing:</p>
-<div id="workaround-3-pre-process-data-before-import-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// In a service or controller:
-public function prepareImportData(string $inputPath, string $outputPath): void
-{
-    $csv = array_map('str_getcsv', file($inputPath));
-    $headers = array_shift($csv);
-    
-    $prepared = [];
-    foreach ($csv as $row) {
-        $row = array_combine($headers, $row);
-        $row['store_sku_key'] = $row['store_id'] . '_' . $row['sku'];
-        $prepared[] = $row;
-    }
-    
-    // Write cleaned CSV
-    $fp = fopen($outputPath, 'w');
-    fputcsv($fp, array_keys($prepared[0]));
-    foreach ($prepared as $row) {
-        fputcsv($fp, $row);
-    }
-    fclose($fp);
-}</code></pre>
+<h3 id="synthetic--unmapped-keys-1">Synthetic / Unmapped Keys</h3>
+<p>If a <code translate="no" v-pre>keyedBy</code> field is <strong>not</strong> registered as a mapping or a relation, it is treated as a <em>synthetic key</em>. The field name itself is used as the model attribute / database column. This is useful when you build a combined key at runtime (e.g. inside <code translate="no" v-pre>beforeRow()</code>):</p>
+<div id="synthetic--unmapped-keys-1-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">IngestConfig::for(Product::class)
+    -&gt;map('store_id', 'store_id')
+    -&gt;map('sku', 'sku')
+    -&gt;map('name', 'name')
+    -&gt;beforeRow(function (array &amp;$row) {
+        $row['composite_key'] = $row['store_id'] . '|' . $row['sku'];
+    })
+    -&gt;keyedBy('composite_key')
+    -&gt;onDuplicate(DuplicateStrategy::UPDATE);</code></pre>
 </doc-codeblock></div>
 <blockquote>
-<p><strong>Note:</strong> Native composite-key support for the fluent API is planned for a future version and will make these workarounds obsolete.</p>
+<p><strong>Precondition:</strong> The synthetic column must either be a fillable model attribute or exist as a column in the database. If it does not exist, the import will fail at the database level with a <code translate="no" v-pre>QueryException</code>.</p>
 </blockquote>
-<div id="workaround-3-pre-process-data-before-import-code-2" class="codeblock-wrapper"><doc-codeblock>
+<div id="synthetic--unmapped-keys-1-code-2" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none"> </code></pre>
 </doc-codeblock></div>
 

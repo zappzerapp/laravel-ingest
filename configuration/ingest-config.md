@@ -26,13 +26,37 @@ IngestConfig::for(\App\Models\Product::class)
 
 ## Identity & Duplicates
 
-### `keyedBy(string $sourceColumn)`
-Defines the "Unique ID" column in your **source file** (not the database column name). This is used to check if a record already exists.
+### `keyedBy(string|array $sourceColumn)`
+Defines the "Unique ID" column(s) in your **source file** (not the database column name). This is used to check if a record already exists.
 
 ```php
 // The CSV has a column "EAN-Code" which is unique
 ->keyedBy('EAN-Code')
 ```
+
+You can also pass an array for composite keys:
+
+```php
+->keyedBy(['store_id', 'sku'])
+```
+
+#### Synthetic / Unmapped Keys
+
+If a `keyedBy` field is **not** registered as a mapping or a relation, it is treated as a *synthetic key*. The field name itself is used as the model attribute / database column. This is useful when you build a combined key at runtime (e.g. inside `beforeRow()`):
+
+```php
+IngestConfig::for(Product::class)
+    ->map('store_id', 'store_id')
+    ->map('sku', 'sku')
+    ->map('name', 'name')
+    ->beforeRow(function (array &$row) {
+        $row['composite_key'] = $row['store_id'] . '|' . $row['sku'];
+    })
+    ->keyedBy('composite_key')
+    ->onDuplicate(DuplicateStrategy::UPDATE);
+```
+
+> **Precondition:** The synthetic column must either be a fillable model attribute or exist as a column in the database. If it does not exist, the import will fail at the database level with a `QueryException`.
 
 ### `onDuplicate(DuplicateStrategy $strategy)`
 Defines behavior when a record with the `keyedBy` value is found in the database.
@@ -587,61 +611,31 @@ IngestConfig::for(Order::class)
 
 ## Composite Keys
 
-Currently, `keyedBy()` only accepts a single string. For composite keys (e.g., `['store_id', 'sku']`), use one of the following workarounds:
-
-### Workaround 1: Add a synthetic unique column
-Create a combined column in your source file:
+`keyedBy()` accepts either a single string or an array of strings for composite keys:
 
 ```php
-// CSV contains: store_id, sku, product_name
-// Create a new column: unique_key = "store_id|sku"
-->keyedBy('unique_key')
+// Single column
+->keyedBy('sku')
+
+// Composite key
+->keyedBy(['store_id', 'sku'])
 ```
 
-Example CSV transformation:
-```csv
-store_id,sku,product_name,unique_key
-1,PROD001,Product A,"1|PROD001"
-2,PROD001,Product B,"2|PROD001"
-```
+### Synthetic / Unmapped Keys
 
-### Workaround 2: Build the key in `beforeRow()`
-Use the `beforeRow()` method to create a combined key at runtime:
+If a `keyedBy` field is **not** registered as a mapping or a relation, it is treated as a *synthetic key*. The field name itself is used as the model attribute / database column. This is useful when you build a combined key at runtime (e.g. inside `beforeRow()`):
 
 ```php
-->beforeRow(function(array &$row) {
-    // Combine store_id and sku into a unique key
-    $row['composite_key'] = ($row['store_id'] ?? '') . '|' . ($row['sku'] ?? '');
-})
-->keyedBy('composite_key')
+IngestConfig::for(Product::class)
+    ->map('store_id', 'store_id')
+    ->map('sku', 'sku')
+    ->map('name', 'name')
+    ->beforeRow(function (array &$row) {
+        $row['composite_key'] = $row['store_id'] . '|' . $row['sku'];
+    })
+    ->keyedBy('composite_key')
+    ->onDuplicate(DuplicateStrategy::UPDATE);
 ```
 
-### Workaround 3: Pre-process data before import
-For complex scenarios, prepare the data in a separate process before importing:
-
-```php
-// In a service or controller:
-public function prepareImportData(string $inputPath, string $outputPath): void
-{
-    $csv = array_map('str_getcsv', file($inputPath));
-    $headers = array_shift($csv);
-    
-    $prepared = [];
-    foreach ($csv as $row) {
-        $row = array_combine($headers, $row);
-        $row['store_sku_key'] = $row['store_id'] . '_' . $row['sku'];
-        $prepared[] = $row;
-    }
-    
-    // Write cleaned CSV
-    $fp = fopen($outputPath, 'w');
-    fputcsv($fp, array_keys($prepared[0]));
-    foreach ($prepared as $row) {
-        fputcsv($fp, $row);
-    }
-    fclose($fp);
-}
-```
-
-> **Note:** Native composite-key support for the fluent API is planned for a future version and will make these workarounds obsolete.
+> **Precondition:** The synthetic column must either be a fillable model attribute or exist as a column in the database. If it does not exist, the import will fail at the database level with a `QueryException`.
 ```
