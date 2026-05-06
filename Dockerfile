@@ -1,4 +1,4 @@
-FROM composer:latest as composer
+FROM composer:latest AS composer
 
 FROM php:8.4-cli
 
@@ -21,9 +21,7 @@ COPY composer.json composer.lock ./
 
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-COPY . .
-
-RUN chown -R nobody:nogroup /var/www/html
+COPY --chown=nobody:nogroup . .
 
 CMD ["tail", "-f", "/dev/null"]
 USER nobody

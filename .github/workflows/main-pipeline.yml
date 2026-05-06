@@ -18,21 +18,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build image with BuildKit cache
-        uses: docker/bake-action@v5
-        with:
-          files: |
-            docker-compose.ci.yml
-          set: |
-            *.cache-from=type=gha
-            *.cache-to=type=gha,mode=max
-          load: true
-
-      - name: Start Docker services
-        run: docker compose -f docker-compose.ci.yml up -d
+      - name: Build and start Docker services
+        run: |
+          export DOCKER_BUILDKIT=1
+          docker compose -f docker-compose.ci.yml up -d --build
 
       - name: Check code style with Pint
         run: docker compose -f docker-compose.ci.yml exec -T --user root app composer lint:check
