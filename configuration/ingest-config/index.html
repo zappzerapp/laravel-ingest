@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.2.828911574153">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.831381833405">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 4.5.2">
+    <meta name="generator" content="Retype 4.5.3">
 
     <!-- Primary Meta Tags -->
     <title>The IngestConfig Class</title>
@@ -38,12 +38,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=4.5.2.828911574153" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=4.5.3.831381833405" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.2" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.2.828911574153" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.3.831381833405" defer></script>
 
     <script defer src="https://analytics.zebra-fruit.de/script.js" data-website-id="6f1b70fe-d321-4e14-987e-629870d98640"></script>
     <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/docs/_includes/favicon.ico">
@@ -63,7 +63,7 @@
                 <div class="flex items-center px-2 md:px-6">
                     <a id="retype-branding-logo" href="https://zappzerapp.github.io/laravel-ingest/" class="flex items-center leading-snug text-xl">
                         <span class="dark:text-white font-bold line-clamp-1 md:line-clamp-2">Laravel Ingest</span>
-                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.2</span>
+                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.4</span>
                 </div>
     
                 <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
@@ -237,25 +237,92 @@
 -&gt;map(['email', 'E-Mail', 'user_email'], 'email')
 -&gt;map(['name', 'full_name', 'Name'], 'name')</code></pre>
 </doc-codeblock></div>
-<h3 id="mapandtransformstringarray-sourcecolumn-string-modelattribute-callable-callback"><code translate="no" v-pre>mapAndTransform(string|array $sourceColumn, string $modelAttribute, callable $callback)</code></h3>
-<p>Transforms the value before saving. Also supports column aliases.</p>
-<ul>
-<li><strong>Callback Signature</strong>: <code translate="no" v-pre>fn($value, array $row)</code></li>
-<li><strong>$value</strong>: The value of the specific column.</li>
-<li><strong>$row</strong>: The entire raw row array (useful for combining columns).</li>
-</ul>
-<div id="mapandtransformstringarray-sourcecolumn-string-modelattribute-callable-callback-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// Combine First and Last name
+<h3 id="mapandtransformstringarray-sourcecolumn-string-modelattribute-closuretransformerinterfacestringarray-transformer"><code translate="no" v-pre>mapAndTransform(string|array $sourceColumn, string $modelAttribute, Closure|TransformerInterface|string|array $transformer)</code></h3>
+<p>Transforms the value before saving. Also supports column aliases. The transformer can be provided in four forms:</p>
+<ol>
+<li><strong>Closure</strong>: <code translate="no" v-pre>fn($value, array $row) =&gt; mixed</code></li>
+<li><strong>TransformerInterface instance</strong>: <code translate="no" v-pre>new NumericTransformer(decimals: 2)</code></li>
+<li><strong>Class-name string</strong> (auto-resolved): <code translate="no" v-pre>DivideByHundredTransformer::class</code></li>
+<li><strong>Array of transformers</strong> (applied in sequence): <code translate="no" v-pre>[new NumericTransformer(), fn($val) =&gt; $val * 100]</code></li>
+</ol>
+<div id="mapandtransformstringarray-sourcecolumn-string-modelattribute-closuretransformerinterfacestringarray-transformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Closure
 -&gt;mapAndTransform('Last Name', 'full_name', function($value, $row) {
     return $row['First Name'] . ' ' . $value;
 })
 
-// Format currency
--&gt;mapAndTransform('Price', 'price_in_cents', fn($val) =&gt; (int)($val * 100))
+// TransformerInterface instance
+-&gt;mapAndTransform('price_cents', 'price', new NumericTransformer(decimals: 2))
+
+// Class-name string (auto-resolved)
+-&gt;mapAndTransform('price_cents', 'price', DivideByHundredTransformer::class)
+
+// Array of transformers (applied in sequence)
+-&gt;mapAndTransform('price_cents', 'price', [
+    fn($val) =&gt; (int) $val,
+    new DivideByHundredTransformer(),
+])
 
 // With aliases
 -&gt;mapAndTransform(['status', 'Status', 'STATE'], 'is_active', fn($val) =&gt; $val === 'active')</code></pre>
 </doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#transformation-pipelines">Transformation Pipelines</a></p>
+<h3 id="mapandvalidatestringarray-sourcecolumn-string-modelattribute-validatorinterfacestringarray-validator"><code translate="no" v-pre>mapAndValidate(string|array $sourceColumn, string $modelAttribute, ValidatorInterface|string|array $validator)</code></h3>
+<p>Maps a column and validates it using a custom validator before saving. Supports column aliases. The validator can be provided as a <code translate="no" v-pre>ValidatorInterface</code> instance, a class-name string (auto-resolved), or an array of validators.</p>
+<div id="mapandvalidatestringarray-sourcecolumn-string-modelattribute-validatorinterfacestringarray-validator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// ValidatorInterface instance
+-&gt;mapAndValidate('email', 'email', new EmailValidator())
+
+// Class-name string (auto-resolved)
+-&gt;mapAndValidate('email', 'email', EmailValidator::class)
+
+// Array of validators
+-&gt;mapAndValidate('price', 'price', [MinValueValidator::class, NumericValidator::class])</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#validators">Validators</a></p>
+<h3 id="maptransformandvalidatestringarray-sourcecolumn-string-modelattribute-array-transformers-array-validators"><code translate="no" v-pre>mapTransformAndValidate(string|array $sourceColumn, string $modelAttribute, array $transformers, array $validators)</code></h3>
+<p>Combines transformation and validation in a single call. Applies all transformers in sequence, then runs all validators. Supports column aliases.</p>
+<div id="maptransformandvalidatestringarray-sourcecolumn-string-modelattribute-array-transformers-array-validators-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;mapTransformAndValidate(
+    'price',
+    'price',
+    [fn($val) =&gt; (float) $val, new DivideByHundredTransformer()],
+    [MinValueValidator::class, NumericValidator::class]
+)</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#validators">Validators</a> and <a href="docs/advanced/advanced-features.md#transformation-pipelines">Transformation Pipelines</a></p>
+<h3 id="mapwhenstringarray-sourcecolumn-string-modelattribute-closureconditionalmappinginterface-condition-closuretransformerinterfacestringnull-transformer--null-closurevalidatorinterfacestringnull-validator--null"><code translate="no" v-pre>mapWhen(string|array $sourceColumn, string $modelAttribute, Closure|ConditionalMappingInterface $condition, Closure|TransformerInterface|string|null $transformer = null, Closure|ValidatorInterface|string|null $validator = null)</code></h3>
+<p>Conditionally applies a mapping only when the given condition evaluates to <code translate="no" v-pre>true</code> for the current row. Supports column aliases, optional transformation, and optional validation.</p>
+<p>The condition can be a <code translate="no" v-pre>Closure</code> receiving the full row array, or a class implementing <code translate="no" v-pre>ConditionalMappingInterface</code>.</p>
+<div id="mapwhenstringarray-sourcecolumn-string-modelattribute-closureconditionalmappinginterface-condition-closuretransformerinterfacestringnull-transformer--null-closurevalidatorinterfacestringnull-validator--null-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Conditional mapping with a closure
+-&gt;mapWhen('status', 'is_active', fn($row) =&gt; $row['type'] === 'user', fn($val) =&gt; $val === 'active')
+
+// Conditional mapping with a transformer and validator
+-&gt;mapWhen(
+    'price',
+    'price',
+    fn($row) =&gt; $row['type'] === 'premium',
+    new NumericTransformer(decimals: 2),
+    MinValueValidator::class
+)
+
+// Using a ConditionalMappingInterface class
+-&gt;mapWhen('status', 'order_status', new OrderStatusMapping())</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#conditional-mappings">Conditional Mappings</a></p>
+<h3 id="neststring-sourcecolumn-closure-callback"><code translate="no" v-pre>nest(string $sourceColumn, Closure $callback)</code></h3>
+<p>Maps nested data structures (e.g., JSON objects) into related models. The callback receives a <code translate="no" v-pre>NestedIngestConfig</code> instance to define mappings for the nested fields.</p>
+<div id="neststring-sourcecolumn-closure-callback-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;nest('address', function(NestedIngestConfig $config) {
+    $config
+        -&gt;map('street', 'street_address')
+        -&gt;map('city', 'city')
+        -&gt;map('zip', 'postal_code')
+        -&gt;keyedBy('zip');
+})</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#nested-mappings">Nested Mappings</a></p>
 <h3 id="relatestring-sourcecolumn-string-relationname-string-relatedmodel-string-relatedkey-bool-createifmissing--false"><code translate="no" v-pre>relate(string $sourceColumn, string $relationName, string $relatedModel, string $relatedKey, bool $createIfMissing = false)</code></h3>
 <p>Automatically resolves <code translate="no" v-pre>BelongsTo</code> relationships.</p>
 <ol>
@@ -286,11 +353,11 @@
 <div id="relatemanystring-sourcefield-string-relationname-string-relatedmodel-string-relatedkey--id-string-separator---code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// Example 1: Tags from CSV column &quot;Tags&quot; containing &quot;PHP, Laravel, Backend&quot;
 -&gt;relateMany(
-    sourceField: 'tag_names',       // Spalte im CSV (z.B. &quot;Laravel,PHP,API&quot;)
-    relation: 'tags',                // Name der Beziehung im Model
-    relatedModel: Tag::class,        // Klasse des verwandten Models
-    relatedKey: 'name',              // Attribut zum Suchen/Aufösen
-    separator: ','                   // Trennzeichen (Default: &quot;,&quot;)
+    sourceField: 'tag_names',       // Column in CSV (e.g. &quot;Laravel,PHP,API&quot;)
+    relation: 'tags',                // Name of the relationship in the model
+    relatedModel: Tag::class,        // Class of the related model
+    relatedKey: 'name',              // Attribute to search/resolve by
+    separator: ','                   // Separator (Default: &quot;,&quot;)
 )
 
 // Example 2: Categories with semicolon separator
@@ -348,10 +415,23 @@ public static function getRules(): array
 -&gt;validateWithModelRules()
 -&gt;validate(['price' =&gt; 'required|numeric']) // Additional rules</code></pre>
 </doc-codeblock></div>
+<h3 id="expectschemaarray-schema"><code translate="no" v-pre>expectSchema(array $schema)</code></h3>
+<p>Validates the structure of the source data before processing. Define expected columns with their types and constraints. If the source schema does not match, the import fails early with a clear error.</p>
+<div id="expectschemaarray-schema-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;expectSchema([
+    'sku' =&gt; ['type' =&gt; 'string', 'required' =&gt; true],
+    'price' =&gt; ['type' =&gt; 'numeric', 'required' =&gt; true, 'nullable' =&gt; false],
+    'description' =&gt; ['type' =&gt; 'string', 'nullable' =&gt; true],
+])</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#schema-validation">Schema Validation</a></p>
 <hr>
 <h2 id="hooks">Hooks</h2>
 <h3 id="beforerowcallable-callback"><code translate="no" v-pre>beforeRow(callable $callback)</code></h3>
 <p>Executed <strong>before</strong> validation. Allows you to modify the raw data array by reference. Perfect for cleaning up messy data globally.</p>
+<blockquote>
+<p><strong>Note:</strong> Closures passed to <code translate="no" v-pre>beforeRow</code> are automatically wrapped in a <code translate="no" v-pre>SerializableClosure</code> for serialization safety. This ensures the config can be cached or queued without losing the callback logic.</p>
+</blockquote>
 <div id="beforerowcallable-callback-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$data) {
     // Remove invisible characters from all keys
@@ -367,6 +447,9 @@ public static function getRules(): array
 <li><strong>$model</strong>: The saved Eloquent model.</li>
 <li><strong>$row</strong>: The original raw data.</li>
 </ul>
+<blockquote>
+<p><strong>Note:</strong> Closures passed to <code translate="no" v-pre>afterRow</code> are automatically wrapped in a <code translate="no" v-pre>SerializableClosure</code> for serialization safety. This ensures the config can be cached or queued without losing the callback logic.</p>
+</blockquote>
 <div id="afterrowcallable-callback-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;afterRow(function(Product $product, array $row) {
     // Sync tags or trigger side effects
@@ -374,6 +457,7 @@ public static function getRules(): array
     $product-&gt;saveQuietly();
 })</code></pre>
 </doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#import-events">Import Events</a></p>
 <hr>
 <h2 id="processing-options">Processing Options</h2>
 <h3 id="setchunksizeint-size"><code translate="no" v-pre>setChunkSize(int $size)</code></h3>
@@ -399,6 +483,32 @@ public static function getRules(): array
 -&gt;map('email', 'email')      // Must exist in source file
 -&gt;map('name', 'name')        // Must exist in source file</code></pre>
 </doc-codeblock></div>
+<hr>
+<h2 id="tracing--debugging">Tracing &amp; Debugging</h2>
+<h3 id="withtracing"><code translate="no" v-pre>withTracing()</code></h3>
+<p>Enables full tracing for the import. This records detailed logs for both mappings and transformations, making it easier to debug complex imports.</p>
+<div id="withtracing-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;withTracing()</code></pre>
+</doc-codeblock></div>
+<h3 id="tracetransformations"><code translate="no" v-pre>traceTransformations()</code></h3>
+<p>Enables tracing for transformations only. Records how each value is transformed during the import process.</p>
+<div id="tracetransformations-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;traceTransformations()</code></pre>
+</doc-codeblock></div>
+<h3 id="tracemappings"><code translate="no" v-pre>traceMappings()</code></h3>
+<p>Enables tracing for mappings only. Records how source columns are mapped to model attributes.</p>
+<div id="tracemappings-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;traceMappings()</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#debugging--tracing">Debugging &amp; Tracing</a></p>
+<hr>
+<h2 id="event-handling">Event Handling</h2>
+<h3 id="witheventhandlerimporteventhandlerinterface-handler"><code translate="no" v-pre>withEventHandler(ImportEventHandlerInterface $handler)</code></h3>
+<p>Registers a custom event handler to hook into the import lifecycle. The handler must be an instance of <code translate="no" v-pre>ImportEventHandlerInterface</code>.</p>
+<div id="witheventhandlerimporteventhandlerinterface-handler-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;withEventHandler(new SendSlackNotificationHandler())</code></pre>
+</doc-codeblock></div>
+<p><strong>See also:</strong> <a href="docs/advanced/advanced-features.md#import-events">Import Events</a></p>
 <hr>
 <h2 id="dynamic-model-resolution">Dynamic Model Resolution</h2>
 <h3 id="resolvemodelusingcallable-callback"><code translate="no" v-pre>resolveModelUsing(callable $callback)</code></h3>
@@ -439,34 +549,177 @@ IngestConfig::for(User::class)
 -&gt;transactionMode(TransactionMode::ROW)</code></pre>
 </doc-codeblock></div>
 <hr>
-<h2 id="composite-keys-geplant-für-v05">Composite Keys (geplant für v0.5)</h2>
-<p>Aktuell unterstützt <code translate="no" v-pre>keyedBy()</code> nur einfache Schlüssel. Für zusammengesetzte Schlüssel (z.B. <code translate="no" v-pre>['store_id', 'sku']</code>) können Sie Workarounds verwenden:</p>
-<h3 id="workaround-1-künstliche-unique-spalte-erstellen">Workaround 1: Künstliche Unique-Spalte erstellen</h3>
-<p>Erstellen Sie eine kombinierte Spalte in Ihrer Quelldatei:</p>
-<div id="workaround-1-künstliche-unique-spalte-erstellen-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// CSV enthält: store_id, sku, product_name
-// Erstellen Sie eine neue Spalte: unique_key = &quot;store_id|sku&quot;
+<h2 id="reusable-mappings">Reusable Mappings</h2>
+<p>When multiple importers share the same field mappings (e.g., products appear in both orders and refunds), define reusable mapping classes that implement <code translate="no" v-pre>MappingInterface</code>.</p>
+<h3 id="creating-a-mapping-class">Creating a Mapping Class</h3>
+<p>Create mapping classes in your application (e.g., <code translate="no" v-pre>app/Ingest/Mappings/</code>):</p>
+<div id="creating-a-mapping-class-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Ingest/Mappings/ProductMapping.php
+use LaravelIngest\Contracts\HasMappings;
+use LaravelIngest\Contracts\MappingInterface;
+use LaravelIngest\Contracts\NestedMappingInterface;
+use LaravelIngest\IngestConfig;
+use LaravelIngest\NestedIngestConfig;
+use LaravelIngest\Transformers\NumericTransformer;
+
+class ProductMapping implements MappingInterface, NestedMappingInterface
+{
+    public function apply(IngestConfig $config, string $prefix = ''): IngestConfig
+    {
+        return $this-&gt;applyMappings($config, $prefix);
+    }
+
+    public function applyNested(NestedIngestConfig $config, string $prefix = ''): NestedIngestConfig
+    {
+        return $this-&gt;applyMappings($config, $prefix);
+    }
+
+    private function applyMappings(HasMappings $config, string $prefix = ''): HasMappings
+    {
+        $prefix = $prefix !== '' ? &quot;{$prefix}_&quot; : '';
+
+        return $config
+            -&gt;map(&quot;{$prefix}product_id&quot;, 'product_id')
+            -&gt;map(&quot;{$prefix}product_name&quot;, 'name')
+            -&gt;mapAndTransform(
+                &quot;{$prefix}price_cents&quot;,
+                'price',
+                new NumericTransformer(decimals: 2)
+            )
+            -&gt;map(&quot;{$prefix}sku&quot;, 'sku');
+    }
+}</code></pre>
+</doc-codeblock></div>
+<h3 id="using-mappings-in-importers">Using Mappings in Importers</h3>
+<div id="using-mappings-in-importers-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">class OrderImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Order::class)
+            -&gt;fromSource(SourceType::UPLOAD)
+            -&gt;map('order_id', 'id')
+            -&gt;map('customer_email', 'customer_email')
+            -&gt;applyMapping(new ProductMapping(), 'line_item');  // Prefix: line_item_product_id
+    }
+}
+
+class RefundImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Refund::class)
+            -&gt;fromSource(SourceType::UPLOAD)
+            -&gt;map('refund_id', 'id')
+            -&gt;applyMapping(new ProductMapping());  // No prefix needed
+    }
+}</code></pre>
+</doc-codeblock></div>
+<h3 id="using-mappings-in-nested-configs">Using Mappings in Nested Configs</h3>
+<p>Reusable mappings can also be used inside <code translate="no" v-pre>nest()</code> blocks to keep nested data structures DRY. The mapping class must implement <code translate="no" v-pre>NestedMappingInterface</code> in addition to <code translate="no" v-pre>MappingInterface</code>.</p>
+<div id="using-mappings-in-nested-configs-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">class OrderImporter implements IngestDefinition
+{
+    public function getConfig(): IngestConfig
+    {
+        return IngestConfig::for(Order::class)
+            -&gt;fromSource(SourceType::UPLOAD)
+            -&gt;map('order_id', 'id')
+            -&gt;nest('line_items', function (NestedIngestConfig $nested) {
+                $nested-&gt;applyMapping(new ProductMapping(), 'item');
+            });
+    }
+}</code></pre>
+</doc-codeblock></div>
+<blockquote>
+<p><strong>Note:</strong> Mapping classes that only implement <code translate="no" v-pre>MappingInterface</code> (not <code translate="no" v-pre>NestedMappingInterface</code>) are silently ignored when used inside a <code translate="no" v-pre>nest()</code> block. This prevents existing mappings from breaking when reused in nested contexts.</p>
+</blockquote>
+<h3 id="configurable-mappings">Configurable Mappings</h3>
+<p>Add fluent configuration methods for flexibility:</p>
+<div id="configurable-mappings-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// app/Ingest/Mappings/ProductMapping.php
+class ProductMapping implements MappingInterface
+{
+    private bool $includeSku = true;
+    private ?int $priceDecimals = 2;
+
+    public function apply(IngestConfig $config, string $prefix = ''): IngestConfig
+    {
+        $prefix = $prefix !== '' ? &quot;{$prefix}_&quot; : '';
+
+        $config
+            -&gt;map(&quot;{$prefix}product_id&quot;, 'product_id')
+            -&gt;map(&quot;{$prefix}product_name&quot;, 'name')
+            -&gt;mapAndTransform(
+                &quot;{$prefix}price_cents&quot;,
+                'price',
+                new NumericTransformer(decimals: $this-&gt;priceDecimals)
+            );
+
+        if ($this-&gt;includeSku) {
+            $config-&gt;map(&quot;{$prefix}sku&quot;, 'sku');
+        }
+
+        return $config;
+    }
+
+    public function withSku(bool $include = true): self
+    {
+        $this-&gt;includeSku = $include;
+        return $this;
+    }
+
+    public function withPriceDecimals(int $decimals): self
+    {
+        $this-&gt;priceDecimals = $decimals;
+        return $this;
+    }
+}</code></pre>
+</doc-codeblock></div>
+<p>Usage with configuration:</p>
+<div id="configurable-mappings-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">IngestConfig::for(Order::class)
+    -&gt;applyMapping(
+        (new ProductMapping())-&gt;withSku(false)-&gt;withPriceDecimals(0),
+        'item'
+    );</code></pre>
+</doc-codeblock></div>
+<h3 id="benefits">Benefits</h3>
+<ul>
+<li><strong>DRY</strong>: Define product mappings once, reuse everywhere</li>
+<li><strong>Testability</strong>: Unit test mapping logic in isolation</li>
+<li><strong>Consistency</strong>: Same transformation logic across all importers</li>
+<li><strong>Flexibility</strong>: Configure behavior per importer via fluent methods</li>
+</ul>
+<hr>
+<h2 id="composite-keys">Composite Keys</h2>
+<p>Currently, <code translate="no" v-pre>keyedBy()</code> only accepts a single string. For composite keys (e.g., <code translate="no" v-pre>['store_id', 'sku']</code>), use one of the following workarounds:</p>
+<h3 id="workaround-1-add-a-synthetic-unique-column">Workaround 1: Add a synthetic unique column</h3>
+<p>Create a combined column in your source file:</p>
+<div id="workaround-1-add-a-synthetic-unique-column-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// CSV contains: store_id, sku, product_name
+// Create a new column: unique_key = &quot;store_id|sku&quot;
 -&gt;keyedBy('unique_key')</code></pre>
 </doc-codeblock></div>
-<p>Beispiel CSV-Transformation:</p>
-<div id="workaround-1-künstliche-unique-spalte-erstellen-code-2" class="codeblock-wrapper"><doc-codeblock>
+<p>Example CSV transformation:</p>
+<div id="workaround-1-add-a-synthetic-unique-column-code-2" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-csv"><code v-pre class="language-csv">store_id,sku,product_name,unique_key
 1,PROD001,Product A,&quot;1|PROD001&quot;
 2,PROD001,Product B,&quot;2|PROD001&quot;</code></pre>
 </doc-codeblock></div>
-<h3 id="workaround-2-transformation-in-beforerow">Workaround 2: Transformation in beforeRow()</h3>
-<p>Verwenden Sie die <code translate="no" v-pre>beforeRow()</code> Methode, um einen kombinierten Schlüssel zur Laufzeit zu erstellen:</p>
-<div id="workaround-2-transformation-in-beforerow-code-1" class="codeblock-wrapper"><doc-codeblock>
+<h3 id="workaround-2-build-the-key-in-beforerow">Workaround 2: Build the key in <code translate="no" v-pre>beforeRow()</code></h3>
+<p>Use the <code translate="no" v-pre>beforeRow()</code> method to create a combined key at runtime:</p>
+<div id="workaround-2-build-the-key-in-beforerow-code-1" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
-    // Kombiniere store_id und sku zu einem einzigartigen Schlüssel
+    // Combine store_id and sku into a unique key
     $row['composite_key'] = ($row['store_id'] ?? '') . '|' . ($row['sku'] ?? '');
 })
 -&gt;keyedBy('composite_key')</code></pre>
 </doc-codeblock></div>
-<h3 id="workaround-3-daten-vor-dem-import-vorverarbeiten">Workaround 3: Daten vor dem Import vorverarbeiten</h3>
-<p>Für komplexe Szenarien können Sie die Daten vor dem Import in einem separaten Prozess vorbereiten:</p>
-<div id="workaround-3-daten-vor-dem-import-vorverarbeiten-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// In einem Service oder Controller:
+<h3 id="workaround-3-pre-process-data-before-import">Workaround 3: Pre-process data before import</h3>
+<p>For complex scenarios, prepare the data in a separate process before importing:</p>
+<div id="workaround-3-pre-process-data-before-import-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In a service or controller:
 public function prepareImportData(string $inputPath, string $outputPath): void
 {
     $csv = array_map('str_getcsv', file($inputPath));
@@ -479,7 +732,7 @@ public function prepareImportData(string $inputPath, string $outputPath): void
         $prepared[] = $row;
     }
     
-    // Schreibe bereinigte CSV
+    // Write cleaned CSV
     $fp = fopen($outputPath, 'w');
     fputcsv($fp, array_keys($prepared[0]));
     foreach ($prepared as $row) {
@@ -489,9 +742,9 @@ public function prepareImportData(string $inputPath, string $outputPath): void
 }</code></pre>
 </doc-codeblock></div>
 <blockquote>
-<p><strong>Hinweis</strong>: Echte Composite-Key-Unterstützung ist für Version 0.5 geplant und wird diese Workarounds überflüssig machen.</p>
+<p><strong>Note:</strong> Native composite-key support for the fluent API is planned for a future version and will make these workarounds obsolete.</p>
 </blockquote>
-<div id="workaround-3-daten-vor-dem-import-vorverarbeiten-code-2" class="codeblock-wrapper"><doc-codeblock>
+<div id="workaround-3-pre-process-data-before-import-code-2" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-none"><code v-pre class="language-none"> </code></pre>
 </doc-codeblock></div>
 

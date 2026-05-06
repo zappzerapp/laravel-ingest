@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="turbo-root" content="/laravel-ingest">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.831381833405">
+
+    <!-- See retype.com -->
+    <meta name="generator" content="Retype 4.5.3">
+
+    <!-- Primary Meta Tags -->
+    <title>Advanced Features</title>
+    <meta name="title" content="Advanced Features">
+    <meta name="description" content="This documentation describes the advanced features of Laravel Ingest that significantly improve the developer experience and testability.">
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/advanced/advanced-features/">
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="https://zappzerapp.github.io/laravel-ingest/sitemap.xml">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/advanced-features/">
+    <meta property="og:title" content="Advanced Features">
+    <meta property="og:description" content="This documentation describes the advanced features of Laravel Ingest that significantly improve the developer experience and testability.">
+    <meta property="og:site_name" content="Laravel Ingest">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/advanced/advanced-features/">
+    <meta name="twitter:title" content="Advanced Features">
+    <meta name="twitter:description" content="This documentation describes the advanced features of Laravel Ingest that significantly improve the developer experience and testability.">
+
+    <!-- Alternate Markdown -->
+    <link rel="alternate" type="text/markdown" href="https://zappzerapp.github.io/laravel-ingest/advanced/advanced-features.md">
+
+    <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
+
+    <link href="../../resources/css/retype.css?v=4.5.3.831381833405" rel="stylesheet">
+
+    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.3.831381833405" defer></script>
+
+    <script defer src="https://analytics.zebra-fruit.de/script.js" data-website-id="6f1b70fe-d321-4e14-987e-629870d98640"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/docs/_includes/favicon.ico">
+</head>
+<body>
+    <div id="retype-app" class="relative text-base antialiased text-base-text bg-base-bg font-body">
+    <div class="absolute bottom-0 left-0" style="top: 5rem; right: 50%"></div>
+
+    <header id="retype-header" class="sticky top-0 z-30 flex w-full h-16 bg-header-bg border-b border-header-border md:h-20">
+        <div class="container relative flex items-center justify-between pr-6 grow md:justify-start">
+            <!-- Mobile menu button skeleton -->
+            <button v-cloak class="skeleton retype-mobile-menu-button flex items-center justify-center shrink-0 overflow-hidden dark:text-white focus:outline-hidden rounded-full w-10 h-10 ml-3.5 md:hidden"><svg xmlns="http://www.w3.org/2000/svg" class="mb-px shrink-0" width="24" height="24" viewBox="0 0 24 24" role="presentation" style="margin-bottom: 0px;"><g fill="currentColor"><path d="M2 4h20v2H2zM2 11h20v2H2zM2 18h20v2H2z"></path></g></svg></button>
+            <div v-cloak id="retype-sidebar-left-toggle-button"></div>
+    
+            <!-- Logo -->
+            <div class="flex items-center justify-between h-full py-2 md:w-75">
+                <div class="flex items-center px-2 md:px-6">
+                    <a id="retype-branding-logo" href="https://zappzerapp.github.io/laravel-ingest/" class="flex items-center leading-snug text-xl">
+                        <span class="dark:text-white font-bold line-clamp-1 md:line-clamp-2">Laravel Ingest</span>
+                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.4</span>
+                </div>
+    
+                <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
+            </div>
+    
+            <div class="flex justify-between md:grow">
+                <!-- Top Nav -->
+                <nav id="retype-header-nav" class="hidden md:flex">
+                    <ul class="flex flex-col mb-4 md:pl-16 md:mb-0 md:flex-row md:items-center">
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../configuration/">Configuration</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../advanced/">Advanced</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
+                        </li>
+                        <li class="mr-6">
+                            <a class="py-2 md:mb-0 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
+                        </li>
+    
+                    </ul>
+                </nav>
+    
+                <div v-cloak class="flex justify-end grow">
+                    <div id="retype-mobile-search-button"></div>
+                    <doc-search-desktop></doc-search-desktop>
+    
+                    <doc-theme-switch class="lg:ml-2"></doc-theme-switch>
+                    <doc-history></doc-history>
+                </div>
+            </div>
+        </div>
+    </header>
+
+
+    <div id="retype-container" class="container relative flex bg-white">
+        <!-- Sidebar Skeleton -->
+        <div v-cloak class="fixed flex flex-col shrink-0 duration-300 ease-in-out bg-sidebar-left-bg border-sidebar-left-border sidebar top-20 w-75 border-r h-screen md:sticky transition-transform skeleton">
+        
+            <div class="flex items-center h-16 px-6">
+                <input id="retype-filter-input-mock" class="w-full h-10 pl-8 px-3 py-2 transition-colors duration-200 ease-linear bg-filter-bg border border-filter-border rounded-lg shadow-none md:text-sm hover:border-filter-border-hover focus:outline-hidden focus:border-filter-border-focus placeholder-filter-placeholder" type="text">
+            </div>
+        
+            <div class="pl-6 mt-1 mb-4">
+                <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+                <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            </div>
+        
+            <div class="shrink-0 mt-auto bg-transparent dark:border-base-border">
+                <a class="flex items-center justify-center flex-nowrap h-16 text-gray-350 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by" target="_blank" href="https://retype.com/" rel="noopener">
+                    <span class="text-xs whitespace-nowrap">Powered by</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-2" fill="currentColor" width="96" height="20" overflow="visible"><path d="M0 0v20h13.59V0H0zm11.15 17.54H2.44V2.46h8.71v15.08zM15.8 20h2.44V4.67L15.8 2.22zM20.45 6.89V20h2.44V9.34z"/><g><path d="M40.16 8.44c0 1.49-.59 2.45-1.75 2.88l2.34 3.32h-2.53l-2.04-2.96h-1.43v2.96h-2.06V5.36h3.5c1.43 0 2.46.24 3.07.73s.9 1.27.9 2.35zm-2.48 1.1c.26-.23.38-.59.38-1.09 0-.5-.13-.84-.4-1.03s-.73-.28-1.39-.28h-1.54v2.75h1.5c.72 0 1.2-.12 1.45-.35zM51.56 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92h4.74v1.83h-6.79V5.36h6.64zM60.09 7.15v7.48h-2.06V7.15h-2.61V5.36h7.28v1.79h-2.61zM70.81 14.64h-2.06v-3.66l-3.19-5.61h2.23l1.99 3.45 1.99-3.45H74l-3.19 5.61v3.66zM83.99 6.19c.65.55.97 1.4.97 2.55s-.33 1.98-1 2.51-1.68.8-3.04.8h-1.23v2.59h-2.06V5.36h3.26c1.42 0 2.45.28 3.1.83zm-1.51 3.65c.25-.28.37-.69.37-1.22s-.16-.92-.48-1.14c-.32-.23-.82-.34-1.5-.34H79.7v3.12h1.38c.68 0 1.15-.14 1.4-.42zM95.85 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92H96v1.83h-6.79V5.36h6.64z"/></g></svg>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Sidebar component -->
+        <doc-sidebar v-cloak>
+            <template #sidebar-footer>
+                <div class="shrink-0 mt-auto border-t md:bg-transparent md:border-none dark:border-base-border">
+        
+                    <div class="py-3 px-6 md:hidden border-b dark:border-base-border">
+                        <nav>
+                            <ul class="flex flex-wrap justify-center items-center">
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../getting-started/installation/">Getting Started</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../configuration/">Configuration</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../usage/facade/">Usage</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../advanced/">Advanced</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="../../api-reference/">API Reference</a>
+                                </li>
+                                <li class="mr-6">
+                                    <a class="block py-1 inline-flex items-center text-sm whitespace-nowrap transition-colors duration-200 ease-linear md:text-header-text font-header-text hover:text-header-text-hover" href="https://github.com/zappzerapp/laravel-ingest">GitHub</a>
+                                </li>
+        
+                            </ul>
+                        </nav>
+                    </div>
+        
+                    <a class="flex items-center justify-center flex-nowrap h-16 text-gray-350 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors duration-150 ease-in docs-powered-by" target="_blank" href="https://retype.com/" rel="noopener">
+                        <span class="text-xs whitespace-nowrap">Powered by</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="ml-2" fill="currentColor" width="96" height="20" overflow="visible"><path d="M0 0v20h13.59V0H0zm11.15 17.54H2.44V2.46h8.71v15.08zM15.8 20h2.44V4.67L15.8 2.22zM20.45 6.89V20h2.44V9.34z"/><g><path d="M40.16 8.44c0 1.49-.59 2.45-1.75 2.88l2.34 3.32h-2.53l-2.04-2.96h-1.43v2.96h-2.06V5.36h3.5c1.43 0 2.46.24 3.07.73s.9 1.27.9 2.35zm-2.48 1.1c.26-.23.38-.59.38-1.09 0-.5-.13-.84-.4-1.03s-.73-.28-1.39-.28h-1.54v2.75h1.5c.72 0 1.2-.12 1.45-.35zM51.56 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92h4.74v1.83h-6.79V5.36h6.64zM60.09 7.15v7.48h-2.06V7.15h-2.61V5.36h7.28v1.79h-2.61zM70.81 14.64h-2.06v-3.66l-3.19-5.61h2.23l1.99 3.45 1.99-3.45H74l-3.19 5.61v3.66zM83.99 6.19c.65.55.97 1.4.97 2.55s-.33 1.98-1 2.51-1.68.8-3.04.8h-1.23v2.59h-2.06V5.36h3.26c1.42 0 2.45.28 3.1.83zm-1.51 3.65c.25-.28.37-.69.37-1.22s-.16-.92-.48-1.14c-.32-.23-.82-.34-1.5-.34H79.7v3.12h1.38c.68 0 1.15-.14 1.4-.42zM95.85 5.36V7.2h-4.59v1.91h4.13v1.76h-4.13v1.92H96v1.83h-6.79V5.36h6.64z"/></g></svg>
+                    </a>
+                </div>
+            </template>
+        </doc-sidebar>
+
+        <div class="grow min-w-0 bg-body-bg">
+            <!-- Render "toolbar" template here on api pages --><!-- Render page content -->
+<div class="flex">
+    <div id="retype-main" class="min-w-0 p-4 grow md:px-16">
+        <main class="relative pb-12 lg:pt-2">
+            <div class="relative retype-markdown" id="retype-content">
+                <!-- Rendered if sidebar right is enabled -->
+                <div id="retype-sidebar-right-toggle"></div>
+                <doc-page-actions></doc-page-actions>
+
+                <!-- Page content  -->
+<h1 id="advanced-features">Advanced Features</h1>
+<p>This documentation describes the advanced features of Laravel Ingest that significantly improve the developer experience and testability.</p>
+<hr>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><doc-anchor-trigger to="#validators">Validators</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#transformation-pipelines">Transformation Pipelines</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#conditional-mappings">Conditional Mappings</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#custom-data-sources">Custom Data Sources</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#import-events">Import Events</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#nested-mappings">Nested Mappings</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#schema-validation">Schema Validation</doc-anchor-trigger></li>
+<li><doc-anchor-trigger to="#debugging--tracing">Debugging &amp; Tracing</doc-anchor-trigger></li>
+</ol>
+<hr>
+<h2 id="validators">Validators</h2>
+<p>Validators are to validation logic what transformers are to transformation logic: reusable, testable, and declarative.</p>
+<h3 id="basic-principle">Basic Principle</h3>
+<div id="basic-principle-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\IngestConfig;
+use LaravelIngest\Validators\EmailValidator;
+use LaravelIngest\Validators\RequiredValidator;
+use LaravelIngest\Validators\RangeValidator;
+
+IngestConfig::for(Product::class)
+    -&gt;mapAndValidate('email', 'email', EmailValidator::class)
+    -&gt;mapAndValidate('price', 'price', [
+        RequiredValidator::class,
+        new RangeValidator(min: 0, max: 10000),
+    ]);</code></pre>
+</doc-codeblock></div>
+<h3 id="built-in-validators">Built-in Validators</h3>
+<h4 id="requiredvalidator">RequiredValidator</h4>
+<p>Checks whether a field contains a value.</p>
+<div id="requiredvalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\RequiredValidator;
+
+-&gt;mapAndValidate('name', 'product_name', RequiredValidator::class)</code></pre>
+</doc-codeblock></div>
+<p>Validation fails for null, empty strings, and empty arrays.</p>
+<h4 id="emailvalidator">EmailValidator</h4>
+<p>Validates email formats.</p>
+<div id="emailvalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\EmailValidator;
+
+-&gt;mapAndValidate('email', 'customer_email', EmailValidator::class)</code></pre>
+</doc-codeblock></div>
+<p>Empty values are considered valid (null, &#x27;&#x27;).</p>
+<h4 id="rangevalidator">RangeValidator</h4>
+<p>Checks numeric values against min/max boundaries.</p>
+<div id="rangevalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\RangeValidator;
+
+// Minimum only
+-&gt;mapAndValidate('price', 'price', new RangeValidator(min: 0))
+
+// Min and Max
+-&gt;mapAndValidate('quantity', 'qty', new RangeValidator(min: 1, max: 100))
+
+// With custom error message
+-&gt;mapAndValidate('discount', 'discount_percent', 
+    new RangeValidator(min: 0, max: 100, message: 'Discount must be between 0% and 100%'))</code></pre>
+</doc-codeblock></div>
+<h4 id="regexvalidator">RegexValidator</h4>
+<p>Validates against a regex pattern.</p>
+<div id="regexvalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\RegexValidator;
+
+// Postal code validation (5 digits)
+-&gt;mapAndValidate('zip', 'postal_code', 
+    new RegexValidator('/^\d{5}$/', 'Must be a 5-digit postal code'))</code></pre>
+</doc-codeblock></div>
+<h4 id="inarrayvalidator">InArrayValidator</h4>
+<p>Checks whether a value is contained in an allowed list.</p>
+<div id="inarrayvalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\InArrayValidator;
+
+-&gt;mapAndValidate('status', 'status', 
+    new InArrayValidator(['active', 'inactive', 'pending']))
+
+// With strict mode (type checking)
+-&gt;mapAndValidate('type', 'type', 
+    new InArrayValidator(['1', '2', '3'], strict: true))</code></pre>
+</doc-codeblock></div>
+<h4 id="datevalidator">DateValidator</h4>
+<p>Validates date formats.</p>
+<div id="datevalidator-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Validators\DateValidator;
+
+// Default: Y-m-d
+-&gt;mapAndValidate('date', 'order_date', new DateValidator())
+
+// Custom format
+-&gt;mapAndValidate('date', 'order_date', new DateValidator('d/m/Y'))</code></pre>
+</doc-codeblock></div>
+<h3 id="combined-transformation--validation">Combined Transformation + Validation</h3>
+<div id="combined-transformation--validation-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;mapTransformAndValidate(
+    'price_cents',
+    'price',
+    [new NumericTransformer(decimals: 2)],
+    [new RangeValidator(min: 0)]
+)</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="transformation-pipelines">Transformation Pipelines</h2>
+<p>Apply multiple transformations in sequence:</p>
+<div id="transformation-pipelines-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\TrimTransformer;
+use LaravelIngest\Transformers\SlugTransformer;
+use LaravelIngest\Transformers\DefaultValueTransformer;
+
+// Pipeline: Trim -&gt; Slug -&gt; Default
+-&gt;mapAndTransform('title', 'slug', [
+    new TrimTransformer(),
+    new SlugTransformer(),
+    new DefaultValueTransformer('untitled'),
+])</code></pre>
+</doc-codeblock></div>
+<h3 id="additional-built-in-transformers">Additional Built-in Transformers</h3>
+<h4 id="trimtransformer">TrimTransformer</h4>
+<div id="trimtransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\TrimTransformer;
+
+-&gt;mapAndTransform('name', 'name', new TrimTransformer())
+
+// With custom characters
+-&gt;mapAndTransform('code', 'code', new TrimTransformer('x'))</code></pre>
+</doc-codeblock></div>
+<h4 id="slugtransformer">SlugTransformer</h4>
+<div id="slugtransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\SlugTransformer;
+
+-&gt;mapAndTransform('title', 'slug', new SlugTransformer())
+
+// With underscore instead of hyphen
+-&gt;mapAndTransform('title', 'slug', new SlugTransformer('_'))</code></pre>
+</doc-codeblock></div>
+<h4 id="maptransformer">MapTransformer</h4>
+<p>Map values from a lookup table:</p>
+<div id="maptransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\MapTransformer;
+
+-&gt;mapAndTransform('status', 'status_code', new MapTransformer([
+    'active' =&gt; 1,
+    'inactive' =&gt; 0,
+    'pending' =&gt; 2,
+], default: -1))</code></pre>
+</doc-codeblock></div>
+<h4 id="booleantransformer">BooleanTransformer</h4>
+<p>Convert string values to boolean (0/1):</p>
+<div id="booleantransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\BooleanTransformer;
+
+// Default truthy: yes, true, 1, on, y
+// Default falsy: no, false, 0, off, n
+-&gt;mapAndTransform('is_active', 'is_active', new BooleanTransformer())
+
+// Custom truthy/falsy values
+-&gt;mapAndTransform('status', 'is_active', new BooleanTransformer(
+    truthyValues: ['aktiv', 'active', '1'],
+    falsyValues: ['inaktiv', 'inactive', '0'],
+    default: 0
+))</code></pre>
+</doc-codeblock></div>
+<p>Empty or null values are mapped to <code translate="no" v-pre>default</code> (null by default).</p>
+<h4 id="datetransformer">DateTransformer</h4>
+<p>Parse and reformat date values:</p>
+<div id="datetransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\DateTransformer;
+
+// Input: &quot;31.12.2024&quot;, Output: &quot;2024-12-31&quot;
+-&gt;mapAndTransform('date', 'created_at', new DateTransformer(
+    inputFormat: 'd.m.Y',
+    outputFormat: 'Y-m-d'
+))
+
+// Parse ISO date and store as timestamp
+-&gt;mapAndTransform('date', 'created_at', new DateTransformer(
+    inputFormat: DateTimeInterface::ATOM,
+    outputFormat: 'Y-m-d H:i:s'
+))</code></pre>
+</doc-codeblock></div>
+<p>Invalid or empty values return <code translate="no" v-pre>default</code> (null by default).</p>
+<h4 id="concattransformer">ConcatTransformer</h4>
+<p>Merge multiple fields:</p>
+<div id="concattransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\ConcatTransformer;
+
+// Build a full name from different columns
+-&gt;mapAndTransform(null, 'full_name', new ConcatTransformer(
+    ['first_name', 'last_name'], 
+    separator: ' '
+))</code></pre>
+</doc-codeblock></div>
+<h4 id="defaultvaluetransformer">DefaultValueTransformer</h4>
+<p>Replace empty values with a default:</p>
+<div id="defaultvaluetransformer-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Transformers\DefaultValueTransformer;
+
+-&gt;mapAndTransform('description', 'description', new DefaultValueTransformer('No description available'))
+
+// With custom &quot;empty&quot; values
+-&gt;mapAndTransform('status', 'status', new DefaultValueTransformer(
+    'unknown', 
+    ['null', 'NULL', '']
+))</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="conditional-mappings">Conditional Mappings</h2>
+<p>Apply mappings only when a condition is met:</p>
+<div id="conditional-mappings-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\IngestConfig;
+use LaravelIngest\Transformers\NumericTransformer;
+
+// Different status fields depending on type
+IngestConfig::for(Transaction::class)
+    -&gt;mapWhen('status', 'order_status', 
+        fn($row) =&gt; $row['type'] === 'order',
+        new MapTransformer(['pending' =&gt; 1, 'completed' =&gt; 2])
+    )
+    -&gt;mapWhen('status', 'refund_status',
+        fn($row) =&gt; $row['type'] === 'refund',
+        new MapTransformer(['requested' =&gt; 1, 'processed' =&gt; 2])
+    );</code></pre>
+</doc-codeblock></div>
+<p>Use ConditionalMappingInterface for complex logic:</p>
+<div id="conditional-mappings-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Contracts\ConditionalMappingInterface;
+
+class OrderStatusMapping implements ConditionalMappingInterface
+{
+    public function shouldApply(array $rowContext): bool
+    {
+        return $rowContext['type'] === 'order';
+    }
+
+    public function getSourceField(): string
+    {
+        return 'status';
+    }
+
+    public function getModelAttribute(): string
+    {
+        return 'order_status';
+    }
+
+    public function getTransformer(): ?TransformerInterface
+    {
+        return new MapTransformer(['pending' =&gt; 1, 'completed' =&gt; 2]);
+    }
+
+    public function getValidator(): ?ValidatorInterface
+    {
+        return null;
+    }
+}
+
+// Usage
+-&gt;mapWhen('status', 'order_status', new OrderStatusMapping())</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="custom-data-sources">Custom Data Sources</h2>
+<p>Use SourceInterface for external data sources:</p>
+<div id="custom-data-sources-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Contracts\SourceInterface;
+use Generator;
+
+class ShopifyProductSource implements SourceInterface
+{
+    public function __construct(
+        private string $shopDomain,
+        private string $apiKey
+    ) {}
+
+    public function read(): Generator
+    {
+        $client = new ShopifyClient($this-&gt;shopDomain, $this-&gt;apiKey);
+        
+        foreach ($client-&gt;getProducts() as $product) {
+            yield [
+                'id' =&gt; $product['id'],
+                'title' =&gt; $product['title'],
+                'price' =&gt; $product['variants'][0]['price'] ?? null,
+                'sku' =&gt; $product['variants'][0]['sku'] ?? null,
+            ];
+        }
+    }
+
+    public function getSchema(): array
+    {
+        return [
+            'id' =&gt; ['type' =&gt; 'integer', 'required' =&gt; true],
+            'title' =&gt; ['type' =&gt; 'string', 'required' =&gt; true],
+            'price' =&gt; ['type' =&gt; 'numeric', 'required' =&gt; false],
+            'sku' =&gt; ['type' =&gt; 'string', 'required' =&gt; false],
+        ];
+    }
+
+    public function getSourceMetadata(): array
+    {
+        return [
+            'source_type' =&gt; 'shopify',
+            'shop_domain' =&gt; $this-&gt;shopDomain,
+        ];
+    }
+}
+
+// Usage
+IngestConfig::for(Product::class)
+    -&gt;fromSource(new ShopifyProductSource($shopDomain, $apiKey));</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="import-events">Import Events</h2>
+<p>Hook into the import lifecycle with event handlers:</p>
+<div id="import-events-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\Contracts\ImportEventHandlerInterface;
+use LaravelIngest\DTOs\RowData;
+use LaravelIngest\Models\IngestRun;
+use LaravelIngest\ValueObjects\ImportStats;
+
+class SlackNotificationHandler implements ImportEventHandlerInterface
+{
+    public function beforeImport(IngestRun $run): void
+    {
+        Log::info(&quot;Starting import {$run-&gt;id}&quot;);
+    }
+
+    public function onRowProcessed(IngestRun $run, RowData $row, object $model): void
+    {
+        // Per row logging (use sparingly!)
+    }
+
+    public function onError(IngestRun $run, RowData $row, \Throwable $error): void
+    {
+        Log::error(&quot;Import error in row {$row-&gt;rowNumber}: {$error-&gt;getMessage()}&quot;);
+    }
+
+    public function afterImport(IngestRun $run, ImportStats $stats): void
+    {
+        $successRate = $stats-&gt;successRate();
+        
+        if ($stats-&gt;wasFullySuccessful()) {
+            Slack::send(&quot;Import completed successfully: {$stats-&gt;successCount} rows&quot;);
+        } else {
+            Slack::send(&quot;Import completed with {$stats-&gt;failureCount} errors ({$successRate}% success)&quot;);
+        }
+    }
+}
+
+// Register
+IngestConfig::for(Product::class)
+    -&gt;withEventHandler(new SlackNotificationHandler())
+    -&gt;fromSource(SourceType::UPLOAD);</code></pre>
+</doc-codeblock></div>
+<h3 id="importstats">ImportStats</h3>
+<p>The ImportStats object contains:</p>
+<div id="importstats-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">$stats-&gt;totalRows           // Total count
+$stats-&gt;successCount        // Successfully processed
+$stats-&gt;failureCount        // Failed rows
+$stats-&gt;createdCount        // Newly created records
+$stats-&gt;updatedCount        // Updated records
+$stats-&gt;skippedCount()      // Skipped rows
+$stats-&gt;successRate()       // Success rate in %
+$stats-&gt;wasFullySuccessful() // True if no errors
+$stats-&gt;duration            // Duration in seconds
+$stats-&gt;toArray()           // As array for JSON</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="nested-mappings">Nested Mappings</h2>
+<p>For complex, nested data structures:</p>
+<div id="nested-mappings-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">use LaravelIngest\IngestConfig;
+use LaravelIngest\NestedIngestConfig;
+use LaravelIngest\Transformers\NumericTransformer;
+
+IngestConfig::for(Order::class)
+    -&gt;map('order_id', 'id')
+    -&gt;map('customer_email', 'email')
+    -&gt;nest('line_items', function (NestedIngestConfig $nested) {
+        $nested-&gt;map('sku', 'product_sku')
+               -&gt;map('name', 'product_name')
+               -&gt;mapAndTransform('qty', 'quantity', NumericTransformer::class)
+               -&gt;mapAndTransform('unit_price', 'price', [
+                   new NumericTransformer(decimals: 2),
+                   new RangeValidator(min: 0),
+               ])
+               -&gt;keyedBy('sku');
+    });</code></pre>
+</doc-codeblock></div>
+<p>Input:</p>
+<div id="nested-mappings-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-json"><code v-pre class="language-json">{
+    &quot;order_id&quot;: &quot;123&quot;,
+    &quot;customer_email&quot;: &quot;test@example.com&quot;,
+    &quot;line_items&quot;: [
+        {&quot;sku&quot;: &quot;ABC-001&quot;, &quot;name&quot;: &quot;Widget&quot;, &quot;qty&quot;: &quot;2&quot;, &quot;unit_price&quot;: &quot;19.99&quot;},
+        {&quot;sku&quot;: &quot;DEF-002&quot;, &quot;name&quot;: &quot;Gadget&quot;, &quot;qty&quot;: &quot;1&quot;, &quot;unit_price&quot;: &quot;29.99&quot;}
+    ]
+}</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="schema-validation">Schema Validation</h2>
+<p>Define the expected schema for better error messages:</p>
+<div id="schema-validation-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">IngestConfig::for(Product::class)
+    -&gt;expectSchema([
+        'id' =&gt; ['type' =&gt; 'integer', 'required' =&gt; true],
+        'name' =&gt; ['type' =&gt; 'string', 'required' =&gt; true],
+        'price' =&gt; ['type' =&gt; 'numeric', 'required' =&gt; true],
+        'description' =&gt; ['type' =&gt; 'string', 'required' =&gt; false, 'nullable' =&gt; true],
+    ])
+    -&gt;fromSource(SourceType::UPLOAD);</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="debugging--tracing">Debugging &amp; Tracing</h2>
+<p>Enable detailed logs for debugging:</p>
+<div id="debugging--tracing-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">IngestConfig::for(Product::class)
+    -&gt;withTracing()                    // Trace everything
+    // or:
+    -&gt;traceTransformations()          // Only transformations
+    -&gt;traceMappings()                  // Only mappings</code></pre>
+</doc-codeblock></div>
+<p>Tracing logs:</p>
+<ul>
+<li>Input/output of each transformation</li>
+<li>Which fields were mapped where</li>
+<li>Which conditional mappings were active</li>
+</ul>
+<p>Access traces:</p>
+<div id="debugging--tracing-code-2" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">$service = app(DataTransformationService::class);
+$traces = $service-&gt;getTraceLog();
+
+// [
+//     'price' =&gt; [
+//         ['step' =&gt; 'input', 'value' =&gt; '123.456'],
+//         ['step' =&gt; 'NumericTransformer', 'value' =&gt; 123.46],
+//         ['step' =&gt; 'DefaultValueTransformer', 'value' =&gt; 123.46],
+//     ]
+// ]</code></pre>
+</doc-codeblock></div>
+<hr>
+<h2 id="summary">Summary</h2>
+<div class="table-wrapper scrollbar overflow-hidden">
+<table class="comfortable">
+<thead>
+<tr>
+<th>Feature</th>
+<th>Purpose</th>
+<th>API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Validators</strong></td>
+<td>Reusable, testable validation</td>
+<td><code translate="no" v-pre>mapAndValidate()</code></td>
+</tr>
+<tr>
+<td><strong>Pipelines</strong></td>
+<td>Multiple transformations in sequence</td>
+<td>Array to <code translate="no" v-pre>mapAndTransform()</code></td>
+</tr>
+<tr>
+<td><strong>Conditional Mappings</strong></td>
+<td>Context-dependent mapping logic</td>
+<td><code translate="no" v-pre>mapWhen()</code></td>
+</tr>
+<tr>
+<td><strong>Custom Sources</strong></td>
+<td>External data sources (APIs, etc.)</td>
+<td><code translate="no" v-pre>SourceInterface</code></td>
+</tr>
+<tr>
+<td><strong>Events</strong></td>
+<td>Hook into the import lifecycle</td>
+<td><code translate="no" v-pre>ImportEventHandlerInterface</code></td>
+</tr>
+<tr>
+<td><strong>Nested Mappings</strong></td>
+<td>Nested data structures</td>
+<td><code translate="no" v-pre>nest()</code></td>
+</tr>
+<tr>
+<td><strong>Schema</strong></td>
+<td>Input validation</td>
+<td><code translate="no" v-pre>expectSchema()</code></td>
+</tr>
+<tr>
+<td><strong>Tracing</strong></td>
+<td>Debugging information</td>
+<td><code translate="no" v-pre>withTracing()</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All features follow the same pattern: <strong>interface-based, testable, declarative</strong>.</p>
+
+                
+                <!-- Required only on API pages -->
+                <doc-toolbar-member-filter-no-results></doc-toolbar-member-filter-no-results>
+            </div>
+            <footer id="retype-content-footer" class="clear-both">
+            
+                <nav id="retype-nextprev" class="print:hidden flex mt-14">
+                    <div class="w-1/2">
+                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../advanced/exceptions/">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+                            <span>
+                                <span class="block text-xs font-normal text-base-text-muted">Previous</span>
+                                <span class="block mt-1">Exceptions</span>
+                            </span>
+                        </a>
+                    </div>
+            
+                    <div class="w-1/2">
+                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../api-reference/">
+                            <span>
+                                <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
+                                <span class="block mt-1">API Reference</span>
+                            </span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
+                        </a>
+                    </div>
+                </nav>
+            </footer>
+        </main>
+
+        <div id="retype-page-footer" class="print:border-none border-t border-base-border pt-6 mb-8">
+            <footer class="flex flex-wrap items-center justify-between print:justify-center">
+                <div id="retype-footer-links" class="print:hidden">
+                    <ul class="flex flex-wrap items-center text-sm">
+                    </ul>
+                </div>
+                <div id="retype-copyright" class="print:justify-center py-2 text-footer-text font-footer-link text-sm leading-relaxed"><p>© Copyright 2026. All rights reserved.</p></div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Rendered if sidebar right is enabled -->
+    <!-- Sidebar right skeleton-->
+    <div v-cloak class="fixed top-0 bottom-0 right-0 translate-x-full bg-sidebar-right-bg border-sidebar-right-border lg:sticky lg:border-l lg:shrink-0 lg:pt-6 lg:translate-x-0 sm:w-1/2 lg:w-64 lg:z-0 md:w-104 sidebar-right skeleton">
+        <div class="pl-5">
+            <div class="w-32 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            <div class="w-48 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+            <div class="w-40 h-3 mb-4 bg-skeleton-bg rounded-full loading"></div>
+        </div>
+    </div>
+
+    <!-- User should be able to hide sidebar right -->
+    <doc-sidebar-right v-cloak></doc-sidebar-right>
+</div>
+
+        </div>
+    </div>
+
+    <doc-search-mobile></doc-search-mobile>
+    <doc-back-to-top></doc-back-to-top>
+</div>
+
+
+    <div id="retype-overlay-target"></div>
+
+        <script data-cfasync="false">window.__DOCS__ = { "title": "Advanced Features", level: 2, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: false, hasMath: false, tocDepth: 23, "md": "/advanced/advanced-features.md" }</script>
+</body>
+</html>

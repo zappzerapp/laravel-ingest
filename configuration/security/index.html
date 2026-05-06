@@ -11,30 +11,30 @@
     <meta name="generator" content="Retype 4.5.3">
 
     <!-- Primary Meta Tags -->
-    <title>Available Source Types</title>
-    <meta name="title" content="Available Source Types">
-    <meta name="description" content="Laravel Ingest is designed to be source-agnostic. You define the source of your data using the fromSource() method on your IngestConfig object. Here are the built-in source handlers and their required options.">
+    <title>Security Best Practices</title>
+    <meta name="title" content="Security Best Practices">
+    <meta name="description" content="When dealing with file uploads and data imports, security should be a top priority. Here are the recommended security configurations for production environments.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/configuration/source-types/">
+    <link rel="canonical" href="https://zappzerapp.github.io/laravel-ingest/configuration/security/">
     <link rel="sitemap" type="application/xml" title="Sitemap" href="https://zappzerapp.github.io/laravel-ingest/sitemap.xml">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/source-types/">
-    <meta property="og:title" content="Available Source Types">
-    <meta property="og:description" content="Laravel Ingest is designed to be source-agnostic. You define the source of your data using the fromSource() method on your IngestConfig object. Here are the built-in source handlers and their required options.">
+    <meta property="og:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/security/">
+    <meta property="og:title" content="Security Best Practices">
+    <meta property="og:description" content="When dealing with file uploads and data imports, security should be a top priority. Here are the recommended security configurations for production environments.">
     <meta property="og:site_name" content="Laravel Ingest">
     <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/source-types/">
-    <meta name="twitter:title" content="Available Source Types">
-    <meta name="twitter:description" content="Laravel Ingest is designed to be source-agnostic. You define the source of your data using the fromSource() method on your IngestConfig object. Here are the built-in source handlers and their required options.">
+    <meta name="twitter:url" content="https://zappzerapp.github.io/laravel-ingest/configuration/security/">
+    <meta name="twitter:title" content="Security Best Practices">
+    <meta name="twitter:description" content="When dealing with file uploads and data imports, security should be a top priority. Here are the recommended security configurations for production environments.">
 
     <!-- Alternate Markdown -->
-    <link rel="alternate" type="text/markdown" href="https://zappzerapp.github.io/laravel-ingest/configuration/source-types.md">
+    <link rel="alternate" type="text/markdown" href="https://zappzerapp.github.io/laravel-ingest/configuration/security.md">
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
@@ -182,135 +182,307 @@
                 <doc-page-actions></doc-page-actions>
 
                 <!-- Page content  -->
-<h1 id="available-source-types">Available Source Types</h1>
-<p>Laravel Ingest is designed to be source-agnostic. You define the source of your data using the <code translate="no" v-pre>fromSource()</code> method on your <code translate="no" v-pre>IngestConfig</code> object. Here are the built-in source handlers and their required options.</p>
-<h3 id="sourcetypeupload"><code translate="no" v-pre>SourceType::UPLOAD</code></h3>
-<p>This is the most common source type for user-facing imports. It expects a file to be provided via an API request.</p>
-<ul>
-<li><strong>Payload:</strong> An instance of <code translate="no" v-pre>Illuminate\Http\UploadedFile</code>.</li>
-<li><strong>Options:</strong> No options are required in the <code translate="no" v-pre>IngestConfig</code>.</li>
-</ul>
-<div id="sourcetypeupload-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig
--&gt;fromSource(SourceType::UPLOAD)
-
-// API Request
-// POST /api/v1/ingest/upload/{importerSlug}
-// with a multipart/form-data body containing a 'file'.</code></pre>
-</doc-codeblock></div>
-<hr>
-<h3 id="sourcetypefilesystem"><code translate="no" v-pre>SourceType::FILESYSTEM</code></h3>
-<p>This handler reads a file directly from one of your configured Laravel filesystem disks (e.g., <code translate="no" v-pre>local</code>, <code translate="no" v-pre>s3</code>). It&#x27;s ideal for imports triggered by console commands or scheduled jobs.</p>
-<ul>
-<li><strong>Payload:</strong> The path to the file can be passed as a string payload to the <code translate="no" v-pre>Ingest::start()</code> method (or via CLI <code translate="no" v-pre>--file</code> argument).</li>
-<li><strong>Options:</strong>
-<ul>
-<li><code translate="no" v-pre>path</code> (string): The default path to the file if no payload is provided.</li>
-<li><code translate="no" v-pre>disk</code> (string, optional): Overrides the default disk for this specific import.</li>
-</ul>
-</li>
-</ul>
-<div id="sourcetypefilesystem-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig for a command-triggered import where path is dynamic
--&gt;fromSource(SourceType::FILESYSTEM) 
-
-// IngestConfig for a hardcoded path (e.g. nightly cron)
--&gt;fromSource(SourceType::FILESYSTEM, ['path' =&gt; 'imports/daily-products.csv', 'disk' =&gt; 's3'])</code></pre>
-</doc-codeblock></div>
-<hr>
-<h3 id="sourcetypeurl"><code translate="no" v-pre>SourceType::URL</code></h3>
-<p>This handler downloads a file from a public URL and processes it. The file is streamed to a temporary local file to keep memory usage low.</p>
-<ul>
-<li><strong>Payload:</strong> None. The URL is configured directly.</li>
-<li><strong>Options:</strong>
-<ul>
-<li><code translate="no" v-pre>url</code> (string): The full URL to the file to be downloaded.</li>
-</ul>
-</li>
-</ul>
-<div id="sourcetypeurl-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig
--&gt;fromSource(SourceType::URL, ['url' =&gt; 'https://example.com/data/export.csv'])</code></pre>
-</doc-codeblock></div>
-<hr>
-<h3 id="sourcetypejson"><code translate="no" v-pre>SourceType::JSON</code></h3>
-<p>This handler processes a file containing a JSON array of objects. It&#x27;s useful for API-driven imports or when dealing with structured data feeds.</p>
-<ul>
-<li><strong>Payload:</strong> The full path to the JSON file.</li>
-<li><strong>Options:</strong> No options are required.</li>
-</ul>
-<h4 id="example-ingestconfig">Example IngestConfig</h4>
-<div id="example-ingestconfig-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig
--&gt;fromSource(SourceType::JSON)</code></pre>
-</doc-codeblock></div>
-<h4 id="example-usage">Example Usage</h4>
-<div id="example-usage-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// Programmatic trigger
-Ingest::start('user-importer', storage_path('app/imports/users.json'));</code></pre>
-</doc-codeblock></div>
-<h4 id="example-usersjson-file">Example <code translate="no" v-pre>users.json</code> File</h4>
-<p>The file must contain a single top-level array. Each element in the array is treated as a row.</p>
-<div id="example-usersjson-file-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-json"><code v-pre class="language-json">[
-  {
-    &quot;full_name&quot;: &quot;John Doe&quot;,
-    &quot;user_email&quot;: &quot;john@example.com&quot;,
-    &quot;is_admin&quot;: &quot;yes&quot;
-  },
-  {
-    &quot;full_name&quot;: &quot;Jane Smith&quot;,
-    &quot;user_email&quot;: &quot;jane@example.com&quot;,
-    &quot;is_admin&quot;: &quot;no&quot;
-  }
-]</code></pre>
-</doc-codeblock></div>
-<hr>
-<h3 id="sourcetypeftp--sourcetypesftp"><code translate="no" v-pre>SourceType::FTP</code> &amp; <code translate="no" v-pre>SourceType::SFTP</code></h3>
-<p>These handlers use the <code translate="no" v-pre>RemoteDiskHandler</code> to download a file from a remote server configured as a Laravel filesystem disk. This requires a corresponding disk configuration in <code translate="no" v-pre>config/filesystems.php</code>.</p>
-<ul>
-<li><strong>Payload:</strong> None.</li>
-<li><strong>Options:</strong>
-<ul>
-<li><code translate="no" v-pre>disk</code> (string): <strong>Required.</strong> The name of the FTP/SFTP disk configured in <code translate="no" v-pre>config/filesystems.php</code>.</li>
-<li><code translate="no" v-pre>path</code> (string): <strong>Required.</strong> The path to the file on the remote server.</li>
-</ul>
-</li>
-</ul>
-<h4 id="example-filesystem-configuration">Example Filesystem Configuration</h4>
-<p>First, configure your disk in <code translate="no" v-pre>config/filesystems.php</code>:</p>
-<div id="example-filesystem-configuration-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// config/filesystems.php
-'disks' =&gt; [
-    // ...
-    'erp_ftp' =&gt; [
-        'driver' =&gt; 'ftp',
-        'host' =&gt; env('FTP_HOST'),
-        'username' =&gt; env('FTP_USERNAME'),
-        'password' =&gt; env('FTP_PASSWORD'),
-        // ... other options
-    ],
+<h1 id="security-best-practices">Security Best Practices</h1>
+<p>When dealing with file uploads and data imports, security should be a top priority. Here are the recommended security configurations for production environments.</p>
+<h2 id="file-upload-security">File Upload Security</h2>
+<h4 id="1-restrict-file-types">1. Restrict File Types</h4>
+<div id="1-restrict-file-types-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
+'allowed_file_types' =&gt; [
+    'csv',
+    'xlsx',
+    'xls',
+    'txt',
 ],</code></pre>
 </doc-codeblock></div>
-<blockquote>
-<p><strong>Note:</strong> FTP support requires <code translate="no" v-pre>league/flysystem-ftp</code>. SFTP support requires <code translate="no" v-pre>league/flysystem-sftp-v3</code>. Install via:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-bash"><code v-pre class="language-bash">composer require league/flysystem-ftp      # for FTP
-composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
+<h4 id="2-file-size-limits">2. File Size Limits</h4>
+<div id="2-file-size-limits-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php
+'max_file_size' =&gt; 10 * 1024 * 1024, // 10MB in production</code></pre>
 </doc-codeblock></div>
-</blockquote>
-<h4 id="example-ingestconfig-1">Example IngestConfig</h4>
-<p>Then, use the configured disk in your importer:</p>
-<div id="example-ingestconfig-1-code-1" class="codeblock-wrapper"><doc-codeblock>
-<pre translate="no" class="language-php"><code v-pre class="language-php">// IngestConfig
--&gt;fromSource(SourceType::FTP, [
-    'disk' =&gt; 'erp_ftp',
-    'path' =&gt; '/exports/stock-levels.csv',
+<h4 id="3-virus-scanning-optional-but-recommended">3. Virus Scanning (Optional but Recommended)</h4>
+<div id="3-virus-scanning-optional-but-recommended-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your Importer class
+use Illuminate\Http\UploadedFile;
+
+public function getConfig(): IngestConfig
+{
+    return IngestConfig::for(Product::class)
+        -&gt;beforeImport(function(UploadedFile $file) {
+            // Integrate with virus scanning service
+            if (app()-&gt;environment('production')) {
+                $this-&gt;scanForMalware($file);
+            }
+        });
+}
+
+private function scanForMalware(UploadedFile $file): void
+{
+    // Example: ClamAV integration
+    $clamav = new \Xenolope\Quahog\Client(
+        new \Xenolope\Quahog\Socket('127.0.0.1', 3310)
+    );
+    
+    $result = $clamav-&gt;scanFile($file-&gt;getPathname());
+    
+    if ($result-&gt;isInfected()) {
+        throw new SecurityException('File contains malware');
+    }
+}</code></pre>
+</doc-codeblock></div>
+<h2 id="data-validation-security">Data Validation Security</h2>
+<h4 id="1-input-sanitization">1. Input Sanitization</h4>
+<div id="1-input-sanitization-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Remove potentially dangerous content
+    foreach ($row as $key =&gt; $value) {
+        if (is_string($value)) {
+            $row[$key] = strip_tags($value);
+            $row[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+        }
+    }
+})</code></pre>
+</doc-codeblock></div>
+<h4 id="2-sql-injection-prevention">2. SQL Injection Prevention</h4>
+<div id="2-sql-injection-prevention-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// Always use parameter binding in custom queries
+-&gt;afterRow(function($model, array $row) {
+    // ❌ BAD: Direct string interpolation
+    // DB::statement(&quot;UPDATE products SET notes = '{$row['notes']}' WHERE id = {$model-&gt;id}&quot;);
+    
+    // ✅ GOOD: Parameter binding
+    DB::statement(
+        &quot;UPDATE products SET notes = ? WHERE id = ?&quot;,
+        [$row['notes'], $model-&gt;id]
+    );
+})</code></pre>
+</doc-codeblock></div>
+<h4 id="3-data-type-validation">3. Data Type Validation</h4>
+<div id="3-data-type-validation-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;validate([
+    'email' =&gt; 'required|email|max:255',
+    'phone' =&gt; 'nullable|string|max:20|regex:/^\+?[1-9]\d{1,14}$/',
+    'price' =&gt; 'required|numeric|min:0|max:999999.99',
+    'quantity' =&gt; 'required|integer|min:0|max:999999',
+    'website' =&gt; 'nullable|url|max:2048',
+    'ip_address' =&gt; 'nullable|ip',
 ])</code></pre>
 </doc-codeblock></div>
-<hr>
-<h2 id="custom-source-handlers">Custom Source Handlers</h2>
-<p>You can create your own source handlers for custom data sources (APIs, XML, etc.). See the <a href="../../advanced/custom-source-handlers/">Custom Source Handlers</a> guide for details.</p>
+<h2 id="access-control">Access Control</h2>
+<h4 id="1-permission-based-import-access">1. Permission-Based Import Access</h4>
+<div id="1-permission-based-import-access-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your ImportController
+public function store(Request $request)
+{
+    $this-&gt;authorize('import', Product::class);
+    
+    // Additional role-based checks
+    if (!auth()-&gt;user()-&gt;hasRole('data_manager')) {
+        abort(403, 'Insufficient permissions for data import');
+    }
+    
+    // Proceed with import
+}</code></pre>
+</doc-codeblock></div>
+<h4 id="2-rate-limiting">2. Rate Limiting</h4>
+<div id="2-rate-limiting-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// routes/web.php or routes/api.php
+Route::middleware([
+    'auth',
+    'throttle:5,1', // 5 imports per minute
+])-&gt;group(function () {
+    Route::post('/import/products', [ProductImportController::class, 'store']);
+});</code></pre>
+</doc-codeblock></div>
+<h4 id="3-audit-logging">3. Audit Logging</h4>
+<div id="3-audit-logging-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeImport(function(UploadedFile $file) {
+    // Log import attempt
+    activity()
+        -&gt;causedBy(auth()-&gt;user())
+        -&gt;performedOn(new Product())
+        -&gt;withProperties([
+            'file_name' =&gt; $file-&gt;getClientOriginalName(),
+            'file_size' =&gt; $file-&gt;getSize(),
+            'mime_type' =&gt; $file-&gt;getMimeType(),
+            'ip_address' =&gt; request()-&gt;ip(),
+        ])
+        -&gt;log('product_import_started');
+})
+
+-&gt;afterImport(function(ImportResult $result) {
+    // Log import completion
+    activity()
+        -&gt;causedBy(auth()-&gt;user())
+        -&gt;performedOn(new Product())
+        -&gt;withProperties([
+            'total_rows' =&gt; $result-&gt;totalRows,
+            'successful_rows' =&gt; $result-&gt;successfulRows,
+            'failed_rows' =&gt; $result-&gt;failedRows,
+            'duration' =&gt; $result-&gt;duration,
+        ])
+        -&gt;log('product_import_completed');
+})</code></pre>
+</doc-codeblock></div>
+<h2 id="environment-specific-security">Environment-Specific Security</h2>
+<h4 id="1-production-configuration">1. Production Configuration</h4>
+<div id="1-production-configuration-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Production
+'allowed_file_types' =&gt; ['csv', 'xlsx'],
+'max_file_size' =&gt; 10 * 1024 * 1024, // 10MB
+'log_rows' =&gt; true, // Enable for audit trail
+'queue_connection' =&gt; 'redis', // Use reliable queue
+'transaction_mode' =&gt; 'chunk', // Safer imports
+'chunk_size' =&gt; 100, // Smaller chunks for reliability</code></pre>
+</doc-codeblock></div>
+<h4 id="2-development-configuration">2. Development Configuration</h4>
+<div id="2-development-configuration-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Local Development
+'allowed_file_types' =&gt; ['csv', 'xlsx', 'txt', 'json'],
+'max_file_size' =&gt; 50 * 1024 * 1024, // 50MB for testing
+'log_rows' =&gt; true, // Enable for debugging
+'queue_connection' =&gt; 'database', // Simple queue for dev
+'transaction_mode' =&gt; 'row', // Maximum safety
+'chunk_size' =&gt; 10, // Small chunks for debugging</code></pre>
+</doc-codeblock></div>
+<h4 id="3-staging-configuration">3. Staging Configuration</h4>
+<div id="3-staging-configuration-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// config/ingest.php - Staging
+'allowed_file_types' =&gt; ['csv', 'xlsx'],
+'max_file_size' =&gt; 20 * 1024 * 1024, // 20MB
+'log_rows' =&gt; true,
+'queue_connection' =&gt; 'redis',
+'transaction_mode' =&gt; 'chunk',
+'chunk_size' =&gt; 50,</code></pre>
+</doc-codeblock></div>
+<h2 id="data-privacy-and-compliance">Data Privacy and Compliance</h2>
+<h4 id="1-gdpr-considerations">1. GDPR Considerations</h4>
+<div id="1-gdpr-considerations-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Remove or anonymize sensitive data if not needed
+    $sensitiveFields = ['ssn', 'credit_card', 'bank_account'];
+    
+    foreach ($sensitiveFields as $field) {
+        if (isset($row[$field])) {
+            unset($row[$field]);
+        }
+    }
+    
+    // Log data processing for compliance
+    if (isset($row['email'])) {
+        Log::info('Processing user data', [
+            'email_hash' =&gt; hash('sha256', $row['email']),
+            'purpose' =&gt; 'product_import',
+            'legal_basis' =&gt; 'legitimate_interest',
+        ]);
+    }
+})</code></pre>
+</doc-codeblock></div>
+<h4 id="2-data-retention-policies">2. Data Retention Policies</h4>
+<div id="2-data-retention-policies-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your Importer class
+public function getConfig(): IngestConfig
+{
+    return IngestConfig::for(Product::class)
+        -&gt;afterImport(function(ImportResult $result) {
+            // Clean up temporary files after processing
+            $this-&gt;cleanupTempFiles();
+            
+            // Archive import logs after 30 days
+            $this-&gt;archiveImportLogs($result-&gt;importId);
+        });
+}</code></pre>
+</doc-codeblock></div>
+<h2 id="security-headers-and-cors">Security Headers and CORS</h2>
+<div id="security-headers-and-cors-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">// In your ImportController
+public function store(Request $request)
+{
+    // Set security headers
+    return response()-&gt;json([
+        'message' =&gt; 'Import started',
+        'import_id' =&gt; $importId,
+    ], 202)-&gt;withHeaders([
+        'X-Content-Type-Options' =&gt; 'nosniff',
+        'X-Frame-Options' =&gt; 'DENY',
+        'X-XSS-Protection' =&gt; '1; mode=block',
+        'Strict-Transport-Security' =&gt; 'max-age=31536000; includeSubDomains',
+    ]);
+}</code></pre>
+</doc-codeblock></div>
+<h2 id="monitoring-and-alerting">Monitoring and Alerting</h2>
+<h4 id="1-security-event-monitoring">1. Security Event Monitoring</h4>
+<div id="1-security-event-monitoring-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;beforeRow(function(array &amp;$row) {
+    // Monitor for suspicious patterns
+    $suspiciousPatterns = [
+        '/&lt;script\b[^&lt;]*(?:(?!&lt;\/script&gt;)&lt;[^&lt;]*)*&lt;\/script&gt;/mi',
+        '/javascript:/i',
+        '/vbscript:/i',
+        '/onload\s*=/i',
+        '/onerror\s*=/i',
+    ];
+    
+    foreach ($row as $key =&gt; $value) {
+        if (is_string($value)) {
+            foreach ($suspiciousPatterns as $pattern) {
+                if (preg_match($pattern, $value)) {
+                    // Log security event
+                    Log::alert('Suspicious content detected', [
+                        'field' =&gt; $key,
+                        'pattern' =&gt; $pattern,
+                        'user_id' =&gt; auth()-&gt;id(),
+                        'ip_address' =&gt; request()-&gt;ip(),
+                    ]);
+                    
+                    // Optionally block the import
+                    throw new SecurityException('Suspicious content detected');
+                }
+            }
+        }
+    }
+})</code></pre>
+</doc-codeblock></div>
+<h4 id="2-performance-monitoring">2. Performance Monitoring</h4>
+<div id="2-performance-monitoring-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-php"><code v-pre class="language-php">-&gt;afterImport(function(ImportResult $result) {
+    // Alert on unusual import patterns
+    if ($result-&gt;failedRows &gt; $result-&gt;totalRows * 0.1) {
+        // More than 10% failure rate - alert administrators
+        Notification::route('mail', ['admin@company.com'])
+            -&gt;notify(new HighFailureRateAlert($result));
+    }
+    
+    if ($result-&gt;duration &gt; 300) { // 5 minutes
+        // Unusually long import time
+        Notification::route('slack', config('services.slack.webhook'))
+            -&gt;notify(new SlowImportAlert($result));
+    }
+})</code></pre>
+</doc-codeblock></div>
+<h2 id="security-checklist">Security Checklist</h2>
+<ul class="contains-task-list">
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> File type restrictions configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> File size limits enforced</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Input validation and sanitization implemented</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> SQL injection prevention measures in place</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Access control and permissions configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Rate limiting applied to import endpoints</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Comprehensive audit logging enabled</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Environment-specific security configurations</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Data privacy and compliance measures implemented</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Security headers and CORS properly configured</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Monitoring and alerting systems active</li>
+<li class="task-list-item"><input disabled="disabled" type="checkbox" /> Regular security reviews and penetration testing</li>
+</ul>
+<h2 id="recommended-security-packages">Recommended Security Packages</h2>
+<div id="recommended-security-packages-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash"># Additional security packages for Laravel
+composer require spatie/laravel-security
+composer require laravel/fortify
+composer require spatie/laravel-activitylog</code></pre>
+</doc-codeblock></div>
+<p>Remember: Security is an ongoing process, not a one-time configuration. Regularly review and update your security measures to protect against new threats.</p>
 
                 
                 <!-- Required only on API pages -->
@@ -320,20 +492,20 @@ composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
             
                 <nav id="retype-nextprev" class="print:hidden flex mt-14">
                     <div class="w-1/2">
-                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/enums/">
+                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/config-files/">
                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                             <span>
                                 <span class="block text-xs font-normal text-base-text-muted">Previous</span>
-                                <span class="block mt-1">Enums Reference</span>
+                                <span class="block mt-1">Configuration Files</span>
                             </span>
                         </a>
                     </div>
             
                     <div class="w-1/2">
-                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../usage/facade/">
+                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-body-link border border-base-border hover:border-base-border-hover rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../configuration/enums/">
                             <span>
                                 <span class="block text-xs font-normal text-right text-base-text-muted">Next</span>
-                                <span class="block mt-1">Facade Reference</span>
+                                <span class="block mt-1">Enums Reference</span>
                             </span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                         </a>
@@ -377,6 +549,6 @@ composer require league/flysystem-sftp-v3  # for SFTP</code></pre>
 
     <div id="retype-overlay-target"></div>
 
-        <script data-cfasync="false">window.__DOCS__ = { "title": "Available Source Types", level: 2, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: false, hasMath: false, tocDepth: 23, "md": "/configuration/source-types.md" }</script>
+        <script data-cfasync="false">window.__DOCS__ = { "title": "Security Best Practices", level: 2, icon: "file", hasPrism: true, hasInstagram: false, hasMermaid: false, hasMath: false, tocDepth: 23, "md": "/configuration/security.md" }</script>
 </body>
 </html>

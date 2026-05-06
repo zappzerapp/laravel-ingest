@@ -2,11 +2,15 @@
 
 Let's create a simple importer to understand the core concepts of Laravel Ingest. We will build an importer for a `User` model.
 
-### 1. Define the Importer Class
+### 1. Generate the Importer Class
 
-An importer is a simple PHP class that implements the `IngestDefinition` interface. This interface has a single method, `getConfig()`, which returns an `IngestConfig` object. This object declaratively defines the entire import process.
+The fastest way to create an importer is via Artisan:
 
-Create a new file at `app/Ingest/UserImporter.php`:
+```bash
+php artisan make:importer UserImporter --model=User
+```
+
+This generates a boilerplate importer class. If you prefer to write it manually, create a new file at `app/Ingest/UserImporter.php`:
 
 ```php
 // app/Ingest/UserImporter.php

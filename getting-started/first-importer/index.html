@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <meta name="turbo-root" content="/laravel-ingest">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.2.828911574153">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="4.5.3.831381833405">
 
     <!-- See retype.com -->
-    <meta name="generator" content="Retype 4.5.2">
+    <meta name="generator" content="Retype 4.5.3">
 
     <!-- Primary Meta Tags -->
     <title>Your First Importer</title>
@@ -38,12 +38,12 @@
 
     <script data-cfasync="false">(function(){var cl=document.documentElement.classList,ls=localStorage.getItem("retype_scheme"),hd=cl.contains("dark"),hl=cl.contains("light"),wm=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;if(ls==="dark"||(!ls&&wm&&!hd&&!hl)){cl.remove("light");cl.add("dark")}else if(ls==="light"||(!ls&&!wm&&!hd&&!hl)){cl.remove("dark");cl.add("light")}})();</script>
 
-    <link href="../../resources/css/retype.css?v=4.5.2.828911574153" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=4.5.3.831381833405" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.2" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.2.828911574153" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.2.828911574153" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/retype.js?v=4.5.3" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=4.5.3.831381833405" data-turbo-eval="false" defer></script>
+    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=4.5.3.831381833405" defer></script>
 
     <script defer src="https://analytics.zebra-fruit.de/script.js" data-website-id="6f1b70fe-d321-4e14-987e-629870d98640"></script>
     <link rel="shortcut icon" type="image/x-icon" href="https://raw.githubusercontent.com/zappzerapp/laravel-ingest/refs/heads/main/docs/_includes/favicon.ico">
@@ -63,7 +63,7 @@
                 <div class="flex items-center px-2 md:px-6">
                     <a id="retype-branding-logo" href="https://zappzerapp.github.io/laravel-ingest/" class="flex items-center leading-snug text-xl">
                         <span class="dark:text-white font-bold line-clamp-1 md:line-clamp-2">Laravel Ingest</span>
-                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.2</span>
+                    </a><span id="retype-branding-label" class="inline-flex mt-1 px-2 py-1 ml-4 text-xs font-medium leading-none items-center rounded-md bg-branding-label-bg text-branding-label-text ring-1 ring-branding-label-border ring-inset md:inline-block">v0.5.4</span>
                 </div>
     
                 <span class="hidden h-8 border-r md:inline-block border-base-border"></span>
@@ -184,10 +184,13 @@
                 <!-- Page content  -->
 <h1 id="your-first-importer">Your First Importer</h1>
 <p>Let&#x27;s create a simple importer to understand the core concepts of Laravel Ingest. We will build an importer for a <code translate="no" v-pre>User</code> model.</p>
-<h3 id="1-define-the-importer-class">1. Define the Importer Class</h3>
-<p>An importer is a simple PHP class that implements the <code translate="no" v-pre>IngestDefinition</code> interface. This interface has a single method, <code translate="no" v-pre>getConfig()</code>, which returns an <code translate="no" v-pre>IngestConfig</code> object. This object declaratively defines the entire import process.</p>
-<p>Create a new file at <code translate="no" v-pre>app/Ingest/UserImporter.php</code>:</p>
-<div id="1-define-the-importer-class-code-1" class="codeblock-wrapper"><doc-codeblock>
+<h3 id="1-generate-the-importer-class">1. Generate the Importer Class</h3>
+<p>The fastest way to create an importer is via Artisan:</p>
+<div id="1-generate-the-importer-class-code-1" class="codeblock-wrapper"><doc-codeblock>
+<pre translate="no" class="language-bash"><code v-pre class="language-bash">php artisan make:importer UserImporter --model=User</code></pre>
+</doc-codeblock></div>
+<p>This generates a boilerplate importer class. If you prefer to write it manually, create a new file at <code translate="no" v-pre>app/Ingest/UserImporter.php</code>:</p>
+<div id="1-generate-the-importer-class-code-2" class="codeblock-wrapper"><doc-codeblock>
 <pre translate="no" class="language-php"><code v-pre class="language-php">// app/Ingest/UserImporter.php
 namespace App\Ingest;
 
