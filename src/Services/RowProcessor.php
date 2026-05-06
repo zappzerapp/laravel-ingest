@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use JsonException;
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use LaravelIngest\DTOs\RowData;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
@@ -114,8 +113,6 @@ class RowProcessor
 
     /**
      * @throws Throwable
-     * @throws InvalidConfigurationException
-     * @throws PhpVersionNotSupportedException
      */
     private function processRow(
         IngestConfig $config,
@@ -135,7 +132,6 @@ class RowProcessor
 
     /**
      * @throws InvalidConfigurationException
-     * @throws PhpVersionNotSupportedException
      */
     private function executeRowLifecycle(
         IngestConfig $config,
@@ -160,9 +156,6 @@ class RowProcessor
         return $model;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     private function executeBeforeRowCallback(IngestConfig $config, RowData $rowData): void
     {
         if ($config->beforeRowCallback) {
@@ -170,9 +163,6 @@ class RowProcessor
         }
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     private function executeAfterRowCallback(IngestConfig $config, ?Model $model, RowData $rowData): void
     {
         if ($config->afterRowCallback && $model) {
@@ -302,9 +292,6 @@ class RowProcessor
         }
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     private function transform(IngestConfig $config, array $processedData, array &$relationCache, string $modelClass, bool $isDryRun = false): array
     {
         $modelData = $this->transformationService->processMappings($processedData, $config->mappings);

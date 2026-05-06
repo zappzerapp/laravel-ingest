@@ -6,7 +6,6 @@ namespace LaravelIngest;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use LaravelIngest\Contracts\ConditionalMappingInterface;
 use LaravelIngest\Contracts\HasMappings;
@@ -112,7 +111,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     public function mapAndTransform(
         string|array $sourceField,
@@ -140,7 +139,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     public function mapAndValidate(
         string|array $sourceField,
@@ -172,7 +171,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     public function mapTransformAndValidate(
         string|array $sourceField,
@@ -196,7 +195,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     public function mapWhen(
         string|array $sourceField,
@@ -225,9 +224,6 @@ class IngestConfig implements HasMappings
         return $mapping->apply($this, $prefix);
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function nest(string $sourceField, Closure $callback): self
     {
         $nestedConfig = new NestedIngestConfig();
@@ -331,9 +327,6 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function beforeRow(Closure $callback): self
     {
         $this->beforeRowCallback = new SerializableClosure($callback);
@@ -341,9 +334,6 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);
@@ -351,9 +341,6 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function resolveModelUsing(Closure $callback): self
     {
         $this->modelResolver = new SerializableClosure($callback);
@@ -418,7 +405,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     public function resolveModelClass(array $rowData): string
     {
@@ -544,7 +531,7 @@ class IngestConfig implements HasMappings
     }
 
     /**
-     * @throws InvalidConfigurationException|PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
     private function normalizeTransformer(Closure|TransformerInterface|string $transformer): SerializableClosure|TransformerInterface
     {
