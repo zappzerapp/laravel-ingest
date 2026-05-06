@@ -134,12 +134,28 @@ it('throws exception when resolver returns non-model class', function () {
         ->toThrow(InvalidConfigurationException::class, "must be an instance of Illuminate\Database\Eloquent\Model");
 });
 
-it('returns null from getAttributeForKeyedBy when keyedBy does not match any mapping', function () {
+it('returns source field name as attribute for synthetic keyedBy in getAttributeForKeyedBy', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->keyedBy('composite_key');
+
+    expect($config->getAttributeForKeyedBy())->toBe('composite_key');
+});
+
+it('returns source field names for synthetic keyedBy in getAttributesForKeyedBy', function () {
+    $config = IngestConfig::for(User::class)
+        ->map('email', 'email')
+        ->keyedBy(['composite_key', 'email']);
+
+    expect($config->getAttributesForKeyedBy())->toBe(['composite_key', 'email']);
+});
+
+it('returns source field name from getAttributeForKeyedBy when keyedBy does not match any mapping', function () {
     $config = IngestConfig::for(User::class)
         ->map('email', 'email')
         ->keyedBy('non_existent_field');
 
-    expect($config->getAttributeForKeyedBy())->toBeNull();
+    expect($config->getAttributeForKeyedBy())->toBe('non_existent_field');
 });
 
 it('returns null from getAttributeForKeyedBy when keyedBy is null', function () {

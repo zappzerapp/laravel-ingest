@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use LaravelIngest\Enums\DuplicateStrategy;
+use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Events\RowProcessed;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Services\RowProcessor;
+use LaravelIngest\Sources\FilesystemHandler;
 use LaravelIngest\Tests\Fixtures\Models\Category;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\ProductWithCategory;
@@ -737,4 +740,123 @@ it('does not find existing model when keyed attribute is missing from data and f
     expect($result['failed'])->toBe(1);
     $this->assertDatabaseHas('products', ['sku' => 'TEST-001', 'name' => 'Original', 'stock' => 5]);
     expect(Product::count())->toBe(1);
+});
+
+it('resolves relation to foreign key name in getAttributeForKeyedBy', function () {
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->relate('cat_name', 'category', Category::class, 'name')
+        ->keyedBy('cat_name');
+
+    expect($config->getAttributeForKeyedBy())->toBe('category_id');
+});
+
+it('resolves single relation to foreign key name in getAttributesForKeyedBy', function () {
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->relate('cat_name', 'category', Category::class, 'name')
+        ->keyedBy('cat_name');
+
+    expect($config->getAttributesForKeyedBy())->toBe(['category_id']);
+});
+
+it('resolves composite relation and mapping in getAttributesForKeyedBy', function () {
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->relate('cat_name', 'category', Category::class, 'name')
+        ->map('sku', 'sku')
+        ->keyedBy(['cat_name', 'sku']);
+
+    expect($config->getAttributesForKeyedBy())->toBe(['category_id', 'sku']);
+});
+
+it('updates existing record when keyedBy relation matches with UPDATE strategy', function () {
+    $category = Category::create(['name' => 'Electronics']);
+    ProductWithCategory::create(['name' => 'Original', 'category_id' => $category->id]);
+
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product_name', 'name')
+        ->relate('cat_name', 'category', Category::class, 'name')
+        ->keyedBy('cat_name')
+        ->onDuplicate(DuplicateStrategy::UPDATE);
+
+    $chunk = [['number' => 1, 'data' => ['product_name' => 'Updated', 'cat_name' => 'Electronics']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'Updated',
+        'category_id' => $category->id,
+    ]);
+    expect(ProductWithCategory::count())->toBe(1);
+});
+
+it('creates new record with null foreign key when relation keyedBy has no match', function () {
+    $config = IngestConfig::for(ProductWithCategory::class)
+        ->map('product_name', 'name')
+        ->relate('cat_name', 'category', Category::class, 'name')
+        ->keyedBy('cat_name')
+        ->onDuplicate(DuplicateStrategy::UPDATE);
+
+    $chunk = [['number' => 1, 'data' => ['product_name' => 'New Product', 'cat_name' => 'NonExistent']]];
+
+    (new RowProcessor())->processChunk(
+        IngestRun::factory()->create(),
+        $config,
+        $chunk,
+        false
+    );
+
+    $this->assertDatabaseHas('products_with_category', [
+        'name' => 'New Product',
+        'category_id' => null,
+    ]);
+    expect(ProductWithCategory::count())->toBe(1);
+});
+
+it('does not throw SourceException for unmapped keyedBy missing from headers', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('test.csv', "sku,name\nSKU-001,Updated");
+
+    $config = IngestConfig::for(Product::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => 'test.csv'])
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->keyedBy('composite_key');  // unmapped / synthetic
+
+    $handler = new FilesystemHandler();
+
+    // Should NOT throw SourceException; synthetic keys skip header validation
+    expect(fn() => iterator_to_array($handler->read($config)))->not->toThrow(LaravelIngest\Exceptions\SourceException::class);
+});
+
+it('findExistingModel returns null when synthetic keyedBy attribute is missing from data', function () {
+    $config = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('composite_key');  // synthetic, but not in row data
+
+    $chunk = [['number' => 1, 'data' => ['sku' => 'SKU-001', 'name' => 'Test', 'stock' => 10]]];
+
+    $config2 = IngestConfig::for(Product::class)
+        ->map('sku', 'sku')
+        ->map('name', 'name')
+        ->map('stock', 'stock')
+        ->keyedBy('sku');
+
+    $chunk2 = [['number' => 1, 'data' => ['sku' => 'SKU-001', 'name' => 'Test', 'stock' => 10]]];
+
+    $processor = new RowProcessor();
+    $run = IngestRun::factory()->create();
+
+    // When keyedBy attribute is missing from data, row is created as new
+    $processor->processChunk($run, $config, $chunk, false);
+    expect(Product::where('sku', 'SKU-001')->count())->toBe(1);
+
+    // Control: when keyedBy IS in data, duplicate detection works
+    $processor->processChunk($run, $config2, $chunk2, false);
+    expect(Product::where('sku', 'SKU-001')->count())->toBe(1);
 });
