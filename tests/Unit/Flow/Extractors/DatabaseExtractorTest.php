@@ -26,7 +26,6 @@ afterEach(function () {
 });
 
 it('extracts data from Eloquent model query', function () {
-    // Create test data
     SimpleItem::create(['name' => 'Alice', 'email' => 'alice@example.com']);
     SimpleItem::create(['name' => 'Bob', 'email' => 'bob@example.com']);
 
@@ -56,7 +55,6 @@ it('extracts data from Eloquent query builder', function () {
 });
 
 it('chunks large datasets into multiple batches', function () {
-    // Create 5 items
     for ($i = 1; $i <= 5; $i++) {
         SimpleItem::create(['name' => "Item {$i}"]);
     }
@@ -66,7 +64,6 @@ it('chunks large datasets into multiple batches', function () {
 
     $rows = iterator_to_array($extractor->extract($context));
 
-    // Should yield 3 batches (2 + 2 + 1)
     expect($rows)->toHaveCount(3);
 });
 
@@ -89,13 +86,10 @@ it('stops extraction when STOP signal is received', function () {
 
     $generator = $extractor->extract($context);
 
-    // Get first batch
     $generator->current();
 
-    // Send STOP signal
     $generator->send(\Flow\ETL\Extractor\Signal::STOP);
 
-    // Should stop after receiving signal
     expect($generator->valid())->toBeFalse();
 });
 

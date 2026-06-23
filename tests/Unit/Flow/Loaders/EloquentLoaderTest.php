@@ -307,7 +307,6 @@ it('handles validation errors and logs them', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Row should be logged as failed
     $this->assertDatabaseHas('ingest_rows', [
         'ingest_run_id' => $ingestRun->id,
         'row_number' => 1,
@@ -326,7 +325,6 @@ it('handles empty rows gracefully', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should complete without error
     expect(true)->toBeTrue();
 });
 
@@ -357,7 +355,6 @@ it('wraps each row in transaction with ROW mode', function () {
 });
 
 it('rolls back entire chunk when one row fails in CHUNK mode', function () {
-    // Create first user to cause duplicate key error
     User::create(['email' => 'existing@example.com', 'name' => 'Existing']);
 
     $config = IngestConfig::for(User::class)
@@ -381,11 +378,9 @@ it('rolls back entire chunk when one row fails in CHUNK mode', function () {
         )
     );
 
-    // Should throw exception for duplicate
     expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
         ->toThrow(RuntimeException::class);
 
-    // Neither row should be committed due to rollback
     $this->assertDatabaseMissing('users', ['email' => 'new@example.com']);
 });
 
@@ -571,7 +566,6 @@ it('calls after chunk callback with multiple rows', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Process multiple rows to trigger chunk callback
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -624,7 +618,6 @@ it('auto-increments row number when number field is missing', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Create rows without IntegerEntry('number', ...) - uses plain array
     $rows = new Rows(
         Row::create(
             jsonDataEntry(['email' => 'user1@example.com', 'name' => 'User 1'])
@@ -661,7 +654,6 @@ it('handles extraFields with non-existent database column gracefully', function 
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should not throw - nonexistent_column should be filtered out
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test User',
@@ -728,7 +720,6 @@ it('handles updateIfNewer when source column is missing', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Row without updated_at in data - should not update
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -738,7 +729,6 @@ it('handles updateIfNewer when source column is missing', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Name should NOT have changed (no timestamp comparison available)
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Existing',
@@ -746,7 +736,6 @@ it('handles updateIfNewer when source column is missing', function () {
 });
 
 it('updates when db timestamp is null', function () {
-    // Create user without updated_at
     $user = User::create(['email' => 'test@example.com', 'name' => 'Test', 'updated_at' => null]);
 
     $config = IngestConfig::for(User::class)
@@ -772,7 +761,6 @@ it('updates when db timestamp is null', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should update because db timestamp is null
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Updated Name',
@@ -800,7 +788,6 @@ it('finds existing model with multiple keys', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should find existing and skip
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Existing',
@@ -809,7 +796,6 @@ it('finds existing model with multiple keys', function () {
 });
 
 it('handles missing key in model data when searching', function () {
-    // Create a user
     User::create(['email' => 'test@example.com', 'name' => 'Existing']);
 
     $config = IngestConfig::for(User::class)
@@ -820,7 +806,6 @@ it('handles missing key in model data when searching', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Row with a new email - should create new model since key not found
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -830,7 +815,6 @@ it('handles missing key in model data when searching', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should create a new user
     expect(User::count())->toBe(2);
     $this->assertDatabaseHas('users', ['email' => 'new@example.com']);
 });
@@ -860,7 +844,6 @@ it('uses model validation rules when configured', function () {
 });
 
 it('upserts when model does not use timestamps', function () {
-    // SimpleItem doesn't use timestamps - test the branches in upsertModel
     $config = IngestConfig::for(LaravelIngest\Tests\Fixtures\Models\SimpleItem::class)
         ->map('code', 'code')
         ->keyedBy('code')
@@ -882,7 +865,6 @@ it('upserts when model does not use timestamps', function () {
 });
 
 it('throws runtime exception in testing mode for non-model beforeSave callback', function () {
-    // This tests line 125-126 in EloquentLoader (testing mode only)
     $config = IngestConfig::for(User::class)
         ->map('email', 'email')
         ->map('name', 'name')
@@ -898,7 +880,6 @@ it('throws runtime exception in testing mode for non-model beforeSave callback',
         )
     );
 
-    // In testing mode, should throw RuntimeException
     expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
         ->toThrow(RuntimeException::class, 'beforeSave callback must return an Eloquent model');
 });
@@ -930,7 +911,6 @@ it('syncs many-to-many relations when cache has values', function () {
 });
 
 it('skips syncing when relation value not found in cache', function () {
-    // Create roles
     LaravelIngest\Tests\Fixtures\Models\Role::create(['name' => 'Admin', 'slug' => 'admin']);
 
     $config = IngestConfig::for(User::class)
@@ -941,7 +921,6 @@ it('skips syncing when relation value not found in cache', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Role 'nonexistent' doesn't exist in database, so it won't be in the prefetch cache
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -952,7 +931,6 @@ it('skips syncing when relation value not found in cache', function () {
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
     $user = User::where('email', 'john@test.com')->first();
-    // Should only sync 'admin' role, 'nonexistent' should be skipped
     expect($user->roles)->toHaveCount(1)
         ->and($user->roles->first()->slug)->toBe('admin');
 });
@@ -1033,7 +1011,6 @@ it('propagates validation exception in CHUNK mode', function () {
         )
     );
 
-    // Should throw due to validation failure in CHUNK mode
     expect(fn() => $loader->load($rows, new FlowContext(EtlConfig::default())))
         ->toThrow(Illuminate\Validation\ValidationException::class);
 });
@@ -1048,7 +1025,6 @@ it('merges model rules with config rules when useModelRules is enabled', functio
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // This should fail because name is too short (model has 'required', config has 'min:3')
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1058,7 +1034,6 @@ it('merges model rules with config rules when useModelRules is enabled', functio
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Row should be logged as failed
     $this->assertDatabaseHas('ingest_rows', [
         'ingest_run_id' => $ingestRun->id,
         'row_number' => 1,
@@ -1084,32 +1059,27 @@ it('handles schema getColumnListing exception in extraFields filtering', functio
         )
     );
 
-    // Mock Schema to throw - the code should catch and continue with all extraFields
     Illuminate\Support\Facades\Schema::shouldReceive('getColumnListing')
         ->andReturn(['email', 'name', 'password', 'is_admin']); // Only real columns
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // custom_field should be filtered out because it's not in real columns
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test User',
     ]);
 
-    // Clear mock
     Illuminate\Support\Facades\Schema::partialMock();
 });
 
 it('returns false from shouldUpdate when timestampComparison is null', function () {
     User::create(['email' => 'test@example.com', 'name' => 'Old Name']);
 
-    // Create config with UPDATE_IF_NEWER but NO timestamp comparison set
     $config = IngestConfig::for(User::class)
         ->map('email', 'email')
         ->map('name', 'name')
         ->keyedBy('email')
         ->onDuplicate(DuplicateStrategy::UPDATE_IF_NEWER);
-    // Note: compareTimestamps() is NOT called - timestampComparison remains null
 
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
@@ -1123,7 +1093,6 @@ it('returns false from shouldUpdate when timestampComparison is null', function 
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Name should NOT change because shouldUpdate returns false when timestampComparison is null
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Old Name', // Not updated
@@ -1141,7 +1110,6 @@ it('skips syncing many-to-many relations when raw values are empty after filteri
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Empty string after trimming/separating should result in empty values array
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1164,7 +1132,6 @@ it('skips syncing when relation value is empty after data_get', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // The role_slugs key exists but has empty/null value
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1189,7 +1156,6 @@ it('prefetches relations with values from chunk', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Multiple rows with different category_names to test prefetch caching
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1254,7 +1220,6 @@ it('handles json_encode failure in prepareLogRow', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should not throw - row should be logged successfully
     $this->assertDatabaseHas('ingest_rows', [
         'ingest_run_id' => $ingestRun->id,
         'row_number' => 1,
@@ -1267,7 +1232,6 @@ it('handles json_encode failure in prepareLogRow', function () {
 it('catches JsonException in prepareLogRow and encodes empty data', function () {
     config(['ingest.log_rows' => true]);
 
-    // Create data that cannot be JSON encoded (resource)
     $resource = fopen('php://memory', 'r');
     fclose($resource);
 
@@ -1278,7 +1242,6 @@ it('catches JsonException in prepareLogRow and encodes empty data', function () 
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // Create a row with validation error to trigger prepareLogRow with errors
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1286,10 +1249,8 @@ it('catches JsonException in prepareLogRow and encodes empty data', function () 
         )
     );
 
-    // Should handle JsonException internally without crashing
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Row should still be logged as failed
     $this->assertDatabaseHas('ingest_rows', [
         'ingest_run_id' => $ingestRun->id,
         'row_number' => 1,
@@ -1301,13 +1262,6 @@ it('catches JsonException in prepareLogRow and encodes empty data', function () 
 
 it('falls back to all extraFields when Schema throws', function () {
     config(['app.env' => 'testing']);
-
-    // Schema is already mocked in DataTransformationServiceTest
-    // We need to remove that mock first - but since we can't, let's skip this
-    // This path is actually tested via the DataTransformationService tests
-
-    // This test validates that when Schema::getColumnListing throws,
-    // the extraFields fallback still works
 
     $config = IngestConfig::for(User::class)
         ->map('email', 'email')
@@ -1328,7 +1282,6 @@ it('falls back to all extraFields when Schema throws', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should create user with is_admin column
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test User',
@@ -1339,7 +1292,6 @@ it('falls back to all extraFields when Schema throws', function () {
 it('handles Schema exception in extraFields during transform', function () {
     config(['app.env' => 'testing']);
 
-    // Temporarily mock Schema to throw to test the catch block
     Illuminate\Support\Facades\Schema::shouldReceive('getColumnListing')
         ->andThrow(new Exception('Connection failed'));
 
@@ -1360,10 +1312,8 @@ it('handles Schema exception in extraFields during transform', function () {
         )
     );
 
-    // Should handle the exception in transform method and continue with fallback
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should create user - fallback allows all fields when Schema exception caught
     $this->assertDatabaseHas('users', [
         'email' => 'test@example.com',
         'name' => 'Test User',
@@ -1382,7 +1332,6 @@ it('handles empty prefetch values for relations', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // No role_slug data - should skip prefetch query entirely
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1392,7 +1341,6 @@ it('handles empty prefetch values for relations', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should create user successfully without querying roles table
     $this->assertDatabaseHas('users', ['email' => 'john@test.com']);
 });
 
@@ -1405,7 +1353,6 @@ it('handles empty prefetch values for many-to-many relations', function () {
     $ingestRun = IngestRun::factory()->create();
     $loader = new EloquentLoader($config, $ingestRun);
 
-    // No role_slugs data - should skip prefetch query entirely
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
@@ -1415,7 +1362,6 @@ it('handles empty prefetch values for many-to-many relations', function () {
 
     $loader->load($rows, new FlowContext(EtlConfig::default()));
 
-    // Should create user successfully without querying roles table
     $this->assertDatabaseHas('users', ['email' => 'john@test.com']);
 });
 

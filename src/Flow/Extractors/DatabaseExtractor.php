@@ -17,10 +17,6 @@ class DatabaseExtractor extends FlowExtractor
     private Builder $query;
     private int $chunkSize;
 
-    /**
-     * @param  Builder|Model  $queryOrModel  Query builder or Eloquent model
-     * @param  int  $chunkSize  Number of rows to fetch per chunk
-     */
     public function __construct(Builder|Model $queryOrModel, int $chunkSize = 1000)
     {
         if ($queryOrModel instanceof Model) {

@@ -15,7 +15,6 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    // Cleanup any temp files
     if (isset($this->tempFile) && file_exists($this->tempFile)) {
         unlink($this->tempFile);
     }
@@ -106,7 +105,6 @@ it('throws exception for non-existent file', function () {
     $extractor = new JsonExtractor('/non/existent/file.json');
     $context = new FlowContext(Config::default());
 
-    // FlowJsonExtractor throws RuntimeException on invalid file
     expect(fn() => iterator_to_array($extractor->extract($context)))->toThrow(Exception::class);
 });
 

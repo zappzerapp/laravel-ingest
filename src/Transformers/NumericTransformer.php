@@ -9,10 +9,6 @@ use LaravelIngest\Contracts\TransformerInterface;
 class NumericTransformer implements TransformerInterface
 {
     /**
-     * @param  int|null  $decimals  Number of decimal places, null for no rounding
-     * @param  float|null  $min  Minimum allowed value, null for no minimum
-     * @param  float|null  $max  Maximum allowed value, null for no maximum
-     * @param  mixed  $default  Default value when conversion fails
      * @param  array{decimal?: string, thousands?: string}  $separators
      */
     public function __construct(

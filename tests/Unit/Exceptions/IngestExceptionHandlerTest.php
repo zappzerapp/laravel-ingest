@@ -20,7 +20,6 @@ it('returns correct response for NoFailedRowsException', function () {
         ->with(Mockery::type('callable'))
         ->andReturnUsing(function ($callback) use (&$capturedResponse, $exception) {
             if ($capturedResponse === null) {
-                // Capture only the first call (NoFailedRowsException)
                 $capturedResponse = $callback($exception);
             }
 
@@ -48,7 +47,6 @@ it('returns correct response for DefinitionNotFoundException with slug', functio
         ->with(Mockery::type('callable'))
         ->andReturnUsing(function ($callback) use (&$capturedResponse, &$callCount, $exception) {
             $callCount++;
-            // Capture the second call (DefinitionNotFoundException)
             if ($callCount === 2) {
                 $capturedResponse = $callback($exception);
             }

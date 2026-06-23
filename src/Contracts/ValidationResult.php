@@ -5,16 +5,9 @@ declare(strict_types=1);
 namespace LaravelIngest\Contracts;
 
 /**
- * Immutable value object representing the result of a validation.
- *
  * @example
- * // Success
  * return ValidationResult::pass();
- *
- * // Failure with message
  * return ValidationResult::fail('Price must be greater than 0');
- *
- * // Failure with multiple messages
  * return ValidationResult::fail(['Price too low', 'Invalid currency']);
  */
 final readonly class ValidationResult

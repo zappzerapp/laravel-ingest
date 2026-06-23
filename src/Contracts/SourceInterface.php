@@ -7,11 +7,6 @@ namespace LaravelIngest\Contracts;
 use Generator;
 
 /**
- * Interface for custom data sources that can be used with IngestConfig::fromSource().
- *
- * Source classes implementing this interface allow importing from any external system
- * (APIs, databases, message queues, etc.) by providing a unified streaming interface.
- *
  * @example
  * class ShopifyProductSource implements SourceInterface
  * {
@@ -50,7 +45,6 @@ use Generator;
  *     }
  * }
  *
- * // Usage in importer:
  * ->fromSource(new ShopifyProductSource('my-shop.myshopify.com', $apiKey))
  */
 interface SourceInterface

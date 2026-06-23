@@ -70,8 +70,6 @@ class EloquentLoader implements Loader
         foreach ($rows as $row) {
             $entries = $this->extractRowData($row);
 
-            // Auto-assign sequential row numbers when 'number' key is missing
-            // This handles transformers that output plain arrays without row numbers
             if (array_key_exists('number', $entries)) {
                 $rowNumber = $entries['number'];
             } else {
@@ -93,7 +91,6 @@ class EloquentLoader implements Loader
 
         foreach ($row->entries() as $entry) {
             $value = $entry->value();
-            // If value is a Flow Json type, extract the underlying array
             if ($value instanceof \Flow\Types\Value\Json) {
                 $value = $value->toArray();
             }

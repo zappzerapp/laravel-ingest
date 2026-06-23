@@ -6,12 +6,6 @@ namespace LaravelIngest\ValueObjects;
 
 final readonly class ImportStats
 {
-    /**
-     * @param  int  $totalRows  Total number of rows processed
-     * @param  ImportCounts  $counts  Success, failure, created, and updated counts
-     * @param  float  $duration  Total duration in seconds
-     * @param  array  $errors  Array of error summaries
-     */
     public function __construct(
         public int $totalRows,
         public ImportCounts $counts,

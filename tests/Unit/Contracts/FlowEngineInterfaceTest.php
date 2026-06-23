@@ -69,10 +69,7 @@ it('throws runtime exception from mock build implementation', function () {
             throw new RuntimeException('Build not implemented');
         }
 
-        public function execute(DataFrame $pipeline): void
-        {
-            // do nothing
-        }
+        public function execute(DataFrame $pipeline): void {}
     };
 
     $config = IngestConfig::for(User::class);

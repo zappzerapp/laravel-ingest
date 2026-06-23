@@ -102,16 +102,13 @@ it('marks row as failed when callback throws exception', function () {
 
     $result = $memory->dump();
 
-    // Should have all 3 rows - pipeline should not crash
     expect($result)->toHaveCount(3);
 
-    // Check that Alice and Charlie succeeded
     expect($result[0])->toHaveKey('name', 'Alice');
     expect($result[0])->not->toHaveKey('_error');
     expect($result[2])->toHaveKey('name', 'Charlie');
     expect($result[2])->not->toHaveKey('_error');
 
-    // Check that Bob has error marked
     expect($result[1])->toHaveKey('_error');
     expect($result[1]['_error'])->toContain('Invalid name: Bob');
 });
@@ -143,10 +140,8 @@ it('continues pipeline when callback fails for some rows', function () {
         ->write(to_memory($memory))
         ->run();
 
-    // All rows should be processed
     expect($processedIds)->toBe([1, 2, 3]);
 
-    // Result should have all 3 rows
     $result = $memory->dump();
     expect($result)->toHaveCount(3);
 });

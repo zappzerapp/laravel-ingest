@@ -103,7 +103,6 @@ it('chains transformers in order: Callback → Header → Validation → Mapping
 it('execute wraps exceptions in RuntimeException', function () {
     $engine = new FlowEngine();
 
-    // Create an extractor that throws to test exception wrapping
     $failingExtractor = new class() implements \Flow\ETL\Extractor
     {
         public function extract(FlowContext $context): Generator
@@ -125,7 +124,6 @@ it('execute propagates wrapped exception with original cause', function () {
 
     $originalException = new Exception('Original cause', 123);
 
-    // Create an extractor that throws the original exception
     $failingExtractor = new class($originalException) implements \Flow\ETL\Extractor
     {
         private Exception $exception;

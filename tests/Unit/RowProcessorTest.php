@@ -827,7 +827,6 @@ it('does not throw SourceException for unmapped keyedBy missing from headers', f
 
     $handler = new FilesystemHandler();
 
-    // Should NOT throw SourceException; synthetic keys skip header validation
     expect(fn() => iterator_to_array($handler->read($config)))->not->toThrow(LaravelIngest\Exceptions\SourceException::class);
 });
 
@@ -851,11 +850,9 @@ it('findExistingModel returns null when synthetic keyedBy attribute is missing f
     $processor = new RowProcessor();
     $run = IngestRun::factory()->create();
 
-    // When keyedBy attribute is missing from data, row is created as new
     $processor->processChunk($run, $config, $chunk, false);
     expect(Product::where('sku', 'SKU-001')->count())->toBe(1);
 
-    // Control: when keyedBy IS in data, duplicate detection works
     $processor->processChunk($run, $config2, $chunk2, false);
     expect(Product::where('sku', 'SKU-001')->count())->toBe(1);
 });

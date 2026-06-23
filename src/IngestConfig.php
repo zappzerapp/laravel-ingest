@@ -296,9 +296,6 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
-    /**
-     * Alias for compareTimestamp() with plural method name
-     */
     public function compareTimestamps(string $sourceColumn, string $dbColumn = 'updated_at'): self
     {
         return $this->compareTimestamp($sourceColumn, $dbColumn);

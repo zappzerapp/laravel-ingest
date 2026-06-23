@@ -44,7 +44,6 @@ it('preserves type safety via interface contract', function () {
     $config = IngestConfig::for(Product::class);
     $mapping = new ProductMapping();
 
-    // This would fail type checking if ProductMapping didn't implement MappingInterface
     $result = $config->applyMapping($mapping);
 
     expect($result)->toBeInstanceOf(IngestConfig::class);
