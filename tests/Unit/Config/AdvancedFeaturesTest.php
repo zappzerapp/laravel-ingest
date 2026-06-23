@@ -184,7 +184,7 @@ it('registers event handler', function () {
 it('accepts custom SourceInterface', function () {
     $source = new class() implements LaravelIngest\Contracts\SourceInterface
     {
-        public function read(): \Generator
+        public function read(): Generator
         {
             yield [];
         }

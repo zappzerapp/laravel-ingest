@@ -594,7 +594,7 @@ it('filters unmapped data for non-fillable attributes', function () {
         $relations,
         $manyRelations,
         $usedTopLevelKeys,
-        LaravelIngest\Tests\Fixtures\Models\Product::class
+        Product::class
     );
 
     expect($result)->not->toHaveKey('fake_column');
