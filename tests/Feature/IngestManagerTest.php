@@ -53,6 +53,7 @@ it('throws source exception if keyedBy column is missing in header', function ()
 
     $config = IngestConfig::for(User::class)
         ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
+        ->map('user_email', 'email')
         ->keyedBy('user_email');
 
     $definition = $this->createTestDefinition($config);
@@ -61,6 +62,21 @@ it('throws source exception if keyedBy column is missing in header', function ()
     $manager->start('testimporter', 'users.csv');
 
 })->throws(SourceException::class, "The key column 'user_email' or one of its aliases was not found in the source file headers.");
+
+it('does not throw source exception for unmapped keyedBy column missing in header', function () {
+    Storage::fake('local');
+    Storage::put('users.csv', "full_name,email_address,is_admin\nJohn,john@doe.com,yes");
+
+    $config = IngestConfig::for(User::class)
+        ->fromSource(SourceType::FILESYSTEM, ['path' => 'users.csv'])
+        ->keyedBy('user_email');
+
+    $definition = $this->createTestDefinition($config);
+    $manager = new IngestManager(['testimporter' => $definition], app(SourceHandlerFactory::class));
+
+    // Should NOT throw; unmapped keyedBy is treated as synthetic
+    expect(fn() => $manager->start('testimporter', 'users.csv'))->not->toThrow(SourceException::class);
+});
 
 it('handles a failed batch correctly', function () {
     Event::fake();

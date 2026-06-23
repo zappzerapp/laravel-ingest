@@ -15,6 +15,7 @@ use Flow\ETL\Row\Entry\IntegerEntry;
 use Flow\ETL\Row\Entry\JsonEntry;
 use Flow\ETL\Row\Entry\StringEntry;
 use Flow\ETL\Transformation;
+use Flow\Types\Value\Json;
 use Laravel\SerializableClosure\SerializableClosure;
 use Throwable;
 
@@ -63,7 +64,7 @@ class CallbackTransformer implements Transformation
     private function createEntry(string $key, mixed $value): Entry
     {
         if (is_array($value)) {
-            return new JsonEntry($key, $value);
+            return new JsonEntry($key, Json::fromArray($value));
         }
 
         if (is_int($value)) {

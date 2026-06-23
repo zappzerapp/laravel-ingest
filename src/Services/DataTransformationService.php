@@ -4,30 +4,206 @@ declare(strict_types=1);
 
 namespace LaravelIngest\Services;
 
+use Closure;
 use Exception;
 use Illuminate\Support\Facades\Schema;
+use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\TransformerInterface;
+use LaravelIngest\Contracts\ValidatorInterface;
+use LaravelIngest\IngestConfig;
 
 class DataTransformationService
 {
-    public function processMappings(array $processedData, array $mappings): array
-    {
+    private array $traceLog = [];
+
+    public function processMappings(
+        array $processedData,
+        array $mappings,
+        ?IngestConfig $config = null
+    ): array {
         $modelData = [];
 
         foreach ($mappings as $sourceField => $mapping) {
-            if (!data_get($processedData, $sourceField)) {
+            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
                 continue;
             }
 
             $value = data_get($processedData, $sourceField);
+            $originalValue = $value;
+            $traceSteps = [];
 
-            if (($transformer = $mapping['transformer'] ?? null) && $transformer instanceof \Laravel\SerializableClosure\SerializableClosure) {
-                $value = call_user_func($transformer->getClosure(), $value, $processedData);
+            if ($config !== null && $config->traceTransformations) {
+                $traceSteps[] = [
+                    'step' => 'input',
+                    'value' => $originalValue,
+                ];
+            }
+
+            $transformers = [];
+
+            if (!empty($mapping['transformers'])) {
+                $transformers = $mapping['transformers'];
+            } elseif (($mapping['transformer'] ?? null) !== null) {
+                $transformers = [$mapping['transformer']];
+            }
+
+            foreach ($transformers as $index => $transformer) {
+                if ($transformer instanceof SerializableClosure) {
+                    $value = call_user_func($transformer->getClosure(), $value, $processedData);
+                    if ($config !== null && $config->traceTransformations) {
+                        $traceSteps[] = [
+                            'step' => 'closure_' . ($index + 1),
+                            'value' => $value,
+                        ];
+                    }
+                } elseif ($transformer instanceof TransformerInterface) {
+                    $value = $transformer->transform($value, $processedData);
+                    if ($config !== null && $config->traceTransformations) {
+                        $traceSteps[] = [
+                            'step' => get_class($transformer),
+                            'value' => $value,
+                        ];
+                    }
+                } elseif ($transformer instanceof Closure) {
+                    $value = $transformer($value, $processedData);
+                    if ($config !== null && $config->traceTransformations) {
+                        $traceSteps[] = [
+                            'step' => 'closure_' . ($index + 1),
+                            'value' => $value,
+                        ];
+                    }
+                }
+            }
+
+            if ($config !== null && $config->traceTransformations && count($traceSteps) > 1) {
+                $this->traceLog[$sourceField] = $traceSteps;
             }
 
             $modelData[$mapping['attribute']] = $value;
         }
 
         return $modelData;
+    }
+
+    public function processValidators(
+        array $processedData,
+        array $validators,
+        IngestConfig $config
+    ): array {
+        $errors = [];
+
+        foreach ($validators as $sourceField => $validatorConfig) {
+            $value = $processedData[$sourceField] ?? null;
+
+            foreach ($validatorConfig['validators'] as $validator) {
+                if ($validator instanceof ValidatorInterface) {
+                    $result = $validator->validate($value, $processedData);
+                    if ($result->failed()) {
+                        $errors[$validatorConfig['attribute']] = array_merge(
+                            $errors[$validatorConfig['attribute']] ?? [],
+                            $result->errors()
+                        );
+                    }
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    public function processConditionalMappings(
+        array $processedData,
+        array $conditionalMappings,
+        IngestConfig $config
+    ): array {
+        $modelData = [];
+
+        foreach ($conditionalMappings as $mapping) {
+            if (!$config->shouldApplyConditional($mapping, $processedData)) {
+                continue;
+            }
+
+            $sourceField = $mapping['sourceField'];
+            if (!RelationService::hasNestedKey($processedData, $sourceField)) {
+                continue;
+            }
+
+            $value = data_get($processedData, $sourceField);
+
+            if ($mapping['transformer'] ?? null) {
+                $transformer = $mapping['transformer'];
+                if ($transformer instanceof SerializableClosure) {
+                    $value = call_user_func($transformer->getClosure(), $value, $processedData);
+                } elseif ($transformer instanceof TransformerInterface) {
+                    $value = $transformer->transform($value, $processedData);
+                }
+            }
+
+            if ($mapping['validator'] ?? null) {
+                $validator = $mapping['validator'];
+                if ($validator instanceof ValidatorInterface) {
+                    $result = $validator->validate($value, $processedData);
+                    if ($result->failed()) {
+                        continue;
+                    }
+                }
+            }
+
+            $modelData[$mapping['attribute']] = $value;
+        }
+
+        return $modelData;
+    }
+
+    public function processNestedData(
+        array $processedData,
+        array $nestedConfigs
+    ): array {
+        $nestedData = [];
+
+        foreach ($nestedConfigs as $sourceField => $nestedConfig) {
+            if (!isset($processedData[$sourceField])) {
+                continue;
+            }
+
+            $nestedItems = $processedData[$sourceField];
+            if (!is_array($nestedItems)) {
+                continue;
+            }
+
+            $processedNested = [];
+            foreach ($nestedItems as $item) {
+                $itemData = [];
+                foreach ($nestedConfig->getMappings() as $field => $mapping) {
+                    if ($field === '_keyedBy') {
+                        continue;
+                    }
+
+                    if (isset($item[$field])) {
+                        $value = $item[$field];
+
+                        if (isset($nestedConfig->getTransformers()[$field])) {
+                            $transformer = $nestedConfig->getTransformers()[$field];
+                            if ($transformer instanceof SerializableClosure) {
+                                $value = call_user_func($transformer->getClosure(), $value, $item);
+                            } elseif ($transformer instanceof TransformerInterface) {
+                                $value = $transformer->transform($value, $item);
+                            }
+                        }
+
+                        $itemData[$mapping['attribute']] = $value;
+                    }
+                }
+
+                if (!empty($itemData)) {
+                    $processedNested[] = $itemData;
+                }
+            }
+
+            $nestedData[$sourceField] = $processedNested;
+        }
+
+        return $nestedData;
     }
 
     public function processRelations(
@@ -75,29 +251,32 @@ class DataTransformationService
         $unmappedData = array_diff_key($processedData, $mappings, $relations, $manyRelations, $usedTopLevelKeys);
         $modelInstance = app($modelClass);
 
-        // Further filter to only include keys that actually exist as database columns
-        // This prevents trying to insert keys that don't correspond to real columns
         return array_filter($unmappedData, static function ($key) use ($modelInstance) {
-            // Only include keys that are actually fillable AND correspond to real database columns
             if (!$modelInstance->isFillable($key)) {
                 return false;
             }
 
-            // For models where all attributes are fillable (guarded=[]),
-            // we need additional validation to ensure the key corresponds to a real column
             if (empty($modelInstance->getGuarded()) || $modelInstance->getGuarded() === ['*']) {
                 try {
-                    // Get the actual database column names
                     $tableColumns = Schema::getColumnListing($modelInstance->getTable());
 
                     return in_array($key, $tableColumns, true);
                 } catch (Exception $e) {
-                    // If we can't determine the columns, fall back to the original behavior
                     return true;
                 }
             }
 
             return true;
         }, ARRAY_FILTER_USE_KEY);
+    }
+
+    public function getTraceLog(): array
+    {
+        return $this->traceLog;
+    }
+
+    public function clearTraceLog(): void
+    {
+        $this->traceLog = [];
     }
 }

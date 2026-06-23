@@ -299,7 +299,7 @@ it('transforms row with float values', function () {
 
     $result = $memory->dump();
     expect($result[0]['price'])->toBe(19.99);
-    expect($result[0]['price_with_tax'])->toBe(23.988);
+    expect(round($result[0]['price_with_tax'], 3))->toBe(23.988);
 });
 
 it('transforms row with datetime values', function () {

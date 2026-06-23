@@ -6,17 +6,24 @@ namespace LaravelIngest;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
+use LaravelIngest\Contracts\ConditionalMappingInterface;
+use LaravelIngest\Contracts\HasMappings;
+use LaravelIngest\Contracts\ImportEventHandlerInterface;
+use LaravelIngest\Contracts\MappingInterface;
+use LaravelIngest\Contracts\SourceInterface;
+use LaravelIngest\Contracts\TransformerInterface;
+use LaravelIngest\Contracts\ValidatorInterface;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\SourceType;
 use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Exceptions\InvalidConfigurationException;
+use LaravelIngest\Services\DataTransformationService;
 
-class IngestConfig
+class IngestConfig implements HasMappings
 {
     public string $model;
-    public SourceType $sourceType;
+    public SourceType|SourceInterface $sourceType;
     public array $sourceOptions = [];
     public string|array|null $keyedBy = null;
     public DuplicateStrategy $duplicateStrategy = DuplicateStrategy::SKIP;
@@ -37,6 +44,14 @@ class IngestConfig
     public ?SerializableClosure $extraFieldsCallback = null;
     public ?SerializableClosure $modelResolver = null;
     public array $extraFields = [];
+    public array $conditionalMappings = [];
+    public array $validators = [];
+    public ?ImportEventHandlerInterface $eventHandler = null;
+    public ?array $expectedSchema = null;
+    public array $nestedConfigs = [];
+    public bool $tracingEnabled = false;
+    public bool $traceTransformations = false;
+    public bool $traceMappings = false;
 
     /**
      * @throws InvalidConfigurationException
@@ -62,7 +77,7 @@ class IngestConfig
         return new self($modelClass);
     }
 
-    public function fromSource(SourceType $sourceType, array $options = []): self
+    public function fromSource(SourceType|SourceInterface $sourceType, array $options = []): self
     {
         $this->sourceType = $sourceType;
         $this->sourceOptions = $options;
@@ -77,7 +92,7 @@ class IngestConfig
         return $this;
     }
 
-    public function map(string|array $sourceField, string $modelAttribute): self
+    public function map(string|array $sourceField, string $modelAttribute): static
     {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
@@ -85,6 +100,7 @@ class IngestConfig
         $this->mappings[$primaryField] = [
             'attribute' => $modelAttribute,
             'transformer' => null,
+            'transformers' => [],
             'aliases' => $aliases,
         ];
 
@@ -92,18 +108,125 @@ class IngestConfig
     }
 
     /**
-     * @throws PhpVersionNotSupportedException
+     * @throws InvalidConfigurationException
      */
-    public function mapAndTransform(string|array $sourceField, string $modelAttribute, Closure $transformer): self
-    {
+    public function mapAndTransform(
+        string|array $sourceField,
+        string $modelAttribute,
+        Closure|TransformerInterface|string|array $transformer
+    ): static {
         $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
         $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
 
+        $transformers = is_array($transformer) ? $transformer : [$transformer];
+
+        $normalizedTransformers = array_map(
+            fn($t) => $this->normalizeTransformer($t),
+            $transformers
+        );
+
         $this->mappings[$primaryField] = [
             'attribute' => $modelAttribute,
-            'transformer' => new SerializableClosure($transformer),
+            'transformer' => count($normalizedTransformers) === 1 ? $normalizedTransformers[0] : null,
+            'transformers' => $normalizedTransformers,
             'aliases' => $aliases,
         ];
+
+        return $this;
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     */
+    public function mapAndValidate(
+        string|array $sourceField,
+        string $modelAttribute,
+        ValidatorInterface|string|array $validator
+    ): static {
+        $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
+        $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
+
+        $validators = is_array($validator) ? $validator : [$validator];
+
+        $this->validators[$primaryField] = [
+            'attribute' => $modelAttribute,
+            'validators' => array_map(
+                fn($v) => $this->normalizeValidator($v),
+                $validators
+            ),
+            'aliases' => $aliases,
+        ];
+
+        $this->mappings[$primaryField] = [
+            'attribute' => $modelAttribute,
+            'transformer' => null,
+            'transformers' => [],
+            'aliases' => $aliases,
+        ];
+
+        return $this;
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     */
+    public function mapTransformAndValidate(
+        string|array $sourceField,
+        string $modelAttribute,
+        array $transformers,
+        array $validators
+    ): self {
+        $this->mapAndTransform($sourceField, $modelAttribute, $transformers);
+
+        $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
+        $this->validators[$primaryField] = [
+            'attribute' => $modelAttribute,
+            'validators' => array_map(
+                fn($v) => $this->normalizeValidator($v),
+                $validators
+            ),
+            'aliases' => is_array($sourceField) ? array_slice($sourceField, 1) : [],
+        ];
+
+        return $this;
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     */
+    public function mapWhen(
+        string|array $sourceField,
+        string $modelAttribute,
+        Closure|ConditionalMappingInterface $condition,
+        Closure|TransformerInterface|string|null $transformer = null,
+        Closure|ValidatorInterface|string|null $validator = null
+    ): self {
+        $primaryField = is_array($sourceField) ? $sourceField[0] : $sourceField;
+        $aliases = is_array($sourceField) ? array_slice($sourceField, 1) : [];
+
+        $this->conditionalMappings[] = [
+            'sourceField' => $primaryField,
+            'attribute' => $modelAttribute,
+            'condition' => $condition,
+            'transformer' => $transformer ? $this->normalizeTransformer($transformer) : null,
+            'validator' => $validator ? $this->normalizeValidator($validator) : null,
+            'aliases' => $aliases,
+        ];
+
+        return $this;
+    }
+
+    public function applyMapping(MappingInterface $mapping, string $prefix = ''): self
+    {
+        return $mapping->apply($this, $prefix);
+    }
+
+    public function nest(string $sourceField, Closure $callback): self
+    {
+        $nestedConfig = new NestedIngestConfig();
+        $callback($nestedConfig);
+
+        $this->nestedConfigs[$sourceField] = $nestedConfig;
 
         return $this;
     }
@@ -142,6 +265,16 @@ class IngestConfig
     public function validateWithModelRules(): self
     {
         $this->useModelRules = true;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, array{type: string, required?: bool, nullable?: bool}>  $schema
+     */
+    public function expectSchema(array $schema): self
+    {
+        $this->expectedSchema = $schema;
 
         return $this;
     }
@@ -199,9 +332,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function beforeRow(Closure $callback): self
     {
         $this->beforeRowCallback = new SerializableClosure($callback);
@@ -209,9 +339,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);
@@ -219,9 +346,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function beforeSave(Closure $callback): self
     {
         $this->beforeSaveCallback = new SerializableClosure($callback);
@@ -229,9 +353,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function afterChunk(Closure $callback): self
     {
         $this->afterChunkCallback = new SerializableClosure($callback);
@@ -239,9 +360,6 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function extraFields(Closure $callback): self
     {
         $this->extraFieldsCallback = new SerializableClosure($callback);
@@ -249,12 +367,41 @@ class IngestConfig
         return $this;
     }
 
-    /**
-     * @throws PhpVersionNotSupportedException
-     */
     public function resolveModelUsing(Closure $callback): self
     {
         $this->modelResolver = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    public function withEventHandler(ImportEventHandlerInterface $handler): self
+    {
+        $this->eventHandler = $handler;
+
+        return $this;
+    }
+
+    public function withTracing(): self
+    {
+        $this->tracingEnabled = true;
+        $this->traceTransformations = true;
+        $this->traceMappings = true;
+
+        return $this;
+    }
+
+    public function traceTransformations(): self
+    {
+        $this->tracingEnabled = true;
+        $this->traceTransformations = true;
+
+        return $this;
+    }
+
+    public function traceMappings(): self
+    {
+        $this->tracingEnabled = true;
+        $this->traceMappings = true;
 
         return $this;
     }
@@ -283,7 +430,7 @@ class IngestConfig
         return $this;
     }
 
-    public function keyedBy(string|array $key): self
+    public function keyedBy(string|array $key): static
     {
         $this->keyedBy = $key;
 
@@ -292,7 +439,6 @@ class IngestConfig
 
     /**
      * @throws InvalidConfigurationException
-     * @throws PhpVersionNotSupportedException
      */
     public function resolveModelClass(array $rowData): string
     {
@@ -312,6 +458,31 @@ class IngestConfig
         return $this->model;
     }
 
+    /**
+     * @return array<string, array<string>>
+     */
+    public function validateRow(array $rowData, ?DataTransformationService $service = null): array
+    {
+        $service ??= new DataTransformationService();
+
+        return $service->processValidators($rowData, $this->validators, $this);
+    }
+
+    public function shouldApplyConditional(array $conditional, array $rowData): bool
+    {
+        $condition = $conditional['condition'];
+
+        if ($condition instanceof ConditionalMappingInterface) {
+            return $condition->shouldApply($rowData);
+        }
+
+        if ($condition instanceof Closure) {
+            return $condition($rowData);
+        }
+
+        return true;
+    }
+
     public function getHeaderNormalizationMap(): array
     {
         $map = [];
@@ -320,6 +491,9 @@ class IngestConfig
             foreach ($config['aliases'] as $alias) {
                 $map[$alias] = $primaryField;
             }
+        }
+        foreach ($this->relations as $sourceField => $config) {
+            $map[$sourceField] = $sourceField;
         }
 
         return $map;
@@ -343,7 +517,14 @@ class IngestConfig
             }
         }
 
-        return null;
+        $relationConfig = $this->relations[$firstKey] ?? null;
+        if ($relationConfig) {
+            $modelInstance = app($this->model);
+
+            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+        }
+
+        return $firstKey;
     }
 
     /**
@@ -359,15 +540,78 @@ class IngestConfig
         $attributes = [];
 
         foreach ($keyedBy as $key) {
+            $found = false;
             foreach ($this->mappings as $sourceField => $map) {
                 $allSourceFields = array_merge([$sourceField], $map['aliases']);
                 if (in_array($key, $allSourceFields, true)) {
                     $attributes[] = $map['attribute'];
+                    $found = true;
                     break;
+                }
+            }
+            if (!$found) {
+                $relationConfig = $this->relations[$key] ?? null;
+                if ($relationConfig) {
+                    $modelInstance = app($this->model);
+                    $attributes[] = $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+                } else {
+                    $attributes[] = $key;
                 }
             }
         }
 
         return $attributes;
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     */
+    private function normalizeTransformer(Closure|TransformerInterface|string $transformer): SerializableClosure|TransformerInterface
+    {
+        if ($transformer instanceof Closure) {
+            return new SerializableClosure($transformer);
+        }
+
+        if ($transformer instanceof TransformerInterface) {
+            return $transformer;
+        }
+
+        if (!class_exists($transformer)) {
+            throw new InvalidConfigurationException(
+                "Transformer class '{$transformer}' does not exist."
+            );
+        }
+
+        if (!is_subclass_of($transformer, TransformerInterface::class)) {
+            throw new InvalidConfigurationException(
+                "Transformer class '{$transformer}' must implement " . TransformerInterface::class
+            );
+        }
+
+        return new $transformer();
+    }
+
+    /**
+     * @throws InvalidConfigurationException
+     */
+    private function normalizeValidator(ValidatorInterface|string $validator): ValidatorInterface
+    {
+        if ($validator instanceof ValidatorInterface) {
+            return $validator;
+        }
+
+        if (!class_exists($validator)) {
+            throw new InvalidConfigurationException(
+                "Validator class '{$validator}' does not exist."
+            );
+        }
+
+        if (!is_subclass_of($validator, ValidatorInterface::class)) {
+            throw new InvalidConfigurationException(
+                "Validator class '{$validator}' must implement " . ValidatorInterface::class
+            );
+        }
+
+        return new $validator();
     }
 }

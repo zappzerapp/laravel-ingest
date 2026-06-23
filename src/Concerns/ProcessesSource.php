@@ -62,7 +62,18 @@ trait ProcessesSource
             $keyedByFields = is_array($config->keyedBy) ? $config->keyedBy : [$config->keyedBy];
 
             foreach ($keyedByFields as $keyField) {
-                if (!in_array($keyField, $translationMap, true)) {
+                $isKnownSource = false;
+                foreach ($config->mappings as $sourceField => $mapping) {
+                    $aliases = array_merge([$sourceField], $mapping['aliases']);
+                    if (in_array($keyField, $aliases, true)) {
+                        $isKnownSource = true;
+                        break;
+                    }
+                }
+                if (!$isKnownSource && isset($config->relations[$keyField])) {
+                    $isKnownSource = true;
+                }
+                if ($isKnownSource && !in_array($keyField, $translationMap, true)) {
                     throw new SourceException("The key column '{$keyField}' or one of its aliases was not found in the source file headers.");
                 }
             }

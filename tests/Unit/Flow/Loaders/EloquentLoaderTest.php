@@ -8,12 +8,18 @@ use Flow\ETL\Row;
 use Flow\ETL\Row\Entry\IntegerEntry;
 use Flow\ETL\Row\Entry\JsonEntry;
 use Flow\ETL\Rows;
+use Flow\Types\Value\Json;
 use LaravelIngest\Enums\DuplicateStrategy;
 use LaravelIngest\Enums\TransactionMode;
 use LaravelIngest\Flow\Loaders\EloquentLoader;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\Tests\Fixtures\Models\User;
+
+function jsonDataEntry(array $data): JsonEntry
+{
+    return new JsonEntry('data', Json::fromArray($data));
+}
 
 it('implements Flow ETL Loader interface', function () {
     $config = IngestConfig::for(User::class);
@@ -36,7 +42,7 @@ it('creates new models with UPSERT strategy when no key specified', function () 
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -63,7 +69,7 @@ it('updates existing models with UPDATE strategy', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Updated Name'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Updated Name'])
         )
     );
 
@@ -90,7 +96,7 @@ it('skips existing models with SKIP strategy', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', [
+            jsonDataEntry( [
                 'email' => 'test@example.com',
                 'unmapped_field' => 'unmapped_value',
                 'another_field' => 123,
@@ -120,7 +126,7 @@ it('upserts models with UPSERT strategy', function () {
     $rows1 = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'First', 'password' => 'secret'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'First', 'password' => 'secret'])
         )
     );
 
@@ -129,7 +135,7 @@ it('upserts models with UPSERT strategy', function () {
     $rows2 = new Rows(
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Updated', 'password' => 'secret'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Updated', 'password' => 'secret'])
         )
     );
 
@@ -153,11 +159,11 @@ it('wraps entire load in transaction with CHUNK mode', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test1@example.com', 'name' => 'User 1'])
+            jsonDataEntry( ['email' => 'test1@example.com', 'name' => 'User 1'])
         ),
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['email' => 'test2@example.com', 'name' => 'User 2'])
+            jsonDataEntry( ['email' => 'test2@example.com', 'name' => 'User 2'])
         )
     );
 
@@ -178,7 +184,7 @@ it('skips persistence in dry run mode', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -205,7 +211,7 @@ it('updates if newer with UPDATE_IF_NEWER strategy', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', [
+            jsonDataEntry( [
                 'email' => 'test@example.com',
                 'name' => 'Updated Name',
                 'updated_at' => '2024-12-01 00:00:00',
@@ -237,7 +243,7 @@ it('skips update when source is older with UPDATE_IF_NEWER strategy', function (
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', [
+            jsonDataEntry( [
                 'email' => 'test@example.com',
                 'name' => 'Should Not Update',
                 'updated_at' => '2024-01-01 00:00:00',
@@ -273,7 +279,7 @@ it('calls after row callback', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -295,7 +301,7 @@ it('handles validation errors and logs them', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'invalid-email'])
+            jsonDataEntry( ['email' => 'invalid-email'])
         )
     );
 
@@ -336,11 +342,11 @@ it('wraps each row in transaction with ROW mode', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test1@example.com', 'name' => 'User 1'])
+            jsonDataEntry( ['email' => 'test1@example.com', 'name' => 'User 1'])
         ),
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['email' => 'test2@example.com', 'name' => 'User 2'])
+            jsonDataEntry( ['email' => 'test2@example.com', 'name' => 'User 2'])
         )
     );
 
@@ -367,11 +373,11 @@ it('rolls back entire chunk when one row fails in CHUNK mode', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'new@example.com', 'name' => 'New User'])
+            jsonDataEntry( ['email' => 'new@example.com', 'name' => 'New User'])
         ),
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['email' => 'existing@example.com', 'name' => 'Duplicate'])
+            jsonDataEntry( ['email' => 'existing@example.com', 'name' => 'Duplicate'])
         )
     );
 
@@ -395,7 +401,7 @@ it('creates models without keyedBy using UPSERT strategy', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -421,7 +427,7 @@ it('processes extraFields callback for additional model attributes', function ()
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', [
+            jsonDataEntry( [
                 'email' => 'test@example.com',
                 'name' => 'Test User',
                 'is_admin' => true,
@@ -458,7 +464,7 @@ it('calls after chunk callback', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -491,7 +497,7 @@ it('calls before save callback', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -518,7 +524,7 @@ it('can modify model in before save callback', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Original Name'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Original Name'])
         )
     );
 
@@ -542,7 +548,7 @@ it('throws exception when before save returns non-model', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -569,15 +575,15 @@ it('calls after chunk callback with multiple rows', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'user1@example.com', 'name' => 'User 1'])
+            jsonDataEntry( ['email' => 'user1@example.com', 'name' => 'User 1'])
         ),
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['email' => 'user2@example.com', 'name' => 'User 2'])
+            jsonDataEntry( ['email' => 'user2@example.com', 'name' => 'User 2'])
         ),
         Row::create(
             new IntegerEntry('number', 3),
-            new JsonEntry('data', ['email' => 'user3@example.com', 'name' => 'User 3'])
+            jsonDataEntry( ['email' => 'user3@example.com', 'name' => 'User 3'])
         )
     );
 
@@ -602,7 +608,7 @@ it('handles exception in after chunk callback', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -621,10 +627,10 @@ it('auto-increments row number when number field is missing', function () {
     // Create rows without IntegerEntry('number', ...) - uses plain array
     $rows = new Rows(
         Row::create(
-            new JsonEntry('data', ['email' => 'user1@example.com', 'name' => 'User 1'])
+            jsonDataEntry( ['email' => 'user1@example.com', 'name' => 'User 1'])
         ),
         Row::create(
-            new JsonEntry('data', ['email' => 'user2@example.com', 'name' => 'User 2'])
+            jsonDataEntry( ['email' => 'user2@example.com', 'name' => 'User 2'])
         )
     );
 
@@ -649,7 +655,7 @@ it('handles extraFields with non-existent database column gracefully', function 
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -674,7 +680,7 @@ it('handles nested source keys in mappings', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['user' => ['email' => 'test@example.com', 'name' => 'Test User']])
+            jsonDataEntry( ['user' => ['email' => 'test@example.com', 'name' => 'Test User']])
         )
     );
 
@@ -701,7 +707,7 @@ it('shows array keys in FAIL strategy error message', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Existing'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Existing'])
         )
     );
 
@@ -726,7 +732,7 @@ it('handles updateIfNewer when source column is missing', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'New Name'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'New Name'])
         )
     );
 
@@ -756,7 +762,7 @@ it('updates when db timestamp is null', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', [
+            jsonDataEntry( [
                 'email' => 'test@example.com',
                 'name' => 'Updated Name',
                 'updated_at' => '2024-01-01 00:00:00',
@@ -788,7 +794,7 @@ it('finds existing model with multiple keys', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Existing'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Existing'])
         )
     );
 
@@ -818,7 +824,7 @@ it('handles missing key in model data when searching', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'new@example.com', 'name' => 'New User'])
+            jsonDataEntry( ['email' => 'new@example.com', 'name' => 'New User'])
         )
     );
 
@@ -841,7 +847,7 @@ it('uses model validation rules when configured', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'valid@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'valid@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -866,7 +872,7 @@ it('upserts when model does not use timestamps', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['code' => 'ITEM001'])
+            jsonDataEntry( ['code' => 'ITEM001'])
         )
     );
 
@@ -888,7 +894,7 @@ it('throws runtime exception in testing mode for non-model beforeSave callback',
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test'])
         )
     );
 
@@ -912,7 +918,7 @@ it('syncs many-to-many relations when cache has values', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'admin,editor'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'admin,editor'])
         )
     );
 
@@ -939,7 +945,7 @@ it('skips syncing when relation value not found in cache', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'nonexistent,admin'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'nonexistent,admin'])
         )
     );
 
@@ -964,7 +970,7 @@ it('logs rows when ingest.log_rows is enabled', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -993,7 +999,7 @@ it('logs failed rows with validation errors', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'invalid-email', 'name' => 'Test'])
+            jsonDataEntry( ['email' => 'invalid-email', 'name' => 'Test'])
         )
     );
 
@@ -1023,7 +1029,7 @@ it('propagates validation exception in CHUNK mode', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'existing@example.com', 'name' => 'New'])
+            jsonDataEntry( ['email' => 'existing@example.com', 'name' => 'New'])
         )
     );
 
@@ -1046,7 +1052,7 @@ it('merges model rules with config rules when useModelRules is enabled', functio
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'AB'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'AB'])
         )
     );
 
@@ -1074,7 +1080,7 @@ it('handles schema getColumnListing exception in extraFields filtering', functio
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -1111,7 +1117,7 @@ it('returns false from shouldUpdate when timestampComparison is null', function 
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'New Name'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'New Name'])
         )
     );
 
@@ -1139,7 +1145,7 @@ it('skips syncing many-to-many relations when raw values are empty after filteri
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => '   '])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => '   '])
         )
     );
 
@@ -1162,7 +1168,7 @@ it('skips syncing when relation value is empty after data_get', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => null])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => null])
         )
     );
 
@@ -1187,11 +1193,11 @@ it('prefetches relations with values from chunk', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'Product1', 'category_name' => 'Electronics'])
+            jsonDataEntry( ['name' => 'Product1', 'category_name' => 'Electronics'])
         ),
         Row::create(
             new IntegerEntry('number', 2),
-            new JsonEntry('data', ['name' => 'Product2', 'category_name' => 'Books'])
+            jsonDataEntry( ['name' => 'Product2', 'category_name' => 'Books'])
         )
     );
 
@@ -1219,7 +1225,7 @@ it('prefetches many-to-many relations with separated values', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'admin,editor'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => 'admin,editor'])
         )
     );
 
@@ -1242,7 +1248,7 @@ it('handles json_encode failure in prepareLogRow', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -1276,7 +1282,7 @@ it('catches JsonException in prepareLogRow and encodes empty data', function () 
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'invalid-email'])
+            jsonDataEntry( ['email' => 'invalid-email'])
         )
     );
 
@@ -1316,7 +1322,7 @@ it('falls back to all extraFields when Schema throws', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -1350,7 +1356,7 @@ it('handles Schema exception in extraFields during transform', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'test@example.com', 'name' => 'Test User'])
+            jsonDataEntry( ['email' => 'test@example.com', 'name' => 'Test User'])
         )
     );
 
@@ -1380,7 +1386,7 @@ it('handles empty prefetch values for relations', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com'])
         )
     );
 
@@ -1403,7 +1409,7 @@ it('handles empty prefetch values for many-to-many relations', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com'])
         )
     );
 
@@ -1427,7 +1433,7 @@ it('finds existing model returns null when key field is missing from data', func
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'New User', 'email' => 'new@example.com'])
+            jsonDataEntry( ['name' => 'New User', 'email' => 'new@example.com'])
         )
     );
 
@@ -1449,7 +1455,7 @@ it('handles many-to-many relations with only separator values resulting in empty
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => ',,'])
+            jsonDataEntry( ['name' => 'John', 'email' => 'john@test.com', 'role_slugs' => ',,'])
         )
     );
 
@@ -1472,7 +1478,7 @@ it('handles JsonException during prepareLogRow encoding', function () {
     $rows = new Rows(
         Row::create(
             new IntegerEntry('number', 1),
-            new JsonEntry('data', ['email' => 'invalid-email'])
+            jsonDataEntry( ['email' => 'invalid-email'])
         )
     );
 

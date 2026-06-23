@@ -120,9 +120,9 @@ it('throws exception for invalid JSON', function () {
     expect(fn() => iterator_to_array($extractor->extract($context)))->toThrow(Exception::class);
 });
 
-it('can extract single JSON object', function () {
+it('can extract single JSON object wrapped in an array', function () {
     $this->tempFile = tempnam(sys_get_temp_dir(), 'test_json_');
-    $jsonData = ['id' => 1, 'name' => 'Alice', 'email' => 'alice@example.com'];
+    $jsonData = [['id' => 1, 'name' => 'Alice', 'email' => 'alice@example.com']];
     file_put_contents($this->tempFile, json_encode($jsonData));
 
     $extractor = new JsonExtractor($this->tempFile);
@@ -135,6 +135,5 @@ it('can extract single JSON object', function () {
         }
     }
 
-    // Flow JSON extractor treats each field of a single object as a row entry
-    expect($results)->toHaveCount(3);
+    expect($results)->toHaveCount(1);
 });

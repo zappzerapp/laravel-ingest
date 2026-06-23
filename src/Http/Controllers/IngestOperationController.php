@@ -69,18 +69,15 @@ class IngestOperationController extends Controller
      * @throws Throwable
      * @throws ConcurrencyException
      * @throws DefinitionNotFoundException
+     * @throws NoFailedRowsException
      */
     public function retry(RetryIngestRequest $request, IngestRun $ingestRun): JsonResponse
     {
         $this->authorizeAccess();
 
-        try {
-            $isDryRun = $request->boolean('dry_run');
-            $newRun = $this->ingestManager->retry($ingestRun, $request->user(), $isDryRun);
+        $isDryRun = $request->boolean('dry_run');
+        $newRun = $this->ingestManager->retry($ingestRun, $request->user(), $isDryRun);
 
-            return IngestRunResource::make($newRun)->response()->setStatusCode(202);
-        } catch (NoFailedRowsException $e) {
-            abort(400, $e->getMessage());
-        }
+        return IngestRunResource::make($newRun)->response()->setStatusCode(202);
     }
 }

@@ -88,3 +88,12 @@ protected $listen = [
 ```
 
 Now, every time an import finishes, the user who started it gets a notification!
+
+## Two Event Systems
+
+Laravel Ingest provides two distinct event systems:
+
+- **Laravel Events** — Dispatched via Laravel's event system. Ideal for app-wide listeners (e.g., Slack notifications).
+- **ImportEventHandlerInterface** — Per-importer lifecycle hooks defined directly in `IngestConfig`. Ideal for encapsulating import-specific logic. Use `withEventHandler()` to register a handler.
+
+→ See [Import Events](advanced-features.md#import-events) for the custom handler system.
