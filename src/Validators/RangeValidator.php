@@ -22,21 +22,21 @@ readonly class RangeValidator implements ValidatorInterface
         }
 
         $numeric = is_numeric($value) ? (float) $value : null;
-
         if ($numeric === null) {
             return ValidationResult::fail('Value must be numeric');
         }
 
-        if ($this->min !== null && $numeric < $this->min) {
-            $message = $this->message ?? "Value must be at least {$this->min}";
+        return $this->validateRange($numeric);
+    }
 
-            return ValidationResult::fail($message);
+    private function validateRange(float $numeric): ValidationResult
+    {
+        if ($this->min !== null && $numeric < $this->min) {
+            return ValidationResult::fail($this->message ?? "Value must be at least {$this->min}");
         }
 
         if ($this->max !== null && $numeric > $this->max) {
-            $message = $this->message ?? "Value must be at most {$this->max}";
-
-            return ValidationResult::fail($message);
+            return ValidationResult::fail($this->message ?? "Value must be at most {$this->max}");
         }
 
         return ValidationResult::pass();

@@ -21,35 +21,17 @@ class JsonHandler implements SourceHandler
      */
     public function read(IngestConfig $config, mixed $payload = null): Generator
     {
-        if (is_string($payload)) {
-            $this->processedFilePath = $payload;
-
-            if (!file_exists($payload)) {
-                throw new SourceException("Unable to read JSON file from path: {$payload}");
-            }
-
-            try {
-                $items = Items::fromFile($payload);
-
-                foreach ($items as $row) {
-                    if (is_object($row)) {
-                        $row = (array) $row;
-                    }
-
-                    if (!is_array($row)) {
-                        continue;
-                    }
-
-                    yield $row;
-                }
-            } catch (Throwable $e) {
-                throw new SourceException('Invalid JSON: ' . $e->getMessage(), 0, $e);
-            }
-
-            return;
+        if (!is_string($payload)) {
+            throw new SourceException('JsonHandler expects a valid file path');
         }
 
-        throw new SourceException('JsonHandler expects a valid file path');
+        $this->processedFilePath = $payload;
+
+        if (!file_exists($payload)) {
+            throw new SourceException("Unable to read JSON file from path: {$payload}");
+        }
+
+        yield from $this->yieldJsonRows($payload);
     }
 
     public function getTotalRows(): ?int
@@ -68,5 +50,31 @@ class JsonHandler implements SourceHandler
             unlink($this->tempFilePath);
             $this->tempFilePath = null;
         }
+    }
+
+    /**
+     * @throws SourceException
+     */
+    private function yieldJsonRows(string $path): Generator
+    {
+        try {
+            foreach (Items::fromFile($path) as $row) {
+                $normalizedRow = $this->normalizeJsonRow($row);
+                if ($normalizedRow !== null) {
+                    yield $normalizedRow;
+                }
+            }
+        } catch (Throwable $e) {
+            throw new SourceException('Invalid JSON: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    private function normalizeJsonRow(mixed $row): ?array
+    {
+        if (is_object($row)) {
+            $row = (array) $row;
+        }
+
+        return is_array($row) ? $row : null;
     }
 }

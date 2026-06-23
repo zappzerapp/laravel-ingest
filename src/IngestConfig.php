@@ -506,25 +506,8 @@ class IngestConfig implements HasMappings
         }
 
         $firstKey = is_array($this->keyedBy) ? ($this->keyedBy[0] ?? null) : $this->keyedBy;
-        if ($firstKey === null) {
-            return null;
-        }
 
-        foreach ($this->mappings as $sourceField => $map) {
-            $allSourceFields = array_merge([$sourceField], $map['aliases']);
-            if (in_array($firstKey, $allSourceFields, true)) {
-                return $map['attribute'];
-            }
-        }
-
-        $relationConfig = $this->relations[$firstKey] ?? null;
-        if ($relationConfig) {
-            $modelInstance = app($this->model);
-
-            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
-        }
-
-        return $firstKey;
+        return $firstKey === null ? null : $this->resolveAttributeForSourceKey($firstKey);
     }
 
     /**
@@ -537,30 +520,30 @@ class IngestConfig implements HasMappings
         }
 
         $keyedBy = is_array($this->keyedBy) ? $this->keyedBy : [$this->keyedBy];
-        $attributes = [];
 
-        foreach ($keyedBy as $key) {
-            $found = false;
-            foreach ($this->mappings as $sourceField => $map) {
-                $allSourceFields = array_merge([$sourceField], $map['aliases']);
-                if (in_array($key, $allSourceFields, true)) {
-                    $attributes[] = $map['attribute'];
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $relationConfig = $this->relations[$key] ?? null;
-                if ($relationConfig) {
-                    $modelInstance = app($this->model);
-                    $attributes[] = $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
-                } else {
-                    $attributes[] = $key;
-                }
+        return array_map(
+            fn(string $key) => $this->resolveAttributeForSourceKey($key),
+            $keyedBy
+        );
+    }
+
+    private function resolveAttributeForSourceKey(string $sourceKey): string
+    {
+        foreach ($this->mappings as $sourceField => $map) {
+            $allSourceFields = array_merge([$sourceField], $map['aliases']);
+            if (in_array($sourceKey, $allSourceFields, true)) {
+                return $map['attribute'];
             }
         }
 
-        return $attributes;
+        $relationConfig = $this->relations[$sourceKey] ?? null;
+        if ($relationConfig) {
+            $modelInstance = app($this->model);
+
+            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+        }
+
+        return $sourceKey;
     }
 
     /**

@@ -116,31 +116,45 @@ class EloquentLoader implements Loader
                 }
                 $rowsToLog[] = $this->prepareLogRow($rowItem, 'success');
             } catch (Throwable $e) {
-                // Always propagate RuntimeExceptions in testing mode to reveal issues
-                if (config('app.env') === 'testing' && $e instanceof RuntimeException) {
-                    throw $e;
-                }
-
-                // Also propagate specific callback validation failures that should throw RuntimeExceptions
-                if (config('app.env') === 'testing' && str_contains($e->getMessage(), 'beforeSave callback must return an Eloquent model')) {
-                    throw new RuntimeException($e->getMessage());
-                }
-
-                $errors = $this->formatErrors($e);
-                $rowsToLog[] = $this->prepareLogRow($rowItem, 'failed', $errors);
-
-                if ($this->config->transactionMode === TransactionMode::CHUNK && !$this->isDryRun) {
-                    throw $e;
-                }
+                $this->handleChunkRowFailure($e, $rowItem, $rowsToLog);
             }
         }
 
-        // Execute afterChunk callback if defined
+        $this->executeAfterChunkCallback($models);
+        $this->logRowsIfEnabled($rowsToLog);
+    }
+
+    private function handleChunkRowFailure(Throwable $e, array $rowItem, array &$rowsToLog): void
+    {
+        if ($this->shouldPropagateTestingException($e)) {
+            throw $e instanceof RuntimeException ? $e : new RuntimeException($e->getMessage(), 0, $e);
+        }
+
+        $rowsToLog[] = $this->prepareLogRow($rowItem, 'failed', $this->formatErrors($e));
+
+        if ($this->config->transactionMode === TransactionMode::CHUNK && !$this->isDryRun) {
+            throw $e;
+        }
+    }
+
+    private function shouldPropagateTestingException(Throwable $e): bool
+    {
+        if (config('app.env') !== 'testing') {
+            return false;
+        }
+
+        if ($e instanceof RuntimeException) {
+            return true;
+        }
+
+        return str_contains($e->getMessage(), 'beforeSave callback must return an Eloquent model');
+    }
+
+    private function executeAfterChunkCallback(array $models): void
+    {
         if ($this->config->afterChunkCallback && !empty($models)) {
             call_user_func($this->config->afterChunkCallback->getClosure(), $models, $this->ingestRun);
         }
-
-        $this->logRowsIfEnabled($rowsToLog);
     }
 
     private function processRow(array $rowItem, array &$relationCache, array &$manyRelationCache): ?Model
@@ -194,36 +208,52 @@ class EloquentLoader implements Loader
             $this->isDryRun
         );
 
-        $modelData = array_merge($modelData, $relationData);
-
-        // Execute extraFields callback if defined
-        if ($this->config->extraFieldsCallback) {
-            $extraFieldsData = call_user_func($this->config->extraFieldsCallback->getClosure(), $data);
-
-            // Filter extraFields to only include database columns for models with empty guarded
-            $modelInstance = app($modelClass);
-            if (empty($modelInstance->getGuarded()) || $modelInstance->getGuarded() === ['*']) {
-                try {
-                    $tableColumns = \Illuminate\Support\Facades\Schema::getColumnListing($modelInstance->getTable());
-                    $extraFieldsData = array_intersect_key($extraFieldsData, array_flip($tableColumns));
-                } catch (Exception $e) {
-                    // If we can't determine columns, use all extraFields data (maintain backward compatibility)
-                }
-            }
-
-            $modelData = array_merge($modelData, $extraFieldsData);
-        }
+        $modelData = array_merge($modelData, $relationData, $this->resolveExtraFields($data, $modelClass));
 
         $unmappedData = $this->transformationService->processUnmappedData(
             $data,
-            $this->config->mappings,
-            $this->config->relations,
-            $this->config->manyRelations,
-            $this->getUsedTopLevelKeys(),
+            $this->buildExcludedSourceKeys(),
             $modelClass
         );
 
         return array_merge($modelData, $unmappedData);
+    }
+
+    private function resolveExtraFields(array $data, string $modelClass): array
+    {
+        if (!$this->config->extraFieldsCallback) {
+            return [];
+        }
+
+        $extraFieldsData = call_user_func($this->config->extraFieldsCallback->getClosure(), $data);
+
+        return $this->filterExtraFieldsForModel($extraFieldsData, $modelClass);
+    }
+
+    private function filterExtraFieldsForModel(array $extraFieldsData, string $modelClass): array
+    {
+        $modelInstance = app($modelClass);
+        if (!empty($modelInstance->getGuarded()) && $modelInstance->getGuarded() !== ['*']) {
+            return $extraFieldsData;
+        }
+
+        try {
+            $tableColumns = \Illuminate\Support\Facades\Schema::getColumnListing($modelInstance->getTable());
+
+            return array_intersect_key($extraFieldsData, array_flip($tableColumns));
+        } catch (Exception) {
+            return $extraFieldsData;
+        }
+    }
+
+    private function buildExcludedSourceKeys(): array
+    {
+        return array_merge(
+            $this->config->mappings,
+            $this->config->relations,
+            $this->config->manyRelations,
+            $this->getUsedTopLevelKeys()
+        );
     }
 
     private function getUsedTopLevelKeys(): array
@@ -258,25 +288,34 @@ class EloquentLoader implements Loader
             return $this->handleDuplicateStrategy($existingModel, $modelData);
         }
 
+        return $this->createModel($modelData, $modelClass);
+    }
+
+    private function createModel(array $modelData, string $modelClass): Model
+    {
         $model = new $modelClass($modelData);
-
-        // Execute beforeSave callback if defined
-        if ($this->config->beforeSaveCallback) {
-            $returnedModel = call_user_func($this->config->beforeSaveCallback->getClosure(), $model, $modelData);
-
-            // Validate that the callback returned an Eloquent model
-            if (!$returnedModel instanceof Model) {
-                throw new RuntimeException('beforeSave callback must return an Eloquent model');
-            }
-
-            $model = $returnedModel;
-        }
+        $model = $this->applyBeforeSaveCallback($model, $modelData);
 
         if (!$this->isDryRun) {
             $model->save();
         }
 
         return $model;
+    }
+
+    private function applyBeforeSaveCallback(Model $model, array $modelData): Model
+    {
+        if (!$this->config->beforeSaveCallback) {
+            return $model;
+        }
+
+        $returnedModel = call_user_func($this->config->beforeSaveCallback->getClosure(), $model, $modelData);
+
+        if (!$returnedModel instanceof Model) {
+            throw new RuntimeException('beforeSave callback must return an Eloquent model');
+        }
+
+        return $returnedModel;
     }
 
     private function handleDuplicateStrategy(Model $existingModel, array $modelData): Model
@@ -321,30 +360,41 @@ class EloquentLoader implements Loader
         }
 
         $model = new $modelClass();
-        $table = $model->getTable();
+        $this->applyUpsertTimestamps($model, $modelData);
 
-        if ($model->usesTimestamps()) {
-            $now = now();
-            $createdAtColumn = $model->getCreatedAtColumn();
-            $updatedAtColumn = $model->getUpdatedAtColumn();
-
-            $modelData[$createdAtColumn] = $now;
-            $modelData[$updatedAtColumn] = $now;
+        $updateColumns = $this->buildUpsertUpdateColumns($model, $modelData, $uniqueKeys);
+        if (empty($updateColumns)) {
+            return $modelClass::create($modelData);
         }
 
+        DB::table($model->getTable())->upsert([$modelData], $uniqueKeys, $updateColumns);
+
+        return $this->findUpsertedModel($modelClass, $modelData, $uniqueKeys);
+    }
+
+    private function applyUpsertTimestamps(Model $model, array &$modelData): void
+    {
+        if (!$model->usesTimestamps()) {
+            return;
+        }
+
+        $now = now();
+        $modelData[$model->getCreatedAtColumn()] = $now;
+        $modelData[$model->getUpdatedAtColumn()] = $now;
+    }
+
+    private function buildUpsertUpdateColumns(Model $model, array $modelData, array $uniqueKeys): array
+    {
         $excludeFromUpdate = array_flip($uniqueKeys);
         if ($model->usesTimestamps()) {
             $excludeFromUpdate[$model->getCreatedAtColumn()] = true;
         }
 
-        $updateColumns = array_keys(array_diff_key($modelData, $excludeFromUpdate));
+        return array_keys(array_diff_key($modelData, $excludeFromUpdate));
+    }
 
-        if (empty($updateColumns)) {
-            return $modelClass::create($modelData);
-        }
-
-        DB::table($table)->upsert([$modelData], $uniqueKeys, $updateColumns);
-
+    private function findUpsertedModel(string $modelClass, array $modelData, array $uniqueKeys): Model
+    {
         $query = $modelClass::query();
         foreach ($uniqueKeys as $key) {
             $query->where($key, $modelData[$key]);
@@ -401,41 +451,50 @@ class EloquentLoader implements Loader
 
     private function syncManyRelations(Model $model, array $originalData, array $manyRelationCache): void
     {
-        if (empty($this->config->manyRelations)) {
+        foreach ($this->config->manyRelations as $sourceField => $relationConfig) {
+            $this->syncSingleManyRelation($model, $originalData, $sourceField, $relationConfig, $manyRelationCache);
+        }
+    }
+
+    private function syncSingleManyRelation(
+        Model $model,
+        array $originalData,
+        string $sourceField,
+        array $relationConfig,
+        array $manyRelationCache
+    ): void {
+        if (!RelationService::hasNestedKey($originalData, $sourceField)) {
             return;
         }
 
-        foreach ($this->config->manyRelations as $sourceField => $relationConfig) {
-            if (!RelationService::hasNestedKey($originalData, $sourceField)) {
-                continue;
-            }
-
-            $relationValue = data_get($originalData, $sourceField);
-            if (empty($relationValue)) {
-                continue;
-            }
-
-            $separator = $relationConfig['separator'];
-            $values = array_filter(array_map('trim', explode($separator, (string) $relationValue)));
-
-            if (empty($values)) {
-                continue;
-            }
-
-            $ids = [];
-            $cache = $manyRelationCache[$sourceField] ?? [];
-
-            foreach ($values as $value) {
-                $id = $cache[$value] ?? null;
-                if ($id !== null) {
-                    $ids[] = $id;
-                }
-            }
-
-            if (!empty($ids)) {
-                $model->{$relationConfig['relation']}()->syncWithoutDetaching($ids);
-            }
+        $ids = $this->resolveManyRelationIds($originalData, $sourceField, $relationConfig, $manyRelationCache);
+        if (!empty($ids)) {
+            $model->{$relationConfig['relation']}()->syncWithoutDetaching($ids);
         }
+    }
+
+    private function resolveManyRelationIds(
+        array $originalData,
+        string $sourceField,
+        array $relationConfig,
+        array $manyRelationCache
+    ): array {
+        $relationValue = data_get($originalData, $sourceField);
+        if (empty($relationValue)) {
+            return [];
+        }
+
+        $separator = $relationConfig['separator'];
+        $values = array_filter(array_map('trim', explode($separator, (string) $relationValue)));
+        if (empty($values)) {
+            return [];
+        }
+
+        $cache = $manyRelationCache[$sourceField] ?? [];
+
+        return array_values(array_filter(
+            array_map(fn(string $value) => $cache[$value] ?? null, $values)
+        ));
     }
 
     private function executeAfterRowCallback(?Model $model, array $data): void
@@ -475,32 +534,43 @@ class EloquentLoader implements Loader
     {
         $cache = [];
         foreach ($this->config->manyRelations as $sourceField => $relationConfig) {
-            $rawValues = collect($chunk)
-                ->map(fn($item) => data_get($item, 'data.' . $sourceField))
-                ->filter()
-                ->values();
-
-            if ($rawValues->isEmpty()) {
-                continue;
-            }
-
-            $separator = $relationConfig['separator'];
-            $lookupKey = $relationConfig['key'];
-            $relatedModelClass = $relationConfig['model'];
-            $relatedInstance = app($relatedModelClass);
-            $pkName = $relatedInstance->getKeyName();
-
-            $allValues = $rawValues->flatMap(fn($value) => explode($separator, $value))->filter()->unique()->values();
-
-            if ($allValues->isEmpty()) {
-                continue;
-            }
-
-            $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$pkName, $lookupKey]);
-            $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
+            $this->prefetchSingleManyRelation($chunk, $sourceField, $relationConfig, $cache);
         }
 
         return $cache;
+    }
+
+    private function prefetchSingleManyRelation(
+        array $chunk,
+        string $sourceField,
+        array $relationConfig,
+        array &$cache
+    ): void {
+        $rawValues = collect($chunk)
+            ->map(fn($item) => data_get($item, 'data.' . $sourceField))
+            ->filter()
+            ->values();
+
+        if ($rawValues->isEmpty()) {
+            return;
+        }
+
+        $allValues = $rawValues
+            ->flatMap(fn($value) => explode($relationConfig['separator'], $value))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($allValues->isEmpty()) {
+            return;
+        }
+
+        $relatedModelClass = $relationConfig['model'];
+        $pkName = app($relatedModelClass)->getKeyName();
+        $lookupKey = $relationConfig['key'];
+
+        $results = $relatedModelClass::query()->whereIn($lookupKey, $allValues)->get([$pkName, $lookupKey]);
+        $cache[$sourceField] = $results->pluck($pkName, $lookupKey)->toArray();
     }
 
     private function formatErrors(Throwable $e): array

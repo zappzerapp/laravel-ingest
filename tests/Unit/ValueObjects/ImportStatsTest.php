@@ -2,10 +2,33 @@
 
 declare(strict_types=1);
 
+use LaravelIngest\ValueObjects\ImportCounts;
 use LaravelIngest\ValueObjects\ImportStats;
 
+function makeImportStats(
+    int $totalRows,
+    int $successCount,
+    int $failureCount,
+    int $createdCount,
+    int $updatedCount,
+    float $duration,
+    array $errors = []
+): ImportStats {
+    return new ImportStats(
+        totalRows: $totalRows,
+        counts: new ImportCounts(
+            success: $successCount,
+            failure: $failureCount,
+            created: $createdCount,
+            updated: $updatedCount,
+        ),
+        duration: $duration,
+        errors: $errors,
+    );
+}
+
 it('calculates success rate', function () {
-    $stats = new ImportStats(
+    $stats = makeImportStats(
         totalRows: 100,
         successCount: 85,
         failureCount: 15,
@@ -18,7 +41,7 @@ it('calculates success rate', function () {
 });
 
 it('returns zero for empty total rows', function () {
-    $stats = new ImportStats(
+    $stats = makeImportStats(
         totalRows: 0,
         successCount: 0,
         failureCount: 0,
@@ -31,7 +54,7 @@ it('returns zero for empty total rows', function () {
 });
 
 it('calculates skipped count', function () {
-    $stats = new ImportStats(
+    $stats = makeImportStats(
         totalRows: 100,
         successCount: 90,
         failureCount: 10,
@@ -44,7 +67,7 @@ it('calculates skipped count', function () {
 });
 
 it('detects fully successful import', function () {
-    $successful = new ImportStats(
+    $successful = makeImportStats(
         totalRows: 100,
         successCount: 100,
         failureCount: 0,
@@ -53,7 +76,7 @@ it('detects fully successful import', function () {
         duration: 10.0
     );
 
-    $failed = new ImportStats(
+    $failed = makeImportStats(
         totalRows: 100,
         successCount: 99,
         failureCount: 1,
@@ -67,7 +90,7 @@ it('detects fully successful import', function () {
 });
 
 it('converts to array', function () {
-    $stats = new ImportStats(
+    $stats = makeImportStats(
         totalRows: 100,
         successCount: 90,
         failureCount: 10,
@@ -86,7 +109,7 @@ it('converts to array', function () {
 });
 
 it('handles errors in toArray', function () {
-    $stats = new ImportStats(
+    $stats = makeImportStats(
         totalRows: 100,
         successCount: 100,
         failureCount: 0,

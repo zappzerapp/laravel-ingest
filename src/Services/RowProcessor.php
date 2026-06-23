@@ -43,8 +43,10 @@ class RowProcessor
             $config,
             $chunk,
             $isDryRun,
-            $relationCache,
-            $manyRelationCache
+            [
+                'relations' => $relationCache,
+                'many' => $manyRelationCache,
+            ]
         );
 
         return $config->transactionMode === TransactionMode::CHUNK && !$isDryRun
@@ -60,42 +62,47 @@ class RowProcessor
         IngestConfig $config,
         array $chunk,
         bool $isDryRun,
-        array $relationCache,
-        array $manyRelationCache
+        array $caches
     ): array {
-        $results = ['processed' => 0, 'successful' => 0, 'failed' => 0];
-        $rowsToLog = [];
+        $state = new ChunkProcessingState(
+            ingestRun: $ingestRun,
+            config: $config,
+            isDryRun: $isDryRun,
+            caches: $caches,
+            output: [
+                'results' => ['processed' => 0, 'successful' => 0, 'failed' => 0],
+                'rowsToLog' => [],
+            ],
+        );
 
         foreach ($chunk as $rowItem) {
-            $this->processSingleRow($rowItem, $ingestRun, $config, $isDryRun, $relationCache, $manyRelationCache, $results, $rowsToLog);
+            $this->processSingleRow($rowItem, $state);
         }
 
-        $this->logRowsIfEnabled($rowsToLog);
+        $this->logRowsIfEnabled($state->output['rowsToLog']);
 
-        return $results;
+        return $state->output['results'];
     }
 
     /**
      * @throws Throwable
      */
-    private function processSingleRow(
-        array $rowItem,
-        IngestRun $ingestRun,
-        IngestConfig $config,
-        bool $isDryRun,
-        array &$relationCache,
-        array &$manyRelationCache,
-        array &$results,
-        array &$rowsToLog
-    ): void {
+    private function processSingleRow(array $rowItem, ChunkProcessingState $state): void
+    {
         $rowData = new RowData($rowItem['data'], $rowItem['number']);
-        $results['processed']++;
+        $state->output['results']['processed']++;
 
         try {
-            $model = $this->processRow($config, $rowData, $isDryRun, $relationCache, $manyRelationCache);
-            $this->handleRowSuccess($ingestRun, $rowData, $model, $results, $rowsToLog);
+            $model = $this->processRow(
+                $state->config,
+                $rowData,
+                $state->isDryRun,
+                $state->caches['relations'],
+                $state->caches['many']
+            );
+            $this->handleRowSuccess($state->ingestRun, $rowData, $model, $state->output['results'], $state->output['rowsToLog']);
         } catch (Throwable $e) {
-            $this->handleRowFailure($config, $e, $ingestRun, $rowData, $rowsToLog, $results, $isDryRun);
+            $this->handleRowFailure($state, $e, $rowData);
         }
     }
 
@@ -175,22 +182,18 @@ class RowProcessor
      * @throws JsonException
      */
     private function handleRowFailure(
-        IngestConfig $config,
+        ChunkProcessingState $state,
         Throwable $e,
-        IngestRun $ingestRun,
-        RowData $rowData,
-        array &$rowsToLog,
-        array &$results,
-        bool $isDryRun
+        RowData $rowData
     ): void {
-        if ($config->transactionMode === TransactionMode::CHUNK && !$isDryRun) {
+        if ($state->config->transactionMode === TransactionMode::CHUNK && !$state->isDryRun) {
             throw $e;
         }
 
         $errors = $this->formatErrors($e);
-        $rowsToLog[] = $this->prepareLogRow($ingestRun, $rowData, 'failed', $errors);
-        $results['failed']++;
-        RowProcessed::dispatch($ingestRun, 'failed', $rowData->originalData, null, $errors);
+        $state->output['rowsToLog'][] = $this->prepareLogRow($state->ingestRun, $rowData, 'failed', $errors);
+        $state->output['results']['failed']++;
+        RowProcessed::dispatch($state->ingestRun, 'failed', $rowData->originalData, null, $errors);
     }
 
     private function logRowsIfEnabled(array $rowsToLog): void
@@ -306,10 +309,7 @@ class RowProcessor
 
         $unmappedData = $this->transformationService->processUnmappedData(
             $processedData,
-            $config->mappings,
-            $config->relations,
-            $config->manyRelations,
-            $this->getUsedTopLevelKeys($config),
+            $this->buildExcludedSourceKeys($config),
             $modelClass
         );
 
@@ -370,6 +370,16 @@ class RowProcessor
 
         return array_filter(
             array_map(fn($value) => $cache[$value] ?? null, $values)
+        );
+    }
+
+    private function buildExcludedSourceKeys(IngestConfig $config): array
+    {
+        return array_merge(
+            $config->mappings,
+            $config->relations,
+            $config->manyRelations,
+            $this->getUsedTopLevelKeys($config)
         );
     }
 

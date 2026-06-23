@@ -13,16 +13,14 @@ class NumericTransformer implements TransformerInterface
      * @param  float|null  $min  Minimum allowed value, null for no minimum
      * @param  float|null  $max  Maximum allowed value, null for no maximum
      * @param  mixed  $default  Default value when conversion fails
-     * @param  string  $decimalSeparator  Character used as decimal separator
-     * @param  string  $thousandsSeparator  Character used as thousands separator to strip
+     * @param  array{decimal?: string, thousands?: string}  $separators
      */
     public function __construct(
         private ?int $decimals = null,
         private ?float $min = null,
         private ?float $max = null,
         private mixed $default = null,
-        private string $decimalSeparator = '.',
-        private string $thousandsSeparator = ','
+        private array $separators = ['decimal' => '.', 'thousands' => ',']
     ) {}
 
     public function transform(mixed $value, array $rowContext): mixed
@@ -37,8 +35,11 @@ class NumericTransformer implements TransformerInterface
             return $this->default;
         }
 
-        $number = (float) $numericString;
+        return $this->applyNumericConstraints((float) $numericString);
+    }
 
+    private function applyNumericConstraints(float $number): float
+    {
         if ($this->min !== null && $number < $this->min) {
             return $this->min;
         }
@@ -56,10 +57,13 @@ class NumericTransformer implements TransformerInterface
 
     private function normalizeNumber(string $value): string
     {
-        $value = str_replace($this->thousandsSeparator, '', $value);
+        $thousandsSeparator = $this->separators['thousands'] ?? ',';
+        $decimalSeparator = $this->separators['decimal'] ?? '.';
 
-        if ($this->decimalSeparator !== '.') {
-            $value = str_replace($this->decimalSeparator, '.', $value);
+        $value = str_replace($thousandsSeparator, '', $value);
+
+        if ($decimalSeparator !== '.') {
+            $value = str_replace($decimalSeparator, '.', $value);
         }
 
         return trim($value);

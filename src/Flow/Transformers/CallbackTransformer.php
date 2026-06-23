@@ -63,30 +63,14 @@ class CallbackTransformer implements Transformation
 
     private function createEntry(string $key, mixed $value): Entry
     {
-        if (is_array($value)) {
-            return new JsonEntry($key, Json::fromArray($value));
-        }
-
-        if (is_int($value)) {
-            return new IntegerEntry($key, $value);
-        }
-
-        if (is_float($value)) {
-            return new FloatEntry($key, $value);
-        }
-
-        if (is_bool($value)) {
-            return new BooleanEntry($key, $value);
-        }
-
-        if ($value === null) {
-            return StringEntry::fromNull($key);
-        }
-
-        if ($value instanceof DateTimeInterface) {
-            return new DateTimeEntry($key, $value);
-        }
-
-        return new StringEntry($key, (string) $value);
+        return match (true) {
+            is_array($value) => new JsonEntry($key, Json::fromArray($value)),
+            is_int($value) => new IntegerEntry($key, $value),
+            is_float($value) => new FloatEntry($key, $value),
+            is_bool($value) => new BooleanEntry($key, $value),
+            $value === null => StringEntry::fromNull($key),
+            $value instanceof DateTimeInterface => new DateTimeEntry($key, $value),
+            default => new StringEntry($key, (string) $value),
+        };
     }
 }

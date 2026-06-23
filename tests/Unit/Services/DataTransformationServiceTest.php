@@ -348,10 +348,7 @@ it('processes unmapped data', function () {
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         Product::class
     );
 
@@ -590,10 +587,7 @@ it('filters unmapped data for non-fillable attributes', function () {
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         Product::class
     );
 
@@ -611,10 +605,7 @@ it('filters unmapped data for guarded models by checking database columns', func
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         LaravelIngest\Tests\Fixtures\Models\User::class
     );
 
@@ -633,10 +624,7 @@ it('includes unmapped data when model has partial guarded', function () {
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         LaravelIngest\Tests\Fixtures\Models\User::class
     );
 
@@ -654,10 +642,7 @@ it('excludes non-fillable attributes from unmapped data', function () {
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
     );
 
@@ -678,10 +663,7 @@ it('falls back to allowing all fields when Schema throws exception', function ()
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         LaravelIngest\Tests\Fixtures\Models\User::class
     );
 
@@ -702,10 +684,7 @@ it('returns true for fillable fields when model has specific guarded', function 
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
     );
 
@@ -723,10 +702,7 @@ it('excludes non-fillable attributes from unmapped data for models with explicit
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         FillableUser::class
     );
 
@@ -752,10 +728,7 @@ it('includes fillable attributes when model has explicit guarded array', functio
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         get_class($model)
     );
 

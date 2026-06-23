@@ -37,30 +37,43 @@ class UrlExtractor extends FlowExtractor
             throw new RuntimeException("Failed to fetch URL: {$this->url}");
         }
 
+        $this->tempFile = $this->createTempFile($response->body());
+
+        try {
+            $extractor = $this->resolveExtractor($response->header('Content-Type'));
+            yield from $extractor->extract($context);
+        } finally {
+            $this->cleanupTempFile();
+        }
+    }
+
+    private function createTempFile(string $body): string
+    {
         $tempFile = tempnam(sys_get_temp_dir(), 'flow_url_');
         if ($tempFile === false) {
             throw new RuntimeException('Failed to create temporary file for URL extraction');
         }
-        $this->tempFile = $tempFile;
-        file_put_contents($this->tempFile, $response->body());
 
-        try {
-            $contentType = $response->header('Content-Type');
-            $extension = pathinfo(parse_url($this->url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
+        file_put_contents($tempFile, $body);
 
-            if (str_contains($contentType, 'csv') || $extension === 'csv') {
-                $extractor = new CSVExtractor(Path::from($this->tempFile));
-            } elseif (str_contains($contentType, 'json') || $extension === 'json') {
-                $extractor = new JsonExtractor(Path::from($this->tempFile));
-            } else {
-                $extractor = new JsonExtractor(Path::from($this->tempFile));
-            }
+        return $tempFile;
+    }
 
-            yield from $extractor->extract($context);
-        } finally {
-            if (file_exists($this->tempFile)) {
-                unlink($this->tempFile);
-            }
+    private function resolveExtractor(?string $contentType): CSVExtractor|JsonExtractor
+    {
+        $extension = pathinfo(parse_url($this->url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
+
+        if (str_contains((string) $contentType, 'csv') || $extension === 'csv') {
+            return new CSVExtractor(Path::from($this->tempFile));
+        }
+
+        return new JsonExtractor(Path::from($this->tempFile));
+    }
+
+    private function cleanupTempFile(): void
+    {
+        if ($this->tempFile !== null && file_exists($this->tempFile)) {
+            unlink($this->tempFile);
         }
     }
 }

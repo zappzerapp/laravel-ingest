@@ -29,72 +29,15 @@ class MakeImporterCommand extends Command
 
     public function handle(): int
     {
-        $name = $this->argument('name') ?? text(
-            label: 'What should the importer be named?',
-            placeholder: 'ProductImporter',
-            required: true,
-            validate: fn(string $value) => preg_match('/^[A-Z][a-zA-Z0-9]*$/', $value)
-                ? null
-                : 'The name must be a valid class name starting with an uppercase letter.',
-        );
+        $name = $this->resolveImporterName();
+        $model = $this->resolveModelName();
+        $source = $this->resolveSourceType();
 
-        $model = $this->option('model') ?? text(
-            label: 'Which model should this importer target?',
-            placeholder: 'Product',
-            required: true,
-        );
-
-        $sourceOption = $this->option('source');
-        $validSources = array_map(static fn(SourceType $type) => $type->value, SourceType::cases());
-
-        if ($sourceOption && !in_array($sourceOption, $validSources, true)) {
-            $this->error("Invalid source type: {$sourceOption}");
-            $this->line('Valid options: ' . implode(', ', $validSources));
-
+        if ($source === null) {
             return self::FAILURE;
         }
 
-        $source = $sourceOption ?? select(
-            label: 'What source type should this importer use?',
-            options: [
-                'upload' => 'Upload - File uploaded via HTTP request',
-                'filesystem' => 'Filesystem - File from local disk',
-                'url' => 'URL - File fetched from remote URL',
-                'ftp' => 'FTP - File from FTP server',
-                'sftp' => 'SFTP - File from SFTP server',
-                'json-stream' => 'JSON Stream - Streaming JSON parser',
-            ],
-            default: 'upload',
-        );
-
-        $className = Str::studly($name);
-        $className = Str::endsWith($className, 'Importer') ? $className : $className . 'Importer';
-
-        $modelClass = Str::studly($model);
-        $sourceEnum = $this->getSourceEnumCase($source);
-
-        $path = app_path("Importers/{$className}.php");
-
-        if ($this->files->exists($path)) {
-            $this->error("Importer already exists: {$path}");
-
-            return self::FAILURE;
-        }
-
-        $this->files->ensureDirectoryExists(dirname($path));
-
-        $stub = $this->getStub($className, $modelClass, $sourceEnum);
-        $this->files->put($path, $stub);
-
-        $this->components->info("Importer [{$path}] created successfully.");
-        $this->newLine();
-        $this->line("  Don't forget to register your importer in <comment>config/ingest.php</comment>:");
-        $this->newLine();
-        $this->line("  <comment>'importers' => [</comment>");
-        $this->line("      <comment>'{$this->getImporterKey($className)}' => \\App\\Importers\\{$className}::class,</comment>");
-        $this->line('  <comment>],</comment>');
-
-        return self::SUCCESS;
+        return $this->createImporter($name, $model, $source);
     }
 
     protected function getSourceEnumCase(string $source): string
@@ -139,5 +82,80 @@ class MakeImporterCommand extends Command
             $className,
             $sourceEnum,
         ], $stub);
+    }
+
+    private function resolveImporterName(): string
+    {
+        return $this->argument('name') ?? text(
+            label: 'What should the importer be named?',
+            placeholder: 'ProductImporter',
+            required: true,
+            validate: fn(string $value) => preg_match('/^[A-Z][a-zA-Z0-9]*$/', $value)
+                ? null
+                : 'The name must be a valid class name starting with an uppercase letter.',
+        );
+    }
+
+    private function resolveModelName(): string
+    {
+        return $this->option('model') ?? text(
+            label: 'Which model should this importer target?',
+            placeholder: 'Product',
+            required: true,
+        );
+    }
+
+    private function resolveSourceType(): ?string
+    {
+        $sourceOption = $this->option('source');
+        $validSources = array_map(static fn(SourceType $type) => $type->value, SourceType::cases());
+
+        if ($sourceOption && !in_array($sourceOption, $validSources, true)) {
+            $this->error("Invalid source type: {$sourceOption}");
+            $this->line('Valid options: ' . implode(', ', $validSources));
+
+            return null;
+        }
+
+        return $sourceOption ?? select(
+            label: 'What source type should this importer use?',
+            options: [
+                'upload' => 'Upload - File uploaded via HTTP request',
+                'filesystem' => 'Filesystem - File from local disk',
+                'url' => 'URL - File fetched from remote URL',
+                'ftp' => 'FTP - File from FTP server',
+                'sftp' => 'SFTP - File from SFTP server',
+                'json-stream' => 'JSON Stream - Streaming JSON parser',
+            ],
+            default: 'upload',
+        );
+    }
+
+    private function createImporter(string $name, string $model, string $source): int
+    {
+        $className = Str::studly($name);
+        $className = Str::endsWith($className, 'Importer') ? $className : $className . 'Importer';
+        $modelClass = Str::studly($model);
+        $sourceEnum = $this->getSourceEnumCase($source);
+        $path = app_path("Importers/{$className}.php");
+
+        if ($this->files->exists($path)) {
+            $this->error("Importer already exists: {$path}");
+
+            return self::FAILURE;
+        }
+
+        $this->files->ensureDirectoryExists(dirname($path));
+        $this->files->put($path, $this->getStub($className, $modelClass, $sourceEnum));
+
+        $this->components->info("Importer [{$path}] created successfully.");
+        $this->newLine();
+        $this->line("  Don't forget to register your importer in <comment>config/ingest.php</comment>:");
+        $this->newLine();
+        $this->line("  <comment>'importers' => [</comment>");
+        $this->line("      <comment>'{$this->getImporterKey($className)}' => \\App\\Importers\\{$className}::class,</comment>");
+        $this->line('  <comment>],</comment>');
+
+        return self::SUCCESS;
     }
 }
