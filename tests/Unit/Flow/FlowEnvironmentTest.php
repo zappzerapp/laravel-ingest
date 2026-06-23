@@ -73,7 +73,7 @@ it('can use createDataFrame helper directly', function () {
 });
 
 it('can load fixtures from CSV file', function () {
-    $path = __DIR__ . '/../../fixtures/users.csv';
+    $path = __DIR__ . '/../../Fixtures/users.csv';
     expect(file_exists($path))->toBeTrue();
 
     $handle = fopen($path, 'r');
@@ -98,7 +98,7 @@ it('can load fixtures from CSV file', function () {
 });
 
 it('can load fixtures from JSON file', function () {
-    $path = __DIR__ . '/../../fixtures/users.json';
+    $path = __DIR__ . '/../../Fixtures/users.json';
     expect(file_exists($path))->toBeTrue();
 
     $content = file_get_contents($path);

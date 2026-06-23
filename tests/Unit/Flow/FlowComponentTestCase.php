@@ -31,7 +31,7 @@ class FlowComponentTestCase
 
     public function createDataFrameFromFixture(string $filename): DataFrame
     {
-        $path = __DIR__ . '/../../fixtures/' . $filename;
+        $path = __DIR__ . '/../../Fixtures/' . $filename;
 
         if (!file_exists($path)) {
             throw new InvalidArgumentException("Fixture file not found: {$filename}");
