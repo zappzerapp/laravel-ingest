@@ -24,15 +24,47 @@ class StatusIngestCommand extends Command
             return self::FAILURE;
         }
 
+        $this->displayRun($run);
+
+        return self::SUCCESS;
+    }
+
+    private function displayRun(IngestRun $run): void
+    {
+        $this->displayRunHeader($run);
+        $this->displayProgressTable($run);
+        $this->displayProcessingProgress($run);
+        $this->displayFailureReason($run);
+    }
+
+    private function displayRunHeader(IngestRun $run): void
+    {
         $this->components->info("Details for Ingest Run #{$run->id}");
 
-        $this->components->twoColumnDetail('Importer', $run->importer);
-        $this->components->twoColumnDetail('Status', "<fg={$this->getStatusColor($run->status)}>{$run->status->value}</>");
-        $this->components->twoColumnDetail('User', $run->user_id ?? 'N/A');
-        $this->components->twoColumnDetail('Original File', $run->original_filename ?? 'N/A');
-        $this->components->twoColumnDetail('Started At', $run->created_at->toDateTimeString());
-        $this->components->twoColumnDetail('Completed At', $run->completed_at?->toDateTimeString() ?? 'N/A');
+        foreach ($this->getRunDetailRows($run) as [$label, $value]) {
+            $this->components->twoColumnDetail($label, $value);
+        }
+    }
 
+    /**
+     * @return list<array{0: string, 1: string}>
+     */
+    private function getRunDetailRows(IngestRun $run): array
+    {
+        $statusColor = $this->getStatusColor($run->status);
+
+        return [
+            ['Importer', $run->importer],
+            ['Status', "<fg={$statusColor}>{$run->status->value}</>"],
+            ['User', (string) ($run->user_id ?? 'N/A')],
+            ['Original File', $run->original_filename ?? 'N/A'],
+            ['Started At', $run->created_at->toDateTimeString()],
+            ['Completed At', $run->completed_at?->toDateTimeString() ?? 'N/A'],
+        ];
+    }
+
+    private function displayProgressTable(IngestRun $run): void
+    {
         $this->newLine();
         $this->line('Progress:');
 
@@ -45,19 +77,27 @@ class StatusIngestCommand extends Command
                 number_format($run->failed_rows),
             ]]
         );
+    }
 
-        if ($run->status === IngestStatus::PROCESSING && $run->total_rows > 0) {
-            $this->output->createProgressBar($run->total_rows)->setProgress($run->processed_rows);
-            $this->newLine(2);
+    private function displayProcessingProgress(IngestRun $run): void
+    {
+        if ($run->status !== IngestStatus::PROCESSING || $run->total_rows <= 0) {
+            return;
         }
 
-        if ($run->status === IngestStatus::FAILED && !empty($run->summary['error'])) {
-            $this->newLine();
-            $this->error('Failure Reason:');
-            $this->warn($run->summary['error']);
+        $this->output->createProgressBar($run->total_rows)->setProgress($run->processed_rows);
+        $this->newLine(2);
+    }
+
+    private function displayFailureReason(IngestRun $run): void
+    {
+        if ($run->status !== IngestStatus::FAILED || empty($run->summary['error'])) {
+            return;
         }
 
-        return self::SUCCESS;
+        $this->newLine();
+        $this->error('Failure Reason:');
+        $this->warn($run->summary['error']);
     }
 
     private function getStatusColor(IngestStatus $status): string

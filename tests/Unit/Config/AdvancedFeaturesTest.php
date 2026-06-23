@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Generator;
 use LaravelIngest\IngestConfig;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 

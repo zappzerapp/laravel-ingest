@@ -69,7 +69,7 @@ class NestedIngestConfig implements HasMappings
         return $this;
     }
 
-    public function keyedBy(string $sourceField): static
+    public function keyedBy(string|array $sourceField): static
     {
         $this->mappings['_keyedBy'] = $sourceField;
 

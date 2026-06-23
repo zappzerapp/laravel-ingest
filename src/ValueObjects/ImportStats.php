@@ -6,21 +6,9 @@ namespace LaravelIngest\ValueObjects;
 
 final readonly class ImportStats
 {
-    /**
-     * @param  int  $totalRows  Total number of rows processed
-     * @param  int  $successCount  Number of successfully processed rows
-     * @param  int  $failureCount  Number of failed rows
-     * @param  int  $createdCount  Number of new records created
-     * @param  int  $updatedCount  Number of existing records updated
-     * @param  float  $duration  Total duration in seconds
-     * @param  array  $errors  Array of error summaries
-     */
     public function __construct(
         public int $totalRows,
-        public int $successCount,
-        public int $failureCount,
-        public int $createdCount,
-        public int $updatedCount,
+        public ImportCounts $counts,
         public float $duration,
         public array $errors = []
     ) {}
@@ -31,17 +19,17 @@ final readonly class ImportStats
             return 0.0;
         }
 
-        return round(($this->successCount / $this->totalRows) * 100, 2);
+        return round(($this->counts->success / $this->totalRows) * 100, 2);
     }
 
     public function wasFullySuccessful(): bool
     {
-        return $this->failureCount === 0 && $this->successCount > 0;
+        return $this->counts->failure === 0 && $this->counts->success > 0;
     }
 
     public function skippedCount(): int
     {
-        return $this->successCount - $this->createdCount - $this->updatedCount;
+        return $this->counts->success - $this->counts->created - $this->counts->updated;
     }
 
     /**
@@ -51,10 +39,10 @@ final readonly class ImportStats
     {
         return [
             'total_rows' => $this->totalRows,
-            'success_count' => $this->successCount,
-            'failure_count' => $this->failureCount,
-            'created_count' => $this->createdCount,
-            'updated_count' => $this->updatedCount,
+            'success_count' => $this->counts->success,
+            'failure_count' => $this->counts->failure,
+            'created_count' => $this->counts->created,
+            'updated_count' => $this->counts->updated,
             'skipped_count' => $this->skippedCount(),
             'success_rate' => $this->successRate(),
             'duration' => $this->duration,

@@ -14,38 +14,48 @@ class PruneIngestFilesCommand extends Command
 
     public function handle(): int
     {
-        $diskName = config('ingest.disk', 'local');
-        $disk = Storage::disk($diskName);
-        $hours = (int) $this->option('hours');
-        $timestamp = now()->subHours($hours)->getTimestamp();
-
-        $directories = ['ingest-temp', 'ingest-uploads'];
+        $disk = Storage::disk(config('ingest.disk', 'local'));
+        $timestamp = now()->subHours((int) $this->option('hours'))->getTimestamp();
         $deletedCount = 0;
 
-        foreach ($directories as $directory) {
-            if (!$disk->exists($directory)) {
+        foreach (['ingest-temp', 'ingest-uploads'] as $directory) {
+            $deletedCount += $this->pruneDirectory($disk, $directory, $timestamp);
+        }
+
+        $this->info("Deleted {$deletedCount} old ingest files from disk '" . config('ingest.disk', 'local') . "'.");
+
+        return self::SUCCESS;
+    }
+
+    private function pruneDirectory($disk, string $directory, int $timestamp): int
+    {
+        if (!$disk->exists($directory)) {
+            return 0;
+        }
+
+        $deletedCount = 0;
+
+        foreach ($disk->allFiles($directory) as $file) {
+            if ($disk->lastModified($file) >= $timestamp) {
                 continue;
             }
 
-            $files = $disk->allFiles($directory);
-
-            foreach ($files as $file) {
-                $lastModified = $disk->lastModified($file);
-
-                if ($lastModified < $timestamp) {
-                    $disk->delete($file);
-                    $deletedCount++;
-
-                    $dir = dirname($file);
-                    if (empty($disk->files($dir)) && empty($disk->directories($dir)) && $dir !== $directory) {
-                        $disk->deleteDirectory($dir);
-                    }
-                }
-            }
+            $disk->delete($file);
+            $deletedCount++;
+            $this->cleanupEmptyDirectory($disk, dirname($file), $directory);
         }
 
-        $this->info("Deleted {$deletedCount} old ingest files from disk '{$diskName}'.");
+        return $deletedCount;
+    }
 
-        return self::SUCCESS;
+    private function cleanupEmptyDirectory($disk, string $dir, string $rootDirectory): void
+    {
+        if ($dir === $rootDirectory) {
+            return;
+        }
+
+        if (empty($disk->files($dir)) && empty($disk->directories($dir))) {
+            $disk->deleteDirectory($dir);
+        }
     }
 }

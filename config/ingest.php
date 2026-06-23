@@ -35,4 +35,11 @@ return [
         'url' => LaravelIngest\Sources\UrlHandler::class,
         'json-stream' => LaravelIngest\Sources\JsonHandler::class,
     ],
+
+    'flow_engine' => [
+        'memory_limit' => '256M',
+        'chunk_size' => 1000,
+        'parallel_processing' => false,
+        'error_strategy' => 'skip_and_log',
+    ],
 ];

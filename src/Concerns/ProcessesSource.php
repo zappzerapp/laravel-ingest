@@ -59,24 +59,7 @@ trait ProcessesSource
     private function validateKeyedByHeader(IngestConfig $config, array $translationMap): void
     {
         if ($config->keyedBy) {
-            $keyedByFields = is_array($config->keyedBy) ? $config->keyedBy : [$config->keyedBy];
-
-            foreach ($keyedByFields as $keyField) {
-                $isKnownSource = false;
-                foreach ($config->mappings as $sourceField => $mapping) {
-                    $aliases = array_merge([$sourceField], $mapping['aliases']);
-                    if (in_array($keyField, $aliases, true)) {
-                        $isKnownSource = true;
-                        break;
-                    }
-                }
-                if (!$isKnownSource && isset($config->relations[$keyField])) {
-                    $isKnownSource = true;
-                }
-                if ($isKnownSource && !in_array($keyField, $translationMap, true)) {
-                    throw new SourceException("The key column '{$keyField}' or one of its aliases was not found in the source file headers.");
-                }
-            }
+            $this->validateKeyedByFields($config, $translationMap);
         }
 
         if ($config->strictHeaders) {
@@ -84,6 +67,33 @@ trait ProcessesSource
             $this->validateStrictRelations($config->relations, $translationMap);
             $this->validateStrictRelations($config->manyRelations, $translationMap);
         }
+    }
+
+    private function validateKeyedByFields(IngestConfig $config, array $translationMap): void
+    {
+        $keyedByFields = is_array($config->keyedBy) ? $config->keyedBy : [$config->keyedBy];
+
+        foreach ($keyedByFields as $keyField) {
+            if (!$this->isKnownKeyedBySource($config, $keyField)) {
+                continue;
+            }
+
+            if (!in_array($keyField, $translationMap, true)) {
+                throw new SourceException("The key column '{$keyField}' or one of its aliases was not found in the source file headers.");
+            }
+        }
+    }
+
+    private function isKnownKeyedBySource(IngestConfig $config, string $keyField): bool
+    {
+        foreach ($config->mappings as $sourceField => $mapping) {
+            $aliases = array_merge([$sourceField], $mapping['aliases']);
+            if (in_array($keyField, $aliases, true)) {
+                return true;
+            }
+        }
+
+        return isset($config->relations[$keyField]);
     }
 
     private function validateStrictMappings(IngestConfig $config, array $translationMap): void

@@ -39,7 +39,11 @@ class IngestConfig implements HasMappings
     public TransactionMode $transactionMode = TransactionMode::NONE;
     public ?SerializableClosure $beforeRowCallback = null;
     public ?SerializableClosure $afterRowCallback = null;
+    public ?SerializableClosure $beforeSaveCallback = null;
+    public ?SerializableClosure $afterChunkCallback = null;
+    public ?SerializableClosure $extraFieldsCallback = null;
     public ?SerializableClosure $modelResolver = null;
+    public array $extraFields = [];
     public array $conditionalMappings = [];
     public array $validators = [];
     public ?ImportEventHandlerInterface $eventHandler = null;
@@ -77,13 +81,6 @@ class IngestConfig implements HasMappings
     {
         $this->sourceType = $sourceType;
         $this->sourceOptions = $options;
-
-        return $this;
-    }
-
-    public function keyedBy(string|array $sourceField): static
-    {
-        $this->keyedBy = $sourceField;
 
         return $this;
     }
@@ -299,6 +296,11 @@ class IngestConfig implements HasMappings
         return $this;
     }
 
+    public function compareTimestamps(string $sourceColumn, string $dbColumn = 'updated_at'): self
+    {
+        return $this->compareTimestamp($sourceColumn, $dbColumn);
+    }
+
     public function setChunkSize(int $size): self
     {
         $this->chunkSize = $size;
@@ -337,6 +339,27 @@ class IngestConfig implements HasMappings
     public function afterRow(Closure $callback): self
     {
         $this->afterRowCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    public function beforeSave(Closure $callback): self
+    {
+        $this->beforeSaveCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    public function afterChunk(Closure $callback): self
+    {
+        $this->afterChunkCallback = new SerializableClosure($callback);
+
+        return $this;
+    }
+
+    public function extraFields(Closure $callback): self
+    {
+        $this->extraFieldsCallback = new SerializableClosure($callback);
 
         return $this;
     }
@@ -400,6 +423,13 @@ class IngestConfig implements HasMappings
             'key' => $relatedKey,
             'separator' => $separator,
         ];
+
+        return $this;
+    }
+
+    public function keyedBy(string|array $key): static
+    {
+        $this->keyedBy = $key;
 
         return $this;
     }
@@ -473,25 +503,8 @@ class IngestConfig implements HasMappings
         }
 
         $firstKey = is_array($this->keyedBy) ? ($this->keyedBy[0] ?? null) : $this->keyedBy;
-        if ($firstKey === null) {
-            return null;
-        }
 
-        foreach ($this->mappings as $sourceField => $map) {
-            $allSourceFields = array_merge([$sourceField], $map['aliases']);
-            if (in_array($firstKey, $allSourceFields, true)) {
-                return $map['attribute'];
-            }
-        }
-
-        $relationConfig = $this->relations[$firstKey] ?? null;
-        if ($relationConfig) {
-            $modelInstance = app($this->model);
-
-            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
-        }
-
-        return $firstKey;
+        return $firstKey === null ? null : $this->resolveAttributeForSourceKey($firstKey);
     }
 
     /**
@@ -504,30 +517,30 @@ class IngestConfig implements HasMappings
         }
 
         $keyedBy = is_array($this->keyedBy) ? $this->keyedBy : [$this->keyedBy];
-        $attributes = [];
 
-        foreach ($keyedBy as $key) {
-            $found = false;
-            foreach ($this->mappings as $sourceField => $map) {
-                $allSourceFields = array_merge([$sourceField], $map['aliases']);
-                if (in_array($key, $allSourceFields, true)) {
-                    $attributes[] = $map['attribute'];
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $relationConfig = $this->relations[$key] ?? null;
-                if ($relationConfig) {
-                    $modelInstance = app($this->model);
-                    $attributes[] = $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
-                } else {
-                    $attributes[] = $key;
-                }
+        return array_map(
+            fn(string $key) => $this->resolveAttributeForSourceKey($key),
+            $keyedBy
+        );
+    }
+
+    private function resolveAttributeForSourceKey(string $sourceKey): string
+    {
+        foreach ($this->mappings as $sourceField => $map) {
+            $allSourceFields = array_merge([$sourceField], $map['aliases']);
+            if (in_array($sourceKey, $allSourceFields, true)) {
+                return $map['attribute'];
             }
         }
 
-        return $attributes;
+        $relationConfig = $this->relations[$sourceKey] ?? null;
+        if ($relationConfig) {
+            $modelInstance = app($this->model);
+
+            return $modelInstance->{$relationConfig['relation']}()->getForeignKeyName();
+        }
+
+        return $sourceKey;
     }
 
     /**

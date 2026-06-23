@@ -7,11 +7,6 @@ namespace LaravelIngest\Contracts;
 use LaravelIngest\NestedIngestConfig;
 
 /**
- * Interface for mapping configurations that can be applied to nested configs.
- *
- * This extends MappingInterface for use inside `nest()` blocks. Implementations
- * can be reused across both top-level and nested configurations.
- *
  * @example
  * class ProductMapping implements MappingInterface, NestedMappingInterface
  * {
@@ -35,10 +30,5 @@ use LaravelIngest\NestedIngestConfig;
  */
 interface NestedMappingInterface
 {
-    /**
-     * @param  NestedIngestConfig  $config  The nested config to apply mappings to
-     * @param  string  $prefix  Optional prefix for source field names
-     * @return NestedIngestConfig The modified config (for chaining)
-     */
     public function applyNested(NestedIngestConfig $config, string $prefix = ''): NestedIngestConfig;
 }

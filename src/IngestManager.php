@@ -120,14 +120,14 @@ class IngestManager
         bool $isDryRun,
         ?callable $cleanupCallback = null
     ): void {
-        $batch = null;
         $totalRows = 0;
-        $chunks = $this->chunkRows($rows, $config->chunkSize, $totalRows);
-
-        foreach ($chunks as $chunk) {
-            $batch = $this->addChunkToBatch($batch, $ingestRun, $config, $chunk, $isDryRun, $cleanupCallback);
-        }
-
+        $batch = $this->dispatchChunkJobs([
+            'ingestRun' => $ingestRun,
+            'config' => $config,
+            'rows' => $rows,
+            'isDryRun' => $isDryRun,
+            'cleanupCallback' => $cleanupCallback,
+        ], $totalRows);
         $this->updateTotalRows($ingestRun, $totalRows);
         $this->finalizeBatchDispatch($ingestRun, $batch, $cleanupCallback);
     }
@@ -142,6 +142,27 @@ class IngestManager
         ]);
 
         IngestRunFailed::dispatch($ingestRun, $e);
+    }
+
+    private function dispatchChunkJobs(array $context, int &$totalRows): ?Batch
+    {
+        $batch = null;
+
+        foreach ($this->chunkRows($context['rows'], $context['config']->chunkSize, $totalRows) as $chunk) {
+            $batch = $this->addChunkToBatch(
+                $batch,
+                $context['ingestRun'],
+                new ProcessIngestChunkJob(
+                    $context['ingestRun'],
+                    $context['config'],
+                    $chunk,
+                    $context['isDryRun']
+                ),
+                $context['cleanupCallback']
+            );
+        }
+
+        return $batch;
     }
 
     /**
@@ -362,13 +383,9 @@ class IngestManager
     private function addChunkToBatch(
         ?Batch $batch,
         IngestRun $ingestRun,
-        IngestConfig $config,
-        array $chunk,
-        bool $isDryRun,
+        ProcessIngestChunkJob $job,
         ?callable $cleanupCallback
     ): Batch {
-        $job = new ProcessIngestChunkJob($ingestRun, $config, $chunk, $isDryRun);
-
         if ($batch === null) {
             return $this->dispatchBatchJobs($ingestRun, [$job], $cleanupCallback);
         }

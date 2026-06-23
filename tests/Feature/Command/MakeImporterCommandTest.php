@@ -33,7 +33,6 @@ class {{ className }} implements IngestDefinition
             ->keyedBy('id') // The source column to identify unique records
             ->onDuplicate(DuplicateStrategy::SKIP)
             ->map([
-                // 'source_column' => 'model_attribute',
             ]);
     }
 }

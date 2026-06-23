@@ -22,5 +22,5 @@ interface HasMappings
         ValidatorInterface|string|array $validator
     ): static;
 
-    public function keyedBy(string $sourceField): static;
+    public function keyedBy(string|array $sourceField): static;
 }

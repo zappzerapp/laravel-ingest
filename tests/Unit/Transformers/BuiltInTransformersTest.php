@@ -64,15 +64,14 @@ it('converts string to numeric value', function () {
 });
 
 it('handles thousands separator', function () {
-    $transformer = new NumericTransformer(thousandsSeparator: ',');
+    $transformer = new NumericTransformer(separators: ['thousands' => ',']);
 
     expect($transformer->transform('1,234.56', []))->toBe(1234.56);
 });
 
 it('handles european number format', function () {
     $transformer = new NumericTransformer(
-        decimalSeparator: ',',
-        thousandsSeparator: '.'
+        separators: ['decimal' => ',', 'thousands' => '.']
     );
 
     expect($transformer->transform('1.234,56', []))->toBe(1234.56);

@@ -74,7 +74,6 @@ it('does not throw source exception for unmapped keyedBy column missing in heade
     $definition = $this->createTestDefinition($config);
     $manager = new IngestManager(['testimporter' => $definition], app(SourceHandlerFactory::class));
 
-    // Should NOT throw; unmapped keyedBy is treated as synthetic
     expect(fn() => $manager->start('testimporter', 'users.csv'))->not->toThrow(SourceException::class);
 });
 

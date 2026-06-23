@@ -13,36 +13,46 @@ class ErrorAnalysisService
     {
         $errorCounts = [];
         $validationErrorCounts = [];
+        $totalFailedRows = 0;
 
-        $failedRows = $ingestRun->rows()->where('status', 'failed')->cursor();
-
-        foreach ($failedRows as $row) {
+        foreach ($ingestRun->rows()->where('status', 'failed')->cursor() as $row) {
             /** @var IngestRow $row */
-            $errors = $row->errors;
-            if (!is_array($errors)) {
-                continue;
-            }
-
-            $message = $errors['message'] ?? 'Unknown Error';
-            $errorCounts[$message] = ($errorCounts[$message] ?? 0) + 1;
-
-            if (isset($errors['validation']) && is_array($errors['validation'])) {
-                foreach ($errors['validation'] as $field => $fieldErrors) {
-                    foreach ($fieldErrors as $fieldError) {
-                        $key = "{$field}: {$fieldError}";
-                        $validationErrorCounts[$key] = ($validationErrorCounts[$key] ?? 0) + 1;
-                    }
-                }
-            }
+            $totalFailedRows++;
+            $this->aggregateRowErrors($row, $errorCounts, $validationErrorCounts);
         }
 
         arsort($errorCounts);
         arsort($validationErrorCounts);
 
         return [
-            'total_failed_rows' => $failedRows->count(),
+            'total_failed_rows' => $totalFailedRows,
             'error_summary' => $errorCounts,
             'validation_summary' => $validationErrorCounts,
         ];
+    }
+
+    private function aggregateRowErrors(IngestRow $row, array &$errorCounts, array &$validationErrorCounts): void
+    {
+        $errors = $row->errors;
+        if (!is_array($errors)) {
+            return;
+        }
+
+        $message = $errors['message'] ?? 'Unknown Error';
+        $errorCounts[$message] = ($errorCounts[$message] ?? 0) + 1;
+
+        if (isset($errors['validation']) && is_array($errors['validation'])) {
+            $this->aggregateValidationErrors($errors['validation'], $validationErrorCounts);
+        }
+    }
+
+    private function aggregateValidationErrors(array $validationErrors, array &$validationErrorCounts): void
+    {
+        foreach ($validationErrors as $field => $fieldErrors) {
+            foreach ($fieldErrors as $fieldError) {
+                $key = "{$field}: {$fieldError}";
+                $validationErrorCounts[$key] = ($validationErrorCounts[$key] ?? 0) + 1;
+            }
+        }
     }
 }

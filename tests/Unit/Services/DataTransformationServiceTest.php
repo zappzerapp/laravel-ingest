@@ -10,6 +10,7 @@ use LaravelIngest\Models\IngestRow;
 use LaravelIngest\Models\IngestRun;
 use LaravelIngest\NestedIngestConfig;
 use LaravelIngest\Services\DataTransformationService;
+use LaravelIngest\Tests\Fixtures\Models\FillableUser;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 
 beforeEach(function () {
@@ -337,7 +338,7 @@ it('processes unmapped data', function () {
     $processedData = [
         'mapped_field' => 'value1',
         'relation_field' => 'value2',
-        'unmapped_field' => 'value3',
+        'stock' => 10,
     ];
 
     $mappings = ['mapped_field' => ['attribute' => 'field']];
@@ -347,15 +348,12 @@ it('processes unmapped data', function () {
 
     $result = $service->processUnmappedData(
         $processedData,
-        $mappings,
-        $relations,
-        $manyRelations,
-        $usedTopLevelKeys,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
         Product::class
     );
 
-    expect($result)->toHaveKey('unmapped_field')
-        ->and($result['unmapped_field'])->toBe('value3');
+    expect($result)->toHaveKey('stock')
+        ->and($result['stock'])->toBe(10);
 });
 
 it('manages trace log', function () {
@@ -576,4 +574,165 @@ it('processes nested data with transformer interface', function () {
     $result = $service->processNestedData($processedData, ['line_items' => $nestedConfig]);
 
     expect($result['line_items'][0]['quantity'])->toBe(50);
+});
+
+it('filters unmapped data for non-fillable attributes', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['sku' => 'ABC123', 'name' => 'Product', 'fake_column' => 'value'];
+    $mappings = ['sku' => ['attribute' => 'sku']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        Product::class
+    );
+
+    expect($result)->not->toHaveKey('fake_column');
+});
+
+it('filters unmapped data for guarded models by checking database columns', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['email' => 'test@example.com', 'nonexistent_column' => 'value'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    expect($result)->not->toHaveKey('nonexistent_column')
+        ->and($result)->toHaveKey('email');
+});
+
+it('includes unmapped data when model has partial guarded', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['name' => 'Test', 'email' => 'test@example.com'];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    expect($result)->toHaveKey('email');
+});
+
+it('excludes non-fillable attributes from unmapped data', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['name' => 'Product', 'category_id' => 1, 'non_existent' => 'value'];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
+    );
+
+    expect($result)->not->toHaveKey('non_existent');
+});
+
+it('falls back to allowing all fields when Schema throws exception', function () {
+    $service = new DataTransformationService();
+
+    Illuminate\Support\Facades\Schema::shouldReceive('getColumnListing')
+        ->andThrow(new Exception('Database error'));
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        LaravelIngest\Tests\Fixtures\Models\User::class
+    );
+
+    expect($result)->toHaveKey('email')
+        ->and($result)->toHaveKey('name');
+
+    Illuminate\Support\Facades\Schema::partialMock();
+});
+
+it('returns true for fillable fields when model has specific guarded', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['name' => 'Product', 'category_id' => 1];
+    $mappings = ['name' => ['attribute' => 'name']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        LaravelIngest\Tests\Fixtures\Models\ProductWithCategory::class
+    );
+
+    expect($result)->toHaveKey('category_id');
+});
+
+it('excludes non-fillable attributes from unmapped data for models with explicit fillable', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test', 'password' => 'secret123'];
+    $mappings = ['email' => ['attribute' => 'email']];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        FillableUser::class
+    );
+
+    expect($result)
+        ->toHaveKey('name')
+        ->not->toHaveKey('password');
+});
+
+it('includes fillable attributes when model has explicit guarded array', function () {
+    $service = new DataTransformationService();
+
+    $processedData = ['email' => 'test@example.com', 'name' => 'Test', 'extra_field' => 'value'];
+    $mappings = [];
+    $relations = [];
+    $manyRelations = [];
+    $usedTopLevelKeys = [];
+
+    $model = new class() extends Illuminate\Database\Eloquent\Model
+    {
+        protected $guarded = ['id'];
+        protected $table = 'users';
+    };
+
+    $result = $service->processUnmappedData(
+        $processedData,
+        array_merge($mappings, $relations, $manyRelations, $usedTopLevelKeys),
+        get_class($model)
+    );
+
+    expect($result)
+        ->toHaveKey('email')
+        ->toHaveKey('name');
 });
