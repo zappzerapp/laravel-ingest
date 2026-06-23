@@ -34,25 +34,13 @@ class ProcessIngestChunkJob implements ShouldQueue
 
     public function handle(?RowProcessor $rowProcessor = null, ?FlowEngineInterface $flowEngine = null): void
     {
-        if ($this->batch() && $this->batch()->cancelled()) {
+        if ($this->shouldSkipProcessing()) {
             return;
         }
 
         $this->checkMemoryUsage();
-
-        $engine = $flowEngine ?? $this->flowEngine ?? app(FlowEngineInterface::class);
-
-        $pipeline = $engine->build($this->config, $this->chunk, $this->ingestRun, $this->isDryRun);
-        $engine->execute($pipeline);
-
-        $results = $this->calculateResults();
-
-        $this->ingestRun->increment('processed_rows', $results['processed']);
-        $this->ingestRun->increment('successful_rows', $results['successful']);
-        $this->ingestRun->increment('failed_rows', $results['failed']);
-
-        ChunkProcessed::dispatch($this->ingestRun, $results);
-
+        $this->executePipeline($this->resolveFlowEngine($flowEngine));
+        $this->recordChunkResults($this->calculateResults());
         $this->forceGarbageCollection();
     }
 
@@ -80,6 +68,31 @@ class ProcessIngestChunkJob implements ShouldQueue
     protected function getCurrentMemoryUsage(): int
     {
         return memory_get_usage(true);
+    }
+
+    private function shouldSkipProcessing(): bool
+    {
+        return $this->batch() && $this->batch()->cancelled();
+    }
+
+    private function resolveFlowEngine(?FlowEngineInterface $flowEngine): FlowEngineInterface
+    {
+        return $flowEngine ?? $this->flowEngine ?? app(FlowEngineInterface::class);
+    }
+
+    private function executePipeline(FlowEngineInterface $engine): void
+    {
+        $pipeline = $engine->build($this->config, $this->chunk, $this->ingestRun, $this->isDryRun);
+        $engine->execute($pipeline);
+    }
+
+    private function recordChunkResults(array $results): void
+    {
+        $this->ingestRun->increment('processed_rows', $results['processed']);
+        $this->ingestRun->increment('successful_rows', $results['successful']);
+        $this->ingestRun->increment('failed_rows', $results['failed']);
+
+        ChunkProcessed::dispatch($this->ingestRun, $results);
     }
 
     private function calculateResults(): array

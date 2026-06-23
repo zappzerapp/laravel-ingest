@@ -133,10 +133,7 @@ class MakeImporterCommand extends Command
 
     private function createImporter(string $name, string $model, string $source): int
     {
-        $className = Str::studly($name);
-        $className = Str::endsWith($className, 'Importer') ? $className : $className . 'Importer';
-        $modelClass = Str::studly($model);
-        $sourceEnum = $this->getSourceEnumCase($source);
+        $className = $this->resolveImporterClassName($name);
         $path = app_path("Importers/{$className}.php");
 
         if ($this->files->exists($path)) {
@@ -145,17 +142,38 @@ class MakeImporterCommand extends Command
             return self::FAILURE;
         }
 
+        $this->writeImporterFile($path, $className, Str::studly($model), $source);
+        $this->displayRegistrationInstructions($className);
+
+        return self::SUCCESS;
+    }
+
+    private function resolveImporterClassName(string $name): string
+    {
+        $className = Str::studly($name);
+
+        return Str::endsWith($className, 'Importer') ? $className : $className . 'Importer';
+    }
+
+    private function writeImporterFile(string $path, string $className, string $modelClass, string $source): void
+    {
+        $sourceEnum = $this->getSourceEnumCase($source);
+
         $this->files->ensureDirectoryExists(dirname($path));
         $this->files->put($path, $this->getStub($className, $modelClass, $sourceEnum));
 
         $this->components->info("Importer [{$path}] created successfully.");
+    }
+
+    private function displayRegistrationInstructions(string $className): void
+    {
+        $importerKey = $this->getImporterKey($className);
+
         $this->newLine();
         $this->line("  Don't forget to register your importer in <comment>config/ingest.php</comment>:");
         $this->newLine();
         $this->line("  <comment>'importers' => [</comment>");
-        $this->line("      <comment>'{$this->getImporterKey($className)}' => \\App\\Importers\\{$className}::class,</comment>");
+        $this->line("      <comment>'{$importerKey}' => \\App\\Importers\\{$className}::class,</comment>");
         $this->line('  <comment>],</comment>');
-
-        return self::SUCCESS;
     }
 }

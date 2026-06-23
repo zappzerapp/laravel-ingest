@@ -348,21 +348,31 @@ class DataTransformationService
         $itemData = [];
 
         foreach ($nestedConfig->getMappings() as $field => $mapping) {
-            if ($field === '_keyedBy' || !isset($item[$field])) {
+            if ($this->shouldSkipNestedField($field, $item)) {
                 continue;
             }
 
-            $value = $item[$field];
-            $transformer = $nestedConfig->getTransformers()[$field] ?? null;
-
-            if ($transformer !== null) {
-                $value = $this->applyTransformer($transformer, $value, $item);
-            }
-
-            $itemData[$mapping['attribute']] = $value;
+            $itemData[$mapping['attribute']] = $this->resolveNestedFieldValue($item, $field, $nestedConfig);
         }
 
         return $itemData;
+    }
+
+    private function shouldSkipNestedField(string $field, array $item): bool
+    {
+        return $field === '_keyedBy' || !isset($item[$field]);
+    }
+
+    private function resolveNestedFieldValue(array $item, string $field, NestedIngestConfig $nestedConfig): mixed
+    {
+        $value = $item[$field];
+        $transformer = $nestedConfig->getTransformers()[$field] ?? null;
+
+        if ($transformer !== null) {
+            $value = $this->applyTransformer($transformer, $value, $item);
+        }
+
+        return $value;
     }
 
     private function isFillableUnmappedKey(Model $modelInstance, string $key): bool
