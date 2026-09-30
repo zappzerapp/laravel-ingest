@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelIngest\Console;
 
 use Illuminate\Console\Command;
+use LaravelIngest\Enums\SourceType;
 use LaravelIngest\IngestManager;
 
 class ListIngestsCommand extends Command
@@ -32,7 +33,7 @@ class ListIngestsCommand extends Command
                 'slug' => "<info>{$slug}</info>",
                 'class' => get_class($definition),
                 'model' => $config->model,
-                'source' => $config->sourceType->value,
+                'source' => $config->sourceType instanceof SourceType ? $config->sourceType->value : class_basename($config->sourceType),
             ];
         });
 

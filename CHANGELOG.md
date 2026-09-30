@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Custom sources passed to `IngestConfig::fromSource()` as a `SourceInterface` can now be imported. `SourceHandlerFactory::make()` previously only accepted a `SourceType`, so `IngestManager::start()` threw a `TypeError`. They are now read through the new `SourceInterfaceHandler`, which applies header aliases, `keyedBy()` checks and `strictHeaders()` like the built-in handlers.
+- `ingest:list` shows the class name of a custom source instead of failing.
+
 ## [0.5.5] - 2026-05-06
 
 ### Fixed

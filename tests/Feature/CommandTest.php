@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Storage;
+use LaravelIngest\IngestConfig;
 use LaravelIngest\IngestManager;
 use LaravelIngest\IngestServiceProvider;
 use LaravelIngest\Sources\SourceHandlerFactory;
+use LaravelIngest\Tests\Fixtures\MockProductSource;
 use LaravelIngest\Tests\Fixtures\Models\Product;
 use LaravelIngest\Tests\Fixtures\Models\User;
 use LaravelIngest\Tests\Fixtures\ProductImporter;
@@ -26,6 +28,19 @@ it('can list all registered importers', function () {
                 ['<info>productimporter</info>', ProductImporter::class, Product::class, 'filesystem'],
             ]
         )
+        ->assertExitCode(0);
+});
+
+it('lists an importer with a custom source by its class name', function () {
+    $config = IngestConfig::for(Product::class)->fromSource(new MockProductSource([]));
+
+    $this->app->singleton(IngestManager::class, fn($app) => new IngestManager(
+        ['customimporter' => $this->createTestDefinition($config)],
+        $app->make(SourceHandlerFactory::class)
+    ));
+
+    $this->artisan('ingest:list')
+        ->expectsOutputToContain('MockProductSource')
         ->assertExitCode(0);
 });
 
